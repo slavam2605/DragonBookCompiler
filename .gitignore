@@ -1,6 +1,9 @@
 # Generated token files in sources
 src/main/antlr/*.tokens
 
+# Generated files in src/main
+src/main/gen
+
 ### --------- Default IntelliJ IDEA .gitignore --------- ###
 .gradle
 build/

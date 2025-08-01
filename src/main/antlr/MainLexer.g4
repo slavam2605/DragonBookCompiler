@@ -1,0 +1,48 @@
+lexer grammar MainLexer;
+
+channels { COMMENTS, WHITESPACE, LINE_BREAK }
+
+// Keywords
+INT_TYPE : 'int' ;
+BOOL_TYPE : 'bool' ;
+IF : 'if' ;
+ELSE : 'else' ;
+FOR : 'for' ;
+WHILE : 'while' ;
+TRUE : 'true' ;
+FALSE : 'false' ;
+
+// Operators
+ASSIGN : '=' ;
+SEMICOLON : ';' ;
+STAR : '*' ;
+DIV : '/' ;
+PLUS : '+' ;
+MINUS : '-' ;
+LPAR : '(' ;
+RPAR : ')' ;
+LBRACE : '{' ;
+RBRACE : '}' ;
+
+// Comparison operators
+EQUAL : '==' ;
+NOT_EQUAL : '!=' ;
+LESS : '<' ;
+GREATER : '>' ;
+LESS_EQUAL : '<=' ;
+GREATER_EQUAL : '>=' ;
+
+// Logical operators
+AND : '&&' ;
+OR : '||' ;
+NOT : '!' ;
+
+// Literals and identifiers
+ID  : [a-zA-Z_][a-zA-Z0-9_]* ;
+INT_LITERAL : [0-9]+ ;
+
+// Whitespace and comments
+WS  : [ \t]+ -> channel(WHITESPACE) ;
+NEW_LINE : [\r\n]+ -> channel(LINE_BREAK) ;
+COMMENT : '//' ~[\r\n]* -> channel(COMMENTS) ;
+COMMENT_BLOCK : '/*' .*? '*/' -> channel(COMMENTS) ;

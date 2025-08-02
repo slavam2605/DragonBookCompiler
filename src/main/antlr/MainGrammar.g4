@@ -38,7 +38,7 @@ assignment
     ;
 
 ifStatement
-    : IF LPAR expression RPAR statement (ELSE statement)?
+    : IF LPAR expression RPAR ifTrue=statement (ELSE ifFalse=statement)?
     ;
 
 whileStatement
@@ -46,7 +46,7 @@ whileStatement
     ;
 
 forStatement
-    : FOR LPAR (declaration | assignment)? SEMICOLON expression? SEMICOLON assignment? RPAR statement
+    : FOR LPAR (initDecl=declaration | initAssign=assignment)? SEMICOLON cond=expression? SEMICOLON inc=assignment? RPAR statement
     ;
 
 expression

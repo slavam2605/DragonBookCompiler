@@ -1,3 +1,5 @@
+import compiler.frontend.CompileToIRVisitor
+import compiler.ir.printToString
 import org.antlr.v4.runtime.*
 import org.example.parser.UnderlineErrorListener
 import java.io.File
@@ -9,5 +11,7 @@ fun main(args: Array<String>) {
         removeErrorListeners()
         addErrorListener(UnderlineErrorListener())
     }
-    parser.program()
+    val tree = parser.program()
+    val ir = CompileToIRVisitor().compileToIR(tree)
+    ir.forEach { println(it.printToString()) }
 }

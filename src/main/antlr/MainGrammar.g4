@@ -50,17 +50,17 @@ forStatement
     ;
 
 expression
-    : LPAR expression RPAR                                # ParenExpr
-    | NOT expression                                      # NotExpr
-    | left=expression op=(STAR | DIV) right=expression    # MulDivExpr
-    | left=expression op=(PLUS | MINUS) right=expression  # AddSubExpr
-    | left=expression op=comparisonOp right=expression    # ComparisonExpr
-    | left=expression AND right=expression                # AndExpr
-    | left=expression OR right=expression                 # OrExpr
-    | ID                                                  # IdExpr
-    | INT_LITERAL                                         # IntExpr
-    | TRUE                                                # TrueExpr
-    | FALSE                                               # FalseExpr
+    : LPAR expression RPAR                                      # ParenExpr
+    | NOT expression                                            # NotExpr
+    | left=expression op=(STAR | DIV | MOD) right=expression    # MulDivExpr
+    | left=expression op=(PLUS | MINUS) right=expression        # AddSubExpr
+    | left=expression op=comparisonOp right=expression          # ComparisonExpr
+    | left=expression AND right=expression                      # AndExpr
+    | left=expression OR right=expression                       # OrExpr
+    | ID                                                        # IdExpr
+    | INT_LITERAL                                               # IntExpr
+    | TRUE                                                      # TrueExpr
+    | FALSE                                                     # FalseExpr
     ;
 
 /* ------------- Helper and synthetic rules ------------- */
@@ -69,7 +69,7 @@ expression
 comparisonOp : LESS | GREATER | LESS_EQUAL | GREATER_EQUAL | EQUAL | NOT_EQUAL ;
 
 // Helper rule for a statement terminator
-end : SEMICOLON | isNewLine ;
+end : SEMICOLON | EOF | isNewLine ;
 
 // Synthetic rule that checks if there is a line break on a separate lexer channel
 isNewLine : { ParserUtils.hasNewLine(_input) }? ;

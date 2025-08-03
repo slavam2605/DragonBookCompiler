@@ -17,6 +17,7 @@ ASSIGN : '=' ;
 SEMICOLON : ';' ;
 STAR : '*' ;
 DIV : '/' ;
+MOD : '%' ;
 PLUS : '+' ;
 MINUS : '-' ;
 LPAR : '(' ;

@@ -8,6 +8,8 @@ import compiler.ir.printToString
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.example.parser.UnderlineErrorListener
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.DynamicTest
 import java.io.File
 import kotlin.random.Random
 
@@ -24,9 +26,11 @@ abstract class CompileToIRTestBase {
         return ProtoIRInterpreter(ir).eval()
     }
 
+    private fun Map<IRVar, Long>.getVariable(varName: String) =
+        entries.singleOrNull { "x$varName[0-9]+\$".toRegex().matches(it.key.name) }?.value
+
     protected fun compileAndGet(input: String, varName: String): Long? =
-        compileAndRun(input).entries
-            .singleOrNull { "x$varName[0-9]+\$".toRegex().matches(it.key.name) }?.value
+        compileAndRun(input).getVariable(varName)
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
         file.readText().let {
@@ -34,6 +38,31 @@ abstract class CompileToIRTestBase {
                 acc.replace($$"<$$$from>", to.toString())
             }
         }
+
+    /**
+     * Reads the file and runs an automated test.
+     * Expected values should be written in the file itself in comments, e.g. `// expected: result == 10`
+     */
+    protected fun runTestFromFile(file: File): DynamicTest {
+        return DynamicTest.dynamicTest(file.name) {
+            val testProgram = file.readText()
+            val expectedRegex = "// *expected: *([a-zA-Z0-9_]+) *== *([0-9]+)".toRegex()
+            val assertions = testProgram.lines().mapNotNull { line ->
+                expectedRegex.find(line)?.let {
+                    val (varName, expectedValue) = it.destructured
+                    varName to expectedValue.toLong()
+                }
+            }
+            check(assertions.isNotEmpty()) { "No assertions found in file $file" }
+            val result = compileAndRun(testProgram)
+            assertions.forEach { (varName, expectedValue) ->
+                val actualValue = result.getVariable(varName)
+                assertEquals(expectedValue, actualValue) {
+                    "Expected $varName == $expectedValue, but got $actualValue"
+                }
+            }
+        }
+    }
 
     private fun listResourceFiles(path: String): List<File> {
         val url = javaClass.getResource(path) ?: error("Resource not found: $path")

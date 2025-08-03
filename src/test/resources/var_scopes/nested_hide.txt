@@ -1,0 +1,8 @@
+int x = 5
+int result = 0
+{
+    int x = 10
+    result = result + x
+}
+result = result + x
+// expected: result == 15

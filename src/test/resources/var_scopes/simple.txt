@@ -1,0 +1,19 @@
+int result = 0
+{
+    int result = 100
+}
+{
+    int a = 20
+    while (a > 0) {
+        result = result - 1
+        a = a - 1
+    }
+}
+for (int result = 1; result < 10; result = result + 1) {
+    int a = 10
+}
+int x = 0
+while (x < 10) {
+    int result = 5
+    x = x + 1
+}

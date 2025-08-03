@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.ParserRuleContext
 
 class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     val resultIR = mutableListOf<IRProtoNode>()
-    val symbolTable = mutableMapOf<String, IRVar>()
+    val symbolTable = SymbolTable()
     val varAllocator = NameAllocator("x")
     val labelAllocator = NameAllocator("L")
 
@@ -32,13 +32,14 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitBlock(ctx: MainGrammar.BlockContext): Nothing? {
-        // TODO push symbol table
-        return ctx.defaultVisitChildren()
+        return symbolTable.withScope {
+            ctx.defaultVisitChildren()
+        }
     }
 
     override fun visitDeclaration(ctx: MainGrammar.DeclarationContext): Nothing? {
         val declName = IRVar(varAllocator.newName(ctx.ID().text))
-        symbolTable[ctx.ID().text] = declName
+        symbolTable.define(ctx.ID().text, declName)
         if (ctx.ASSIGN() != null) {
             resultIR.add(IRAssign(declName, visit(ctx.expression())))
         }
@@ -46,52 +47,71 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitAssignment(ctx: MainGrammar.AssignmentContext): Nothing? {
-        val leftVar = symbolTable[ctx.ID().text]!!
+        val leftVar = symbolTable.lookup(ctx.ID().text) ?: error("Undefined variable ${ctx.ID().text}")
         resultIR.add(IRAssign(leftVar, visit(ctx.expression())))
         return null
     }
 
     override fun visitIfStatement(ctx: MainGrammar.IfStatementContext): Nothing? {
-        // TODO push symbol table (for true and false blocks)
         val labelFalse = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
         val condVar = visit(ctx.expression())
         resultIR.add(IRJumpIfFalse(condVar, labelFalse))
-        visit(ctx.ifTrue)
+
+        symbolTable.withScope {
+            visit(ctx.ifTrue)
+        }
+        
         resultIR.add(IRJump(labelAfter))
         resultIR.add(labelFalse)
+        
         if (ctx.ifFalse != null) {
-            visit(ctx.ifFalse)
+            symbolTable.withScope {
+                visit(ctx.ifFalse)
+            }
         }
+        
         resultIR.add(labelAfter)
         return null
     }
 
     override fun visitWhileStatement(ctx: MainGrammar.WhileStatementContext): Nothing? {
-        // TODO push symbol table
         val labelStart = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
         resultIR.add(labelStart)
         val condVar = visit(ctx.expression())
         resultIR.add(IRJumpIfFalse(condVar, labelAfter))
-        visit(ctx.statement())
+        
+        // Loop body with its own scope
+        symbolTable.withScope {
+            visit(ctx.statement())
+        }
+        
         resultIR.add(IRJump(labelStart))
         resultIR.add(labelAfter)
         return null
     }
 
     override fun visitForStatement(ctx: MainGrammar.ForStatementContext): Nothing? {
-        // TODO push symbol table twice (for init var and for inner block)
-        visit(ctx.initAssign ?: ctx.initDecl)
-        val labelStart = IRLabel(labelAllocator.newName())
-        val labelAfter = IRLabel(labelAllocator.newName())
-        resultIR.add(labelStart)
-        val condVar = visit(ctx.cond)
-        resultIR.add(IRJumpIfFalse(condVar, labelAfter))
-        visit(ctx.statement())
-        visit(ctx.inc)
-        resultIR.add(IRJump(labelStart))
-        resultIR.add(labelAfter)
+        // Push scope for the entire for loop (including init)
+        symbolTable.withScope {
+            visit(ctx.initAssign ?: ctx.initDecl)
+
+            val labelStart = IRLabel(labelAllocator.newName())
+            val labelAfter = IRLabel(labelAllocator.newName())
+            resultIR.add(labelStart)
+            val condVar = visit(ctx.cond)
+            resultIR.add(IRJumpIfFalse(condVar, labelAfter))
+
+            // Push another scope for the loop body
+            symbolTable.withScope {
+                visit(ctx.statement())
+            }
+
+            visit(ctx.inc)
+            resultIR.add(IRJump(labelStart))
+            resultIR.add(labelAfter)
+        }
         return null
     }
 
@@ -124,7 +144,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitIdExpr(ctx: MainGrammar.IdExprContext): IRValue {
-        val idVar = symbolTable[ctx.ID().text] ?: error("Undefined variable ${ctx.ID().text}")
+        val idVar = symbolTable.lookup(ctx.ID().text) ?: error("Undefined variable ${ctx.ID().text}")
         return idVar
     }
 

@@ -2,6 +2,7 @@ package ir.tests
 
 import ir.CompileToIRTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
@@ -15,12 +16,12 @@ class CollatzTest : CompileToIRTestBase() {
     }.count() - 1
 
     @TestFactory
-    fun testCollatz(): List<DynamicTest> {
+    fun testCollatz(): List<DynamicNode> {
         val parameters = generateRandomParameters(1000, 1L .. Int.MAX_VALUE)
-        return withParametersAndFiles(parameters, "/collatz") { n, file ->
-            DynamicTest.dynamicTest("${file.name}($n)") {
+        return withParametersAndFiles(parameters, "/collatz") { mode, n, file ->
+            DynamicTest.dynamicTest("${file.name} [n = $n]") {
                 val program = readWithPattern(file, "n" to n)
-                val result = compileAndGet(program, "result")
+                val result = compileAndGet(mode, program, "result")
                 println("collatz steps for $n = $result")
                 assertEquals(collatz(n).toLong(), result)
             }

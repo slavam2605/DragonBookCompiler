@@ -5,7 +5,7 @@ import org.junit.jupiter.api.TestFactory
 
 class VarScopeTest : CompileToIRTestBase() {
     @TestFactory
-    fun testVarScopes() = withFiles("/var_scopes") { file ->
-        runTestFromFile(file)
+    fun testVarScopes() = withFiles("/var_scopes") { mode, file ->
+        runTestFromFile(mode, file)
     }
 }

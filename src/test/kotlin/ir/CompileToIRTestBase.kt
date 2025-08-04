@@ -3,34 +3,57 @@ package ir
 import MainGrammar
 import MainLexer
 import compiler.frontend.CompileToIRVisitor
+import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
-import compiler.ir.printToString
+import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.print
+import ir.interpreter.CFGInterpreter
+import ir.interpreter.ProtoIRInterpreter
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.example.parser.UnderlineErrorListener
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.DynamicContainer
+import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
 import java.io.File
 import kotlin.random.Random
 
 abstract class CompileToIRTestBase {
-    protected fun compileAndRun(input: String): Map<IRVar, Long> {
+    protected enum class TestMode {
+        IR, CFG
+    }
+
+    private fun compileToIR(input: String): List<IRProtoNode> {
         val lexer = MainLexer(CharStreams.fromString(input))
         val parser = MainGrammar(CommonTokenStream(lexer)).apply {
             removeErrorListeners()
             addErrorListener(UnderlineErrorListener())
         }
         val tree = parser.program()
-        val ir = CompileToIRVisitor().compileToIR(tree)
-        ir.forEach { println(it.printToString()) }
-        return ProtoIRInterpreter(ir).eval()
+        return CompileToIRVisitor().compileToIR(tree)
+    }
+
+    protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
+        val ir = compileToIR(input)
+        when (mode) {
+            TestMode.IR -> {
+                ir.print()
+                return ProtoIRInterpreter(ir).eval()
+            }
+            TestMode.CFG -> {
+                val cfg = ControlFlowGraph.build(ir)
+                cfg.print()
+                return CFGInterpreter(cfg).eval()
+            }
+        }
     }
 
     private fun Map<IRVar, Long>.getVariable(varName: String) =
         entries.singleOrNull { "x$varName[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
-    protected fun compileAndGet(input: String, varName: String): Long? =
-        compileAndRun(input).getVariable(varName)
+    protected fun compileAndGet(mode: TestMode, input: String, varName: String): Long? =
+        compileAndRun(mode, input).getVariable(varName)
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
         file.readText().let {
@@ -43,7 +66,7 @@ abstract class CompileToIRTestBase {
      * Reads the file and runs an automated test.
      * Expected values should be written in the file itself in comments, e.g. `// expected: result == 10`
      */
-    protected fun runTestFromFile(file: File): DynamicTest {
+    protected fun runTestFromFile(mode: TestMode, file: File): DynamicTest {
         return DynamicTest.dynamicTest(file.name) {
             val testProgram = file.readText()
             val expectedRegex = "// *expected: *([a-zA-Z0-9_]+) *== *([0-9]+)".toRegex()
@@ -54,7 +77,7 @@ abstract class CompileToIRTestBase {
                 }
             }
             check(assertions.isNotEmpty()) { "No assertions found in file $file" }
-            val result = compileAndRun(testProgram)
+            val result = compileAndRun(mode, testProgram)
             assertions.forEach { (varName, expectedValue) ->
                 val actualValue = result.getVariable(varName)
                 assertEquals(expectedValue, actualValue) {
@@ -83,12 +106,20 @@ abstract class CompileToIRTestBase {
             .toList()
     }
 
-    protected fun <T> withParametersAndFiles(intRange: Iterable<Long>, resourceFolder: String, block: (Long, File) -> T): List<T> {
-        val resourceFiles = listResourceFiles(resourceFolder)
-        return intRange.flatMap { n -> resourceFiles.map { n to it } }.map { (n, p) -> block(n, p) }
+    protected fun withParametersAndFiles(
+        intRange: Iterable<Long>,
+        resourceFolder: String,
+        block: (TestMode, Long, File) -> DynamicNode
+    ): List<DynamicContainer> = withFiles(resourceFolder) { mode, file ->
+        val tests = intRange.map { n -> block(mode, n, file) }
+        DynamicContainer.dynamicContainer(file.name, tests)
     }
 
-    protected fun <T> withFiles(resourceFolder: String, block: (File) -> T): List<T> {
-        return listResourceFiles(resourceFolder).map(block)
+    protected fun withFiles(resourceFolder: String, block: (TestMode, File) -> DynamicNode): List<DynamicContainer> {
+        val resourceFiles = listResourceFiles(resourceFolder)
+        return TestMode.entries.map { mode ->
+            val nodes = resourceFiles.map { file -> block(mode, file) }
+            DynamicContainer.dynamicContainer("$mode", nodes)
+        }
     }
 }

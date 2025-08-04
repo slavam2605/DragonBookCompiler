@@ -10,10 +10,10 @@ class FibonacciTest : CompileToIRTestBase() {
         .map { it.first }.elementAt(n.toInt())
 
     @TestFactory
-    fun testFibonacci() = withParametersAndFiles(0L .. 94L, "/fibonacci") { n, file ->
-        DynamicTest.dynamicTest("${file.name}($n)") {
+    fun testFibonacci() = withParametersAndFiles(0L .. 94L, "/fibonacci") { mode, n, file ->
+        DynamicTest.dynamicTest("${file.name} [n = $n]") {
             val program = readWithPattern(file, "n" to n)
-            val result = compileAndGet(program, "result")
+            val result = compileAndGet(mode, program, "result")
             assertEquals(fibonacci(n), result)
         }
     }

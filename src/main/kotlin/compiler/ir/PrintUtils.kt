@@ -1,5 +1,9 @@
 package compiler.ir
 
+import compiler.ir.cfg.ControlFlowGraph
+import kotlin.collections.component1
+import kotlin.collections.component2
+
 fun IRLabel.printToString(): String = name
 
 fun IRValue.printToString(): String = when (this) {
@@ -29,4 +33,22 @@ fun IRProtoNode.printToString(): String = when (this) {
     is IRJump -> "jump ${target.printToString()}"
     is IRJumpIfFalse -> "jump-if-false ${cond.printToString()} ${target.printToString()}"
     is IRJumpIfTrue -> "jump-if-true ${cond.printToString()} ${target.printToString()}"
+}
+
+fun List<IRProtoNode>.print() {
+    forEach { println(it.printToString()) }
+}
+
+fun ControlFlowGraph.print() {
+    println("${root.printToString()}:")
+    blocks[root]!!.irNodes.forEach {
+        println("\t${it.printToString()}")
+    }
+    blocks.forEach { (label, block) ->
+        if (label == root) return@forEach
+        println("${label.printToString()}:")
+        block.irNodes.forEach {
+            println("\t${it.printToString()}")
+        }
+    }
 }

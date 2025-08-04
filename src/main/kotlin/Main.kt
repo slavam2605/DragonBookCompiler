@@ -1,6 +1,6 @@
 import compiler.frontend.CompileToIRVisitor
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.printToString
+import compiler.ir.print
 import org.antlr.v4.runtime.*
 import org.example.parser.UnderlineErrorListener
 import java.io.File
@@ -15,16 +15,5 @@ fun main(args: Array<String>) {
     val tree = parser.program()
     val ir = CompileToIRVisitor().compileToIR(tree)
     val cfg = ControlFlowGraph.build(ir)
-
-    println("${cfg.root.printToString()}:")
-    cfg.nodes[cfg.root]!!.irNodes.forEach {
-        println("\t${it.printToString()}")
-    }
-    cfg.nodes.forEach { (label, block) ->
-        if (label == cfg.root) return@forEach
-        println("${label.printToString()}:")
-        block.irNodes.forEach {
-            println("\t${it.printToString()}")
-        }
-    }
+    cfg.print()
 }

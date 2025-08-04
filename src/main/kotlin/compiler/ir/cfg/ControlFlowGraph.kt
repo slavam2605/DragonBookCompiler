@@ -7,8 +7,14 @@ import compiler.ir.IRProtoNode
 
 class ControlFlowGraph(
     val root: IRLabel,
-    val nodes: Map<IRLabel, CFGBlock>
+    val blocks: Map<IRLabel, CFGBlock>
 ) {
+    val edges: Map<IRLabel, Set<IRLabel>> = blocks.mapValues { (_, block) ->
+        block.irNodes
+            .flatMap { it.labels() }
+            .toSet()
+    }
+
     companion object {
         private val Root = IRLabel("<root>")
 
@@ -34,7 +40,7 @@ class ControlFlowGraph(
             }
             // TODO add explicit "ret" here?
             nodes[currentLabel] = CFGBlock(currentBlock)
-            return ControlFlowGraph(Root, nodes)
+            return RemoveUnusedNodes.invoke(ControlFlowGraph(Root, nodes))
         }
     }
 }

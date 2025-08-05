@@ -1,14 +1,14 @@
 package compiler.frontend
 
-import compiler.ir.IRVar
-
 /**
  * A symbol table with support for nested scopes.
  * Each scope can access symbols from its parent scopes,
  * but parent scopes cannot access symbols from child scopes.
+ *
+ * @param T the type of values stored for each symbol name
  */
-class SymbolTable {
-    private val scopes = mutableListOf<MutableMap<String, IRVar>>()
+class SymbolTable<T> {
+    private val scopes = mutableListOf<MutableMap<String, T>>()
 
     init {
         // Initialize with global scope
@@ -48,18 +48,19 @@ class SymbolTable {
     /**
      * Define a symbol in the current scope
      * @param name The name of the symbol
-     * @param value The IRVar value to associate with the name
+     * @param value The value of type T to associate with the name
+     * @return The previous value from the current scope level, in case of a redefinition
      */
-    fun define(name: String, value: IRVar) {
-        scopes.last()[name] = value
+    fun define(name: String, value: T): T? {
+        return scopes.last().put(name, value)
     }
 
     /**
      * Look up a symbol in the current scope and all parent scopes
      * @param name The name of the symbol to look up
-     * @return The IRVar associated with the name, or null if not found
+     * @return The value of type T associated with the name, or null if not found
      */
-    fun lookup(name: String): IRVar? {
+    fun lookup(name: String): T? {
         // Search from innermost to outermost scope
         for (i in scopes.lastIndex downTo 0) {
             val scope = scopes[i]

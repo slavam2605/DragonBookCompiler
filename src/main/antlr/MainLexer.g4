@@ -3,8 +3,6 @@ lexer grammar MainLexer;
 channels { COMMENTS, WHITESPACE, LINE_BREAK }
 
 // Keywords
-INT_TYPE : 'int' ;
-BOOL_TYPE : 'bool' ;
 IF : 'if' ;
 ELSE : 'else' ;
 FOR : 'for' ;

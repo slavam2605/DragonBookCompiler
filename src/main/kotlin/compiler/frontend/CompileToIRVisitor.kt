@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.ParserRuleContext
 
 class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     val resultIR = mutableListOf<IRProtoNode>()
-    val symbolTable = SymbolTable()
+    val symbolTable = SymbolTable<IRVar>()
     val varAllocator = NameAllocator("x")
     val labelAllocator = NameAllocator("L")
 

@@ -3,7 +3,7 @@ parser grammar MainGrammar;
 options { tokenVocab = MainLexer; }
 
 @header {
-    import org.example.parser.ParserUtils;
+    import parser.ParserUtils;
 }
 
 program
@@ -29,8 +29,7 @@ declaration
     ;
 
 type
-    : INT_TYPE
-    | BOOL_TYPE
+    : ID
     ;
 
 assignment

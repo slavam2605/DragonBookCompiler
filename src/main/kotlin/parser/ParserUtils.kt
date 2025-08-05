@@ -1,4 +1,4 @@
-package org.example.parser
+package parser
 
 import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.TokenStream

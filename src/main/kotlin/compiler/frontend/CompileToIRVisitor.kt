@@ -53,11 +53,13 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitIfStatement(ctx: MainGrammar.IfStatementContext): Nothing? {
+        val labelTrue = IRLabel(labelAllocator.newName())
         val labelFalse = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
         val condVar = visit(ctx.expression())
-        resultIR.add(IRJumpIfFalse(condVar, labelFalse))
+        resultIR.add(IRJumpIfTrue(condVar, labelTrue, labelFalse))
 
+        resultIR.add(labelTrue)
         symbolTable.withScope {
             visit(ctx.ifTrue)
         }
@@ -76,13 +78,15 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitWhileStatement(ctx: MainGrammar.WhileStatementContext): Nothing? {
+        val labelBody = IRLabel(labelAllocator.newName())
         val labelStart = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
         resultIR.add(labelStart)
         val condVar = visit(ctx.expression())
-        resultIR.add(IRJumpIfFalse(condVar, labelAfter))
+        resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
         
         // Loop body with its own scope
+        resultIR.add(labelBody)
         symbolTable.withScope {
             visit(ctx.statement())
         }
@@ -97,13 +101,15 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         symbolTable.withScope {
             visit(ctx.initAssign ?: ctx.initDecl)
 
+            val labelBody = IRLabel(labelAllocator.newName())
             val labelStart = IRLabel(labelAllocator.newName())
             val labelAfter = IRLabel(labelAllocator.newName())
             resultIR.add(labelStart)
             val condVar = visit(ctx.cond)
-            resultIR.add(IRJumpIfFalse(condVar, labelAfter))
+            resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
 
             // Push another scope for the loop body
+            resultIR.add(labelBody)
             symbolTable.withScope {
                 visit(ctx.statement())
             }
@@ -186,27 +192,29 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         }
     }
 
-    override fun visitAndExpr(ctx: MainGrammar.AndExprContext): IRValue {
+    private fun processShortCircuitLogic(left: ParserRuleContext, right: ParserRuleContext, isAnd: Boolean): IRValue {
         val newVar = IRVar(varAllocator.newName())
+        val labelRight = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
-        val left = visit(ctx.left)
+        val left = visit(left)
         resultIR.add(IRAssign(newVar, left))
-        resultIR.add(IRJumpIfFalse(newVar, labelAfter))
-        val right = visit(ctx.right)
+        if (isAnd) {
+            resultIR.add(IRJumpIfTrue(newVar, labelRight, labelAfter))
+        } else {
+            resultIR.add(IRJumpIfTrue(newVar, labelAfter, labelRight))
+        }
+        resultIR.add(labelRight)
+        val right = visit(right)
         resultIR.add(IRAssign(newVar, right))
         resultIR.add(labelAfter)
         return newVar
     }
 
+    override fun visitAndExpr(ctx: MainGrammar.AndExprContext): IRValue {
+        return processShortCircuitLogic(ctx.left, ctx.right, true)
+    }
+
     override fun visitOrExpr(ctx: MainGrammar.OrExprContext): IRValue {
-        val newVar = IRVar(varAllocator.newName())
-        val labelAfter = IRLabel(labelAllocator.newName())
-        val left = visit(ctx.left)
-        resultIR.add(IRAssign(newVar, left))
-        resultIR.add(IRJumpIfTrue(newVar, labelAfter))
-        val right = visit(ctx.right)
-        resultIR.add(IRAssign(newVar, right))
-        resultIR.add(labelAfter)
-        return newVar
+        return processShortCircuitLogic(ctx.left, ctx.right, false)
     }
 }

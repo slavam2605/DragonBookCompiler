@@ -2,6 +2,7 @@ package compiler.ir.cfg
 
 import compiler.ir.BaseIRTransformer
 import compiler.ir.IRJump
+import compiler.ir.IRJumpNode
 import compiler.ir.IRLabel
 
 object RemoveUnusedNodes {
@@ -26,7 +27,7 @@ object RemoveUnusedNodes {
     // Remove all unused blocks
     private fun removeUnusedBlocks(root: IRLabel, blocks: MutableMap<IRLabel, CFGBlock>) {
         val usedBlocks = blocks.values.flatMap { block ->
-            block.irNodes.flatMap { it.labels() }
+            block.irNodes.filterIsInstance<IRJumpNode>().flatMap { it.labels() }
         }.toSet()
         blocks.keys.removeIf { it != root && it !in usedBlocks }
     }

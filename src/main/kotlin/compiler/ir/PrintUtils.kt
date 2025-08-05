@@ -31,8 +31,7 @@ fun IRProtoNode.printToString(): String = when (this) {
     is IRBinOp -> "${result.printToString()} = ${left.printToString()} ${op.printToString()} ${right.printToString()}"
     is IRNot -> "${result.printToString()} = ! ${value.printToString()}"
     is IRJump -> "jump ${target.printToString()}"
-    is IRJumpIfFalse -> "jump-if-false ${cond.printToString()} ${target.printToString()}"
-    is IRJumpIfTrue -> "jump-if-true ${cond.printToString()} ${target.printToString()}"
+    is IRJumpIfTrue -> "jump-if-true ${cond.printToString()} ${target.printToString()} else ${elseTarget.printToString()}"
 }
 
 fun List<IRProtoNode>.print() {

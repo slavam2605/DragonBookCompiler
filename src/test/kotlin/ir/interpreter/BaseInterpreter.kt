@@ -5,7 +5,6 @@ import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
 import compiler.ir.IRInt
 import compiler.ir.IRJump
-import compiler.ir.IRJumpIfFalse
 import compiler.ir.IRJumpIfTrue
 import compiler.ir.IRLabel
 import compiler.ir.IRNot
@@ -60,15 +59,8 @@ abstract class BaseInterpreter {
             is IRJump -> return Command.Jump(node.target)
             is IRJumpIfTrue -> {
                 val condition = getValue(node.cond)
-                if (condition != 0L) {
-                    return Command.Jump(node.target)
-                }
-            }
-            is IRJumpIfFalse -> {
-                val condition = getValue(node.cond)
-                if (condition == 0L) {
-                    return Command.Jump(node.target)
-                }
+                val target = if (condition == 0L) node.elseTarget else node.target
+                return Command.Jump(target)
             }
         }
         return Command.Continue

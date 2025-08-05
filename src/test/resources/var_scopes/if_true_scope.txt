@@ -1,0 +1,8 @@
+int result = 0
+int cond = 1
+if (cond == 1) {
+    int temp = 123
+    result = result + temp
+}
+result = result + temp
+// error: 7:18 "Undefined variable 'temp'"

@@ -68,7 +68,7 @@ expression
 comparisonOp : LESS | GREATER | LESS_EQUAL | GREATER_EQUAL | EQUAL | NOT_EQUAL ;
 
 // Helper rule for a statement terminator
-end : SEMICOLON | EOF | isNewLine ;
+end : SEMICOLON | EOF | isEndOfStatement ;
 
-// Synthetic rule that checks if there is a line break on a separate lexer channel
-isNewLine : { ParserUtils.hasNewLine(_input) }? ;
+// Synthetic rule that checks if there is a line break on a separate lexer channel or another end token
+isEndOfStatement : { ParserUtils.isEndOfStatement(_input) }? ;

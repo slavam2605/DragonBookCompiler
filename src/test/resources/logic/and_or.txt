@@ -1,0 +1,15 @@
+bool t = true
+bool f = false
+int result = 0
+
+if (t && t) { result = result + 1 }
+if (t && f) { result = result + 10 }
+if (f && t) { result = result + 100 }
+if (f && f) { result = result + 1000 }
+
+if (t || t) { result = result + 10000 }
+if (t || f) { result = result + 100000 }
+if (f || t) { result = result + 1000000 }
+if (f || f) { result = result + 10000000 }
+
+// expected: result == 1110001

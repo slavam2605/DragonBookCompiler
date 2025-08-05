@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
 import java.io.File
 import kotlin.random.Random
+import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
     protected enum class TestMode {
@@ -30,6 +31,9 @@ abstract class CompileToIRTestBase {
             addErrorListener(UnderlineErrorListener())
         }
         val tree = parser.program()
+        assertTrue("Test program has ${parser.numberOfSyntaxErrors} parser errors") {
+            parser.numberOfSyntaxErrors == 0
+        }
         SemanticAnalysisVisitor().analyze(tree)
         return CompileToIRVisitor().compileToIR(tree)
     }

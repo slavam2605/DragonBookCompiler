@@ -1,11 +1,9 @@
 package ir.tests
 
-import ir.CompileToIRTestBase
+import ir.FileBasedCompileToIRTest
 import org.junit.jupiter.api.TestFactory
 
-class VarScopeTest : CompileToIRTestBase() {
+class VarScopeTest : FileBasedCompileToIRTest() {
     @TestFactory
-    fun testVarScopes() = withFiles("/var_scopes") { mode, file ->
-        runTestFromFile(mode, file)
-    }
+    fun testVarScopes() = runTestsInFolder("/var_scopes")
 }

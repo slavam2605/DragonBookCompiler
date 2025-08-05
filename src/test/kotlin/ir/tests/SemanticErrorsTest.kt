@@ -1,11 +1,9 @@
 package ir.tests
 
-import ir.CompileToIRTestBase
+import ir.FileBasedCompileToIRTest
 import org.junit.jupiter.api.TestFactory
 
-class SemanticErrorsTest : CompileToIRTestBase() {
+class SemanticErrorsTest : FileBasedCompileToIRTest() {
     @TestFactory
-    fun testSemanticErrors() = withFiles("/semantic_errors") { mode, file ->
-        runTestFromFile(mode, file)
-    }
+    fun testSemanticErrors() = runTestsInFolder("/semantic_errors")
 }

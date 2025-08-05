@@ -2,7 +2,6 @@ package ir
 
 import MainGrammar
 import MainLexer
-import compiler.frontend.CompilationFailed
 import compiler.frontend.CompileToIRVisitor
 import compiler.frontend.SemanticAnalysisVisitor
 import compiler.ir.IRProtoNode
@@ -14,13 +13,10 @@ import ir.interpreter.ProtoIRInterpreter
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import parser.UnderlineErrorListener
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
-import org.junit.jupiter.api.DynamicTest
 import java.io.File
 import kotlin.random.Random
-import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
     protected enum class TestMode {
@@ -53,7 +49,7 @@ abstract class CompileToIRTestBase {
         }
     }
 
-    private fun Map<IRVar, Long>.getVariable(varName: String) =
+    protected fun Map<IRVar, Long>.getVariable(varName: String) =
         entries.singleOrNull { "x$varName[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
     protected fun compileAndGet(mode: TestMode, input: String, varName: String): Long? =
@@ -65,57 +61,6 @@ abstract class CompileToIRTestBase {
                 acc.replace($$"<$$$from>", to.toString())
             }
         }
-
-    /**
-     * Reads the file and runs an automated test.
-     * Expected values should be written in the file itself in comments, e.g. `// expected: result == 10`
-     */
-    protected fun runTestFromFile(mode: TestMode, file: File): DynamicTest {
-        return DynamicTest.dynamicTest(file.name) {
-            val testProgram = file.readText()
-            val expectedRegex = "// *expected: *([a-zA-Z0-9_]+) *== *([0-9]+)".toRegex()
-            val expectedValues = testProgram.lines().mapNotNull { line ->
-                expectedRegex.find(line)?.let {
-                    val (varName, expectedValue) = it.destructured
-                    ExpectedValue(varName, expectedValue.toLong())
-                }
-            }
-            val errorRegex = "// *error: *([0-9]+):([0-9]+)* *\"(.*)\"".toRegex()
-            val expectedErrors = testProgram.lines().mapNotNull { line ->
-                errorRegex.find(line)?.let {
-                    val (line, col, message) = it.destructured
-                    ExpectedError(line.toInt(), col.toInt(), message)
-                }
-            }
-            check(expectedValues.isNotEmpty() || expectedErrors.isNotEmpty()) {
-                "No assertions found in file $file"
-            }
-
-            val visitedErrors = mutableSetOf<ExpectedError>()
-            try {
-                val result = compileAndRun(mode, testProgram)
-                expectedValues.forEach { (varName, expectedValue) ->
-                    val actualValue = result.getVariable(varName)
-                    assertEquals(expectedValue, actualValue) {
-                        "Expected $varName == $expectedValue, but got $actualValue"
-                    }
-                }
-            } catch (e: CompilationFailed) {
-                e.exceptions.forEach { exception ->
-                    val ctx = exception.ctx
-                    val expectedError = expectedErrors.find {
-                        it.line == ctx.line && it.col == ctx.start && it.message == exception.message
-                    }
-                    assertTrue(expectedError != null, "Unexpected error: ${ctx.line}:${ctx.start} \"${exception.message}\"")
-                    visitedErrors.add(expectedError)
-                    println("Expected exception: ${exception.message} at ${ctx.line}:${ctx.start}")
-                }
-            }
-            expectedErrors.forEach { error ->
-                assertTrue(error in visitedErrors, "Expected error was not thrown: ${error.line}:${error.col} \"${error.message}\"")
-            }
-        }
-    }
 
     private fun listResourceFiles(path: String): List<File> {
         val url = javaClass.getResource(path) ?: error("Resource not found: $path")
@@ -152,8 +97,4 @@ abstract class CompileToIRTestBase {
             DynamicContainer.dynamicContainer("$mode", nodes)
         }
     }
-
-    private data class ExpectedValue(val varName: String, val expectedValue: Long)
-
-    private data class ExpectedError(val line: Int, val col: Int, val message: String)
 }

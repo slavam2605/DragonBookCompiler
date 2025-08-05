@@ -1,0 +1,5 @@
+int i = 0
+while (1) {
+    i = i + 1
+}
+// error: 2:7 "Expected type 'BOOL', got 'INT'"

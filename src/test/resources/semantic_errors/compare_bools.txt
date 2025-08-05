@@ -1,0 +1,5 @@
+bool a = true
+bool b = false
+a = a == b
+// error: 3:4 "Expected type 'INT', got 'BOOL'"
+// error: 3:9 "Expected type 'INT', got 'BOOL'"

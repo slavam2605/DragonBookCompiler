@@ -1,0 +1,2 @@
+int x = true
+// error: 1:8 "Expected type 'INT', got 'BOOL'"

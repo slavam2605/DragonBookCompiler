@@ -1,0 +1,5 @@
+int result = 0
+if (1) {
+    result = result + 1
+}
+// error: 2:4 "Expected type 'BOOL', got 'INT'"

@@ -1,0 +1,3 @@
+int x = 0
+x = true
+// error: 2:4 "Expected type 'INT', got 'BOOL'"

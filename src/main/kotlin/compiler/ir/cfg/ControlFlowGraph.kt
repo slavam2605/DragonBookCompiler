@@ -11,8 +11,11 @@ class ControlFlowGraph(
     val root: IRLabel,
     val blocks: Map<IRLabel, CFGBlock>
 ) : ExtensionHolder() {
-    val edges: Map<IRLabel, Set<IRLabel>>
-    val backEdges: Map<IRLabel, Set<IRLabel>>
+    private val edges: Map<IRLabel, Set<IRLabel>>
+    private val backEdges: Map<IRLabel, Set<IRLabel>>
+
+    fun edges(label: IRLabel): Set<IRLabel> = edges[label] ?: emptySet()
+    fun backEdges(label: IRLabel): Set<IRLabel> = backEdges[label] ?: emptySet()
 
     init {
         blocks.forEach { (label, block) ->

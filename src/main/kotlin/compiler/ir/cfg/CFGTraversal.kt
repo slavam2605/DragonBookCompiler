@@ -38,7 +38,7 @@ object PostOrderTraversal : CFGTraversal {
         if (current in visited) return
         visited.add(current)
 
-        val successors = cfg.edges[current] ?: emptyList()
+        val successors = cfg.edges(current)
         for (successor in successors) {
             traversePostOrder(successor, cfg, visited, visitor)
         }

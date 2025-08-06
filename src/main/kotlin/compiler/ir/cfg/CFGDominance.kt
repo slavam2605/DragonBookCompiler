@@ -21,7 +21,7 @@ object CFGDominance {
         while (changed) {
             changed = false
             ReversedPostOrderTraversal.traverse(cfg) { label, _ ->
-                val backEdges = cfg.backEdges[label]!!
+                val backEdges = cfg.backEdges(label)
                 val intersection = if (backEdges.isEmpty()) {
                     emptySet()
                 } else {

@@ -3,7 +3,13 @@ package compiler.ir.cfg
 import compiler.ir.IRLabel
 
 object CFGDominance {
-    fun compute(cfg: ControlFlowGraph): Map<IRLabel, Set<IRLabel>> {
+    private val Key = ExtensionKey<Map<IRLabel, Set<IRLabel>>>("DominanceSets")
+
+    fun get(cfg: ControlFlowGraph): Map<IRLabel, Set<IRLabel>> {
+        return cfg.getOrCompute(Key) { compute(cfg) }
+    }
+
+    private fun compute(cfg: ControlFlowGraph): Map<IRLabel, Set<IRLabel>> {
         val dom = mutableMapOf<IRLabel, Set<IRLabel>>()
         dom[cfg.root] = mutableSetOf(cfg.root)
         cfg.blocks.keys.forEach { label ->

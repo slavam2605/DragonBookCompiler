@@ -40,7 +40,7 @@ class CFGDominanceTest {
             .forEach { blocks[it] = CFGBlock(emptyList()) }
 
         val cfg = ControlFlowGraph(IRLabel(ENTRY), blocks)
-        val dom = CFGDominance.compute(cfg)
+        val dom = CFGDominance.get(cfg)
             .mapKeys { (label, _) -> label.name }
             .mapValues { (_, dominators) -> dominators.map { it.name }.toSet() }
 

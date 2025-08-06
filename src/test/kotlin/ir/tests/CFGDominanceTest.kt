@@ -7,6 +7,7 @@ import compiler.ir.IRLabel
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.CFGDominance
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.DominanceFrontiers
 import compiler.ir.cfg.DominatorTree
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -51,9 +52,27 @@ class CFGDominanceTest {
         val iDom = DominatorTree.get(cfg)
             .mapKeys { (label, _) -> label.name }
             .mapValues { (_, label) -> label.name }
+        val df = DominanceFrontiers.get(cfg)
+            .mapKeys { (label, _) -> label.name }
+            .mapValues { (_, frontiers) -> frontiers.map { it.name }.toSet() }
+        val slowCorrectDF = correctReferenceDF(cfg)
 
-        assertEquals(expectedDom, dom)
-        assertEquals(expectedIDom, iDom)
+        assertEquals(expectedDom, dom, "Incorrect dominance sets")
+        assertEquals(expectedIDom, iDom, "Incorrect immediate dominator tree")
+        assertEquals(slowCorrectDF, df, "Incorrect dominance frontiers")
+    }
+
+    // Slow implementation of DF which uses the definition of Dominance Frontier
+    private fun correctReferenceDF(cfg: ControlFlowGraph): Map<String, Set<String>> {
+        val dom = CFGDominance.get(cfg)
+        return cfg.blocks.mapValues { (label, _) ->
+            cfg.blocks.keys.filter { otherLabel ->
+                // 1. `label` dominates at least one predecessor of `otherLabel`
+                cfg.backEdges(otherLabel).any { pred -> label in dom[pred]!! } &&
+                // 2. `label` does not strictly dominate `otherLabel`
+                label !in (dom[otherLabel]!! - otherLabel)
+            }.map { it.name }.toSet()
+        }.mapKeys { (label, _) -> label.name }
     }
 
     @Test

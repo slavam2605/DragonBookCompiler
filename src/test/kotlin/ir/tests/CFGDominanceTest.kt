@@ -7,11 +7,16 @@ import compiler.ir.IRLabel
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.CFGDominance
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.DominatorTree
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class CFGDominanceTest {
-    private fun runTest(edges: Map<String, List<String>>, expected: Map<String, Set<String>>) {
+    private fun runTest(
+        edges: Map<String, List<String>>, 
+        expectedDom: Map<String, Set<String>>,
+        expectedIDom: Map<String, String>
+    ) {
         // Build a fake CFG from given edges
         val blocks = edges
             .mapKeys { (key, _) -> IRLabel(key) }
@@ -43,8 +48,12 @@ class CFGDominanceTest {
         val dom = CFGDominance.get(cfg)
             .mapKeys { (label, _) -> label.name }
             .mapValues { (_, dominators) -> dominators.map { it.name }.toSet() }
+        val iDom = DominatorTree.get(cfg)
+            .mapKeys { (label, _) -> label.name }
+            .mapValues { (_, label) -> label.name }
 
-        assertEquals(expected, dom)
+        assertEquals(expectedDom, dom)
+        assertEquals(expectedIDom, iDom)
     }
 
     @Test
@@ -59,6 +68,11 @@ class CFGDominanceTest {
             A to setOf(ENTRY, A),
             B to setOf(ENTRY, A, B),
             C to setOf(ENTRY, A, B, C)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to B
         )
     )
 
@@ -76,6 +90,12 @@ class CFGDominanceTest {
             B to setOf(ENTRY, A, B),
             C to setOf(ENTRY, A, C),
             D to setOf(ENTRY, A, D)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to A,
+            D to A
         )
     )
 
@@ -95,6 +115,13 @@ class CFGDominanceTest {
             C to setOf(ENTRY, A, C),
             D to setOf(ENTRY, A, D),
             E to setOf(ENTRY, A, D, E)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to A,
+            D to A,
+            E to D
         )
     )
 
@@ -112,6 +139,12 @@ class CFGDominanceTest {
             B to setOf(ENTRY, A, B),
             C to setOf(ENTRY, A, B, C),
             D to setOf(ENTRY, A, B, C, D)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to B,
+            D to C
         )
     )
 
@@ -131,6 +164,13 @@ class CFGDominanceTest {
             C to setOf(ENTRY, A, C),
             D to setOf(ENTRY, A, C, D),
             E to setOf(ENTRY, A, C, D, E)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to A,
+            D to C,
+            E to D
         )
     )
 
@@ -147,6 +187,11 @@ class CFGDominanceTest {
             B to setOf(ENTRY, A, B),
             C to setOf(C),
             D to setOf(C, D)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            D to C
         )
     )
 
@@ -165,6 +210,13 @@ class CFGDominanceTest {
             C to setOf(ENTRY, A, C),
             D to setOf(ENTRY, A, B, D),
             E to setOf(ENTRY, A, C, E)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to A,
+            D to B,
+            E to C
         )
     )
 
@@ -183,6 +235,12 @@ class CFGDominanceTest {
             B to setOf(ENTRY, A, B),
             C to setOf(ENTRY, A, B, C),
             D to setOf(ENTRY, A, D)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to B,
+            D to A
         )
     )
 
@@ -196,6 +254,10 @@ class CFGDominanceTest {
             ENTRY to setOf(ENTRY),
             A to setOf(ENTRY, A),
             B to setOf(ENTRY, A, B)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A
         )
     )
 
@@ -215,6 +277,13 @@ class CFGDominanceTest {
             C to setOf(ENTRY, A, B, C),
             D to setOf(ENTRY, A, B, D),
             E to setOf(ENTRY, A, B, D, E)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to B,
+            D to B,
+            E to D
         )
     )
 
@@ -244,6 +313,18 @@ class CFGDominanceTest {
             H to setOf(ENTRY, A, B, D, G, H),
             I to setOf(ENTRY, A, C, I),
             J to setOf(ENTRY, A, J)
+        ),
+        mapOf(
+            A to ENTRY,
+            B to A,
+            C to A,
+            D to B,
+            E to D,
+            F to D,
+            G to D,
+            H to G,
+            I to C,
+            J to A
         )
     )
 

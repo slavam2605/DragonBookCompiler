@@ -99,7 +99,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     override fun visitForStatement(ctx: MainGrammar.ForStatementContext): Nothing? {
         // Push scope for the entire for loop (including init)
         symbolTable.withScope {
-            visit(ctx.initAssign ?: ctx.initDecl)
+            (ctx.initAssign ?: ctx.initDecl)?.let { visit(it) }
 
             val labelBody = IRLabel(labelAllocator.newName())
             val labelStart = IRLabel(labelAllocator.newName())

@@ -1,0 +1,16 @@
+int a = 0
+int b = 1
+for (int k = 0; k < 3; k = k + 1) {
+  if (b > k) {
+    a = a + b;
+  }
+  {
+    int tmp = a % (k + 1);
+    a = a + tmp;
+  }
+  b = b * 2;
+}
+int result_a = a
+int result_b = b
+// expected: result_a == 10
+// expected: result_b == 8

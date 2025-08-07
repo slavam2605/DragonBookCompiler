@@ -21,9 +21,9 @@ object DominanceFrontiers {
             if (predecessors.size < 2) return@forEach
             predecessors.forEach { pred ->
                 var runner: IRLabel? = pred
-                while (runner != iDom[label]) {
+                while (runner != iDom.iDom(label)) {
                     frontiers[runner]!!.add(label)
-                    runner = iDom[runner]
+                    runner = iDom.iDom(runner)
                 }
             }
         }

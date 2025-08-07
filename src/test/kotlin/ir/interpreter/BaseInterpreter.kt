@@ -1,17 +1,6 @@
 package ir.interpreter
 
-import compiler.ir.IRAssign
-import compiler.ir.IRBinOp
-import compiler.ir.IRBinOpKind
-import compiler.ir.IRInt
-import compiler.ir.IRJump
-import compiler.ir.IRJumpIfTrue
-import compiler.ir.IRLabel
-import compiler.ir.IRNot
-import compiler.ir.IRProtoNode
-import compiler.ir.IRValue
-import compiler.ir.IRVar
-import compiler.ir.printToString
+import compiler.ir.*
 
 abstract class BaseInterpreter {
     protected val vars = mutableMapOf<IRVar, Long>()
@@ -31,6 +20,9 @@ abstract class BaseInterpreter {
     protected fun baseEval(node: IRProtoNode): Command {
         when (node) {
             is IRLabel -> { /* skip */ }
+            is IRPhi -> {
+                error("Phi nodes are not supported in the base interpreter")
+            }
             is IRAssign -> {
                 vars[node.result] = getValue(node.right)
             }

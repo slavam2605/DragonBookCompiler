@@ -7,15 +7,33 @@ import compiler.ir.IRNode
 import compiler.ir.IRProtoNode
 import compiler.ir.printToString
 
-class ControlFlowGraph(
+open class ControlFlowGraph(
     val root: IRLabel,
     val blocks: Map<IRLabel, CFGBlock>
 ) : ExtensionHolder() {
     private val edges: Map<IRLabel, Set<IRLabel>>
-    private val backEdges: Map<IRLabel, Set<IRLabel>>
+    private val backEdges: Map<IRLabel, List<IRLabel>>
 
+    /**
+     * Edges are not sorted and the order is implementation-dependent.
+     */
     fun edges(label: IRLabel): Set<IRLabel> = edges[label] ?: emptySet()
-    fun backEdges(label: IRLabel): Set<IRLabel> = backEdges[label] ?: emptySet()
+
+    /**
+     * Back edges are sorted by the source's label name.
+     * It is important for phi-nodes in SSA form.
+     */
+    fun backEdges(label: IRLabel): List<IRLabel> = backEdges[label] ?: emptyList()
+
+    /**
+     * Returns the index of the block `from` among back edges of `to`.
+     * The same index is used in phi-nodes to determine which incoming value to use.
+     */
+    fun getBlockIndex(from: IRLabel, to: IRLabel): Int =
+        backEdges(to).indexOf(from).also {
+            // Check that there is an edge `from -> to`
+            check(it >= 0)
+        }
 
     init {
         blocks.forEach { (label, block) ->
@@ -32,8 +50,12 @@ class ControlFlowGraph(
             // TODO check that last node is a jump or a "ret" (when functions will be implemented)
         }
 
-        edges = blocks.mapValues { (_, block) -> block.irNodes.filterIsInstance<IRJumpNode>().flatMap { it.labels() }.toSet() }
-        backEdges = blocks.mapValues { (label, _) -> blocks.keys.filter { label in (edges[it] ?: emptySet()) }.toSet() }
+        edges = blocks.mapValues { (_, block) ->
+            block.irNodes.filterIsInstance<IRJumpNode>().flatMap { it.labels() }.toSet()
+        }
+        backEdges = blocks.mapValues { (label, _) ->
+            blocks.keys.filter { label in edges(it) }.sortedBy { it.name }
+        }
     }
 
     companion object {

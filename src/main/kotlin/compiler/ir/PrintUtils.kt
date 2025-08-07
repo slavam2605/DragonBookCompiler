@@ -27,6 +27,7 @@ fun IRBinOpKind.printToString(): String = when (this) {
 
 fun IRProtoNode.printToString(): String = when (this) {
     is IRLabel -> "$name:"
+    is IRPhi -> "${result.printToString()} = phi(${sources.joinToString(", ") { it.printToString() }})"
     is IRAssign -> "${result.printToString()} = ${right.printToString()}"
     is IRBinOp -> "${result.printToString()} = ${left.printToString()} ${op.printToString()} ${right.printToString()}"
     is IRNot -> "${result.printToString()} = ! ${value.printToString()}"

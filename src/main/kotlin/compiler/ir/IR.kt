@@ -30,6 +30,21 @@ enum class IRBinOpKind { ADD, SUB, MUL, DIV, MOD, EQ, NEQ, GT, GE, LT, LE }
 
 data class IRLabel(val name: String) : IRProtoNode
 
+class IRPhi(val result: IRVar, val sources: List<IRVar>) : IRNode {
+    override fun lvalues() = listOf(result)
+    override fun rvalues() = sources
+    override fun transform(transformer: IRTransformer) = IRPhi(
+        transformer.transformLValue(result),
+        sources.map { transformer.transformLValue(it) }
+    )
+
+    fun replaceSourceAt(index: Int, newSource: IRVar): IRPhi {
+        return IRPhi(result, sources.toMutableList().apply {
+            this[index] = newSource
+        })
+    }
+}
+
 class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
     override fun lvalues() = listOf(result)
     override fun rvalues() = listOf(right)

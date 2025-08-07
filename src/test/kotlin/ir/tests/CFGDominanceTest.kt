@@ -49,9 +49,11 @@ class CFGDominanceTest {
         val dom = CFGDominance.get(cfg)
             .mapKeys { (label, _) -> label.name }
             .mapValues { (_, dominators) -> dominators.map { it.name }.toSet() }
-        val iDom = DominatorTree.get(cfg)
+        val dominatorTree = DominatorTree.get(cfg)
+        val iDom = cfg.blocks.keys.associateWith { dominatorTree.iDom(it) }
+            .filterValues { it != null }
             .mapKeys { (label, _) -> label.name }
-            .mapValues { (_, label) -> label.name }
+            .mapValues { (_, label) -> label!!.name }
         val df = DominanceFrontiers.get(cfg)
             .mapKeys { (label, _) -> label.name }
             .mapValues { (_, frontiers) -> frontiers.map { it.name }.toSet() }

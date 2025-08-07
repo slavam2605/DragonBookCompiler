@@ -1,5 +1,6 @@
 int n = <$n>
-int result = 1
+int r = 1
 for (int i = 2; i <= n; i = i + 1) {
-    result = result * i
+    r = r * i
 }
+int result = r

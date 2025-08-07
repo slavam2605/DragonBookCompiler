@@ -1,15 +1,16 @@
 bool t = true
 bool f = false
-int result = 0
+int r = 0
 
-if (t && t) { result = result + 1 }
-if (t && f) { result = result + 10 }
-if (f && t) { result = result + 100 }
-if (f && f) { result = result + 1000 }
+if (t && t) { r = r + 1 }
+if (t && f) { r = r + 10 }
+if (f && t) { r = r + 100 }
+if (f && f) { r = r + 1000 }
 
-if (t || t) { result = result + 10000 }
-if (t || f) { result = result + 100000 }
-if (f || t) { result = result + 1000000 }
-if (f || f) { result = result + 10000000 }
+if (t || t) { r = r + 10000 }
+if (t || f) { r = r + 100000 }
+if (f || t) { r = r + 1000000 }
+if (f || f) { r = r + 10000000 }
 
+int result = r
 // expected: result == 1110001

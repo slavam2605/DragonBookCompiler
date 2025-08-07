@@ -7,7 +7,9 @@ import compiler.frontend.SemanticAnalysisVisitor
 import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.SSAControlFlowGraph
 import compiler.ir.print
+import compiler.ir.printToString
 import ir.interpreter.CFGInterpreter
 import ir.interpreter.ProtoIRInterpreter
 import org.antlr.v4.runtime.CharStreams
@@ -21,7 +23,7 @@ import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
     protected enum class TestMode {
-        IR, CFG
+        IR, CFG, SSA
     }
 
     private fun compileToIR(input: String): List<IRProtoNode> {
@@ -49,6 +51,13 @@ abstract class CompileToIRTestBase {
                 val cfg = ControlFlowGraph.build(ir)
                 cfg.print()
                 return CFGInterpreter(cfg).eval()
+            }
+            TestMode.SSA -> {
+                val cfg = ControlFlowGraph.build(ir)
+                val ssa = SSAControlFlowGraph.transform(cfg)
+                ssa.print()
+                testSingleAssignmentsInSSA(ssa)
+                return CFGInterpreter(ssa).eval()
             }
         }
     }
@@ -99,6 +108,20 @@ abstract class CompileToIRTestBase {
         return TestMode.entries.map { mode ->
             val nodes = resourceFiles.map { file -> block(mode, file) }
             DynamicContainer.dynamicContainer("$mode", nodes)
+        }
+    }
+
+    companion object {
+        private fun testSingleAssignmentsInSSA(ssa: SSAControlFlowGraph) {
+            val seenLValues = mutableSetOf<IRVar>()
+            ssa.blocks.forEach { (_, block) ->
+                block.irNodes.forEach { node ->
+                    node.lvalues().forEach { lvalue ->
+                       assertTrue(seenLValues.add(lvalue),
+                           "Variable ${lvalue.printToString()} is used more than once")
+                    }
+                }
+            }
         }
     }
 }

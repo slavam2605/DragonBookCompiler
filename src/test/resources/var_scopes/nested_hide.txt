@@ -1,8 +1,9 @@
 int x = 5
-int result = 0
+int r = 0
 {
     int x = 10
-    result = result + x
+    r = r + x
 }
-result = result + x
+r = r + x
+int result = r
 // expected: result == 15

@@ -58,10 +58,12 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitDeclaration(ctx: MainGrammar.DeclarationContext): Nothing? {
         val declName = IRVar(varAllocator.newName(ctx.ID().text), ctx.ID().text)
-        symbolTable.define(ctx.ID().text, declName)
         if (ctx.ASSIGN() != null) {
             resultIR.add(IRAssign(declName, visit(ctx.expression())).withLocation(ctx))
         }
+
+        // Modify the symbol table _after_ visiting the expression, so it uses the old table (in case of shadowing)
+        symbolTable.define(ctx.ID().text, declName)
         return null
     }
 

@@ -1,4 +1,4 @@
-package compiler.ir.cfg.analysis
+package compiler.ir.analysis
 
 import compiler.frontend.CompilationException
 import compiler.frontend.CompilationFailed

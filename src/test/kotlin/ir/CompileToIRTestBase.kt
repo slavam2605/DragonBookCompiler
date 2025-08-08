@@ -8,7 +8,7 @@ import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.SourceLocationMap
-import compiler.ir.cfg.analysis.DefiniteAssignmentAnalysis
+import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.print
 import compiler.ir.printToString

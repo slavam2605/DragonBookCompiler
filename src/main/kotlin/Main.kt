@@ -2,6 +2,8 @@ import compiler.frontend.CompilationFailed
 import compiler.frontend.CompileToIRVisitor
 import compiler.frontend.SemanticAnalysisVisitor
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.analysis.DefiniteAssignmentAnalysis
+import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.print
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -24,9 +26,11 @@ fun main(args: Array<String>) {
 
     try {
         SemanticAnalysisVisitor().analyze(tree)
-        cfg.print()
         val (ir, sourceMap) = CompileToIRVisitor().compileToIR(tree)
         val cfg = ControlFlowGraph.build(ir, sourceMap)
+        DefiniteAssignmentAnalysis(cfg).run()
+        val ssa = SSAControlFlowGraph.transform(cfg)
+        ssa.print()
     } catch (e: CompilationFailed) {
         e.printErrors(tokens)
         exitProcess(1)

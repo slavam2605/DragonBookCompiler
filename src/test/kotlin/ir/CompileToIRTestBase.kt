@@ -8,6 +8,7 @@ import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.SourceLocationMap
+import compiler.ir.cfg.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.print
 import compiler.ir.printToString
@@ -51,10 +52,12 @@ abstract class CompileToIRTestBase {
             TestMode.CFG -> {
                 val cfg = ControlFlowGraph.build(ir, sourceMap)
                 cfg.print()
+                DefiniteAssignmentAnalysis(cfg).run()
                 return CFGInterpreter(cfg).eval()
             }
             TestMode.SSA -> {
                 val cfg = ControlFlowGraph.build(ir, sourceMap)
+                DefiniteAssignmentAnalysis(cfg).run()
                 val ssa = SSAControlFlowGraph.transform(cfg)
                 ssa.print()
                 testSingleAssignmentsInSSA(ssa)

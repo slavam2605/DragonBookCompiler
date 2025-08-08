@@ -1,0 +1,3 @@
+int a
+int b = a + 1
+// error: 2:8 "Variable 'a' is used before being initialized"

@@ -1,0 +1,6 @@
+int a = 1
+int i
+while (a < 5) {
+    a = a + i;
+}
+// error: 4:8 "Variable 'i' is used before being initialized"

@@ -32,9 +32,6 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                     ExpectedError(line.toInt(), col.toInt(), message)
                 }
             }
-            check(expectedValues.isNotEmpty() || expectedErrors.isNotEmpty()) {
-                "No assertions found in file $file"
-            }
 
             val visitedErrors = mutableSetOf<ExpectedError>()
             try {
@@ -47,7 +44,7 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                 }
             } catch (e: CompilationFailed) {
                 e.exceptions.forEach { exception ->
-                    val ctx = exception.ctx
+                    val ctx = exception.location ?: error("Exceptions without location are not supported")
                     val expectedError = expectedErrors.find {
                         it.line == ctx.line && it.col == ctx.start && it.message == exception.message
                     }
@@ -58,6 +55,10 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
             }
             expectedErrors.forEach { error ->
                 assertTrue(error in visitedErrors, "Expected error was not thrown: ${error.line}:${error.col} \"${error.message}\"")
+            }
+
+            check(expectedValues.isNotEmpty() || expectedErrors.isNotEmpty()) {
+                "No assertions found in file $file"
             }
         }
     }

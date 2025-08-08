@@ -1,0 +1,6 @@
+int a
+if (true) {
+    a = 1
+}
+int b = a + 1
+// error: 5:8 "Variable 'a' is used before being initialized"

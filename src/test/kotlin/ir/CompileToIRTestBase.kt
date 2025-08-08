@@ -28,7 +28,9 @@ abstract class CompileToIRTestBase {
         IR, CFG, SSA
     }
 
-    private fun compileToIR(input: String): List<IRProtoNode> {
+    protected open val excludeModes: Set<TestMode> = emptySet()
+
+    private fun compileToIR(input: String): Pair<List<IRProtoNode>, SourceLocationMap> {
         val lexer = MainLexer(CharStreams.fromString(input))
         val parser = MainGrammar(CommonTokenStream(lexer)).apply {
             removeErrorListeners()
@@ -109,7 +111,7 @@ abstract class CompileToIRTestBase {
 
     protected fun withFiles(resourceFolder: String, block: (TestMode, File) -> DynamicNode): List<DynamicContainer> {
         val resourceFiles = listResourceFiles(resourceFolder)
-        return TestMode.entries.map { mode ->
+        return TestMode.entries.filter { it !in excludeModes }.map { mode ->
             val nodes = resourceFiles.map { file -> block(mode, file) }
             DynamicContainer.dynamicContainer("$mode", nodes)
         }

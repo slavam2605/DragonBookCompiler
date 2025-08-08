@@ -1,0 +1,16 @@
+int x
+if (1 > 2) {
+    if (3 < 2) {
+        x = 1
+    } else {
+        x = 2
+    }
+} else if (5 > 10) {
+    x = 3
+} else if (1 < 9) {
+    x = 4
+} else {
+    x = 5
+}
+int y = x + 1
+// expected: y == 5

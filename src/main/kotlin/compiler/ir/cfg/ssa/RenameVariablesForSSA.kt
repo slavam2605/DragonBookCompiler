@@ -38,7 +38,7 @@ internal class RenameVariablesForSSA(
         } else {
             xStack.last().index = index
         }
-        return IRVar(x.name, index)
+        return IRVar(x.name, index, x.sourceName)
     }
 
     private fun renameBlock(label: IRLabel) {
@@ -56,7 +56,7 @@ internal class RenameVariablesForSSA(
                     .filterIsInstance<IRVar>()
                     .associateWith {
                         val ssaIndex = peekName(it.name)
-                        IRVar(it.name, ssaIndex)
+                        IRVar(it.name, ssaIndex, it.sourceName)
                     }
                 val lVars = node.lvalues()
                 check(lVars.size <= 2 || lVars.distinct().size == lVars.size)
@@ -76,7 +76,7 @@ internal class RenameVariablesForSSA(
                 if (node !is IRPhi) return@forEachIndexed
                 val sourceVar = node.sources[selfIndex]
                 val lastSSAVer = peekName(sourceVar.name)
-                nextBlock[index] = node.replaceSourceAt(selfIndex, IRVar(sourceVar.name, lastSSAVer))
+                nextBlock[index] = node.replaceSourceAt(selfIndex, IRVar(sourceVar.name, lastSSAVer, sourceVar.sourceName))
             }
         }
 

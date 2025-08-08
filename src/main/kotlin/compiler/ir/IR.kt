@@ -4,8 +4,8 @@ package compiler.ir
 
 sealed interface IRValue
 
-data class IRVar(val name: String, val ssaVer: Int) : IRValue {
-    constructor(name: String) : this(name, 0)
+data class IRVar(val name: String, val ssaVer: Int, val sourceName: String?) : IRValue {
+    constructor(name: String, sourceName: String?) : this(name, 0, sourceName)
 }
 
 data class IRInt(val value: Long) : IRValue

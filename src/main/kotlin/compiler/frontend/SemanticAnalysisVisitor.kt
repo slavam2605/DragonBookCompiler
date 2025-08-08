@@ -32,7 +32,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
             "int" -> FrontendType.INT
             "bool" -> FrontendType.BOOL
             else -> {
-                errors.add(UnknownTypeException(ctx.asContext(), ctx.text))
+                errors.add(UnknownTypeException(ctx.asLocation(), ctx.text))
                 FrontendType.ERROR_TYPE
             }
         }
@@ -53,7 +53,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     override fun visitDeclaration(ctx: MainGrammar.DeclarationContext): Nothing? {
         val declType = visit(ctx.type())
         if (symbolTable.define(ctx.ID().text, declType) != null) {
-            errors.add(VariableRedeclarationException(ctx.ID().asContext(), ctx.ID().text))
+            errors.add(VariableRedeclarationException(ctx.ID().asLocation(), ctx.ID().text))
         }
         if (ctx.ASSIGN() != null) {
             visit(ctx.expression()).checkType(ctx.expression(), declType)
@@ -64,7 +64,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     override fun visitAssignment(ctx: MainGrammar.AssignmentContext): Nothing? {
         val type = symbolTable.lookup(ctx.ID().text)
         if (type == null) {
-            errors.add(UndefinedVariableException(ctx.ID().symbol.asContext(), ctx.ID().text))
+            errors.add(UndefinedVariableException(ctx.ID().symbol.asLocation(), ctx.ID().text))
         }
         val right = visit(ctx.expression())
         if (type != null) {
@@ -119,14 +119,14 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {
         visit(ctx.left).checkType(ctx.left, FrontendType.INT)
         visit(ctx.right).checkType(ctx.right, FrontendType.INT)
-        checkOperatorSyntax(ctx.op.asContext(), ctx.op.text, "*", "/", "%")
+        checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "*", "/", "%")
         return FrontendType.INT
     }
 
     override fun visitIdExpr(ctx: MainGrammar.IdExprContext): FrontendType {
         val type = symbolTable.lookup(ctx.ID().text)
         if (type == null) {
-            errors.add(UndefinedVariableException(ctx.ID().symbol.asContext(), ctx.ID().text))
+            errors.add(UndefinedVariableException(ctx.ID().symbol.asLocation(), ctx.ID().text))
             return FrontendType.ERROR_TYPE
         }
         return type
@@ -135,7 +135,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     override fun visitComparisonExpr(ctx: MainGrammar.ComparisonExprContext): FrontendType {
         visit(ctx.left).checkType(ctx.left, FrontendType.INT)
         visit(ctx.right).checkType(ctx.right, FrontendType.INT)
-        checkOperatorSyntax(ctx.op.asContext(), ctx.op.text, "<", ">", "<=", ">=", "==", "!=")
+        checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "<", ">", "<=", ">=", "==", "!=")
         return FrontendType.BOOL
     }
 
@@ -155,7 +155,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     override fun visitAddSubExpr(ctx: MainGrammar.AddSubExprContext): FrontendType {
         visit(ctx.left).checkType(ctx.left, FrontendType.INT)
         visit(ctx.right).checkType(ctx.right, FrontendType.INT)
-        checkOperatorSyntax(ctx.op.asContext(), ctx.op.text, "+", "-")
+        checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "+", "-")
         return FrontendType.INT
     }
 
@@ -174,12 +174,12 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     private fun FrontendType.checkType(ctx: ParserRuleContext, expected: FrontendType): FrontendType {
         if (this == FrontendType.ERROR_TYPE || expected == FrontendType.ERROR_TYPE) return this
         if (this != expected) {
-            errors.add(MismatchedTypeException(ctx.asContext(), expected, this))
+            errors.add(MismatchedTypeException(ctx.asLocation(), expected, this))
         }
         return this
     }
 
-    private fun checkOperatorSyntax(ctx: ExceptionContext, op: String, vararg expectedOps: String) {
+    private fun checkOperatorSyntax(ctx: SourceLocation, op: String, vararg expectedOps: String) {
         if (op in expectedOps) return
         errors.add(SyntaxErrorException(ctx, "Unknown operator $op"))
     }

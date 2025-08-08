@@ -12,54 +12,59 @@ class CompilationFailed(val exceptions: List<CompilationException>) : Exception(
 ) {
     fun printErrors(tokens: CommonTokenStream, out: PrintStream = System.err) {
         for (exception in exceptions) {
-            val ctx = exception.ctx
-            out.println("line ${ctx.line}:${ctx.start} ${exception.message}")
-            ErrorPrinter.printError(tokens, ctx.line, ctx.start, ctx.end, out)
+            val location = exception.location
+            if (location != null) {
+                out.println("line ${location.line}:${location.start} ${exception.message}")
+                ErrorPrinter.printError(tokens, location.line, location.start, location.end, out)
+            } else {
+                out.println("[unknown location] ${exception.message}")
+            }
         }
     }
 }
 
-abstract class CompilationException(val ctx: ExceptionContext, message: String) : Exception(message)
+abstract class CompilationException(val location: SourceLocation?, message: String) : Exception(message)
 
-class SyntaxErrorException(ctx: ExceptionContext, message: String) : CompilationException(ctx, message)
+class SyntaxErrorException(location: SourceLocation, message: String) : CompilationException(location, message)
 
-class MismatchedTypeException(ctx: ExceptionContext, expectedType: FrontendType, actualType: FrontendType)
-    : CompilationException(ctx, "Expected type '$expectedType', got '$actualType'")
+class MismatchedTypeException(location: SourceLocation, expectedType: FrontendType, actualType: FrontendType)
+    : CompilationException(location, "Expected type '$expectedType', got '$actualType'")
 
-class UndefinedVariableException(ctx: ExceptionContext, name: String) : CompilationException(ctx, "Undefined variable '$name'")
+class UndefinedVariableException(location: SourceLocation, name: String) : CompilationException(location, "Undefined variable '$name'")
 
 // TODO store ctx in SymbolTable and show in exception when the `name` was originally declared
-class VariableRedeclarationException(ctx: ExceptionContext, name: String) : CompilationException(ctx, "Variable '$name' was already declared")
+class VariableRedeclarationException(location: SourceLocation, name: String) : CompilationException(location, "Variable '$name' was already declared")
 
-class UnknownTypeException(ctx: ExceptionContext, name: String) : CompilationException(ctx, "Unknown type '$name'")
+class UninitializedVariableException(location: SourceLocation?, name: String) : CompilationException(location, "Variable '$name' is used before being initialized")
+
+class UnknownTypeException(location: SourceLocation, name: String) : CompilationException(location, "Unknown type '$name'")
 
 // ------------ exception context ------------
 
-sealed class ExceptionContext {
-    abstract val line: Int
-    abstract val start: Int
-    abstract val end: Int
-
-    class ParserContext(ctx: ParserRuleContext) : ExceptionContext() {
-        // TODO support multiline contexts
-        override val line: Int = ctx.start.line
-        override val start: Int = ctx.start.charPositionInLine
-        override val end: Int = if (ctx.stop.line == line) {
-            ctx.stop.charPositionInLine + ctx.stop.stopIndex - ctx.stop.startIndex
-        } else {
-            ctx.start.charPositionInLine + ctx.start.stopIndex - ctx.start.startIndex
+class SourceLocation(val line: Int, val start: Int, val end: Int) {
+    companion object {
+        fun fromParserContext(ctx: ParserRuleContext): SourceLocation {
+            val line = ctx.start.line
+            val start = ctx.start.charPositionInLine
+            val end = if (ctx.stop.line == line) {
+                ctx.stop.charPositionInLine + ctx.stop.stopIndex - ctx.stop.startIndex
+            } else {
+                ctx.start.charPositionInLine + ctx.start.stopIndex - ctx.start.startIndex
+            }
+            return SourceLocation(line, start, end)
         }
-    }
 
-    class TokenContext(token: Token) : ExceptionContext() {
-        override val line: Int = token.line
-        override val start: Int = token.charPositionInLine
-        override val end: Int = token.charPositionInLine + token.stopIndex - token.startIndex
+        fun fromToken(token: Token): SourceLocation {
+            val line = token.line
+            val start = token.charPositionInLine
+            val end = start + token.stopIndex - token.startIndex
+            return SourceLocation(line, start, end)
+        }
     }
 }
 
-fun ParserRuleContext.asContext() = ExceptionContext.ParserContext(this)
+fun ParserRuleContext.asLocation() = SourceLocation.fromParserContext(this)
 
-fun TerminalNode.asContext() = ExceptionContext.TokenContext(symbol)
+fun TerminalNode.asLocation() = SourceLocation.fromToken(symbol)
 
-fun Token.asContext() = ExceptionContext.TokenContext(this)
+fun Token.asLocation() = SourceLocation.fromToken(this)

@@ -24,9 +24,9 @@ fun main(args: Array<String>) {
 
     try {
         SemanticAnalysisVisitor().analyze(tree)
-        val ir = CompileToIRVisitor().compileToIR(tree)
-        val cfg = ControlFlowGraph.build(ir)
         cfg.print()
+        val (ir, sourceMap) = CompileToIRVisitor().compileToIR(tree)
+        val cfg = ControlFlowGraph.build(ir, sourceMap)
     } catch (e: CompilationFailed) {
         e.printErrors(tokens)
         exitProcess(1)

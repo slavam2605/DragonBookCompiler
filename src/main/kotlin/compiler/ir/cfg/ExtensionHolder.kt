@@ -12,6 +12,11 @@ abstract class ExtensionHolder {
         return extensions[key]?.let { it as T }
     }
 
+    fun <T: Any> removeExtension(key: ExtensionKey<T>): T? {
+        @Suppress("UNCHECKED_CAST")
+        return extensions.remove(key)?.let { it as T }
+    }
+
     fun <T: Any> getOrCompute(key: ExtensionKey<T>, compute: () -> T): T {
         return getExtension(key) ?: compute().also {
             putExtension(key, it)

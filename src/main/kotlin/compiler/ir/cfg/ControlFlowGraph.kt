@@ -61,7 +61,7 @@ open class ControlFlowGraph(
     companion object {
         private val Root = IRLabel("<root>")
 
-        fun build(protoIr: List<IRProtoNode>): ControlFlowGraph {
+        fun build(protoIr: List<IRProtoNode>, sourceMap: SourceLocationMap): ControlFlowGraph {
             val nodes = mutableMapOf<IRLabel, CFGBlock>()
             var currentLabel = Root
             var currentBlock = mutableListOf<IRNode>()
@@ -83,7 +83,10 @@ open class ControlFlowGraph(
             }
             // TODO add explicit "ret" here?
             nodes[currentLabel] = CFGBlock(currentBlock)
-            return RemoveUnusedNodes.invoke(ControlFlowGraph(Root, nodes))
+            val cfg = ControlFlowGraph(Root, nodes).apply {
+                SourceLocationMap.storeMap(sourceMap, this)
+            }
+            return RemoveUnusedNodes.invoke(cfg)
         }
     }
 }

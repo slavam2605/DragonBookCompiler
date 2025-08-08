@@ -7,7 +7,8 @@ import compiler.frontend.SemanticAnalysisVisitor
 import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.cfg.SSAControlFlowGraph
+import compiler.ir.cfg.SourceLocationMap
+import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.print
 import compiler.ir.printToString
 import ir.interpreter.CFGInterpreter
@@ -41,19 +42,19 @@ abstract class CompileToIRTestBase {
     }
 
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
-        val ir = compileToIR(input)
+        val (ir, sourceMap) = compileToIR(input)
         when (mode) {
             TestMode.IR -> {
                 ir.print()
                 return ProtoIRInterpreter(ir).eval()
             }
             TestMode.CFG -> {
-                val cfg = ControlFlowGraph.build(ir)
+                val cfg = ControlFlowGraph.build(ir, sourceMap)
                 cfg.print()
                 return CFGInterpreter(cfg).eval()
             }
             TestMode.SSA -> {
-                val cfg = ControlFlowGraph.build(ir)
+                val cfg = ControlFlowGraph.build(ir, sourceMap)
                 val ssa = SSAControlFlowGraph.transform(cfg)
                 ssa.print()
                 testSingleAssignmentsInSSA(ssa)

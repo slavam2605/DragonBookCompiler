@@ -2,18 +2,22 @@ package compiler.frontend
 
 import MainGrammarBaseVisitor
 import compiler.ir.*
+import compiler.ir.cfg.SourceLocationMap
 import compiler.utils.NameAllocator
 import org.antlr.v4.runtime.ParserRuleContext
+import org.antlr.v4.runtime.Token
+import org.antlr.v4.runtime.tree.TerminalNode
 
 class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     val resultIR = mutableListOf<IRProtoNode>()
+    val sourceMap = SourceLocationMap()
     val symbolTable = SymbolTable<IRVar>()
     val varAllocator = NameAllocator("x")
     val labelAllocator = NameAllocator("L")
 
-    fun compileToIR(tree: MainGrammar.ProgramContext): List<IRProtoNode> {
+    fun compileToIR(tree: MainGrammar.ProgramContext): Pair<List<IRProtoNode>, SourceLocationMap> {
         visit(tree)
-        return resultIR.toList()
+        return resultIR.toList() to sourceMap
     }
 
     private fun ParserRuleContext.defaultVisitChildren(): Nothing? {
@@ -23,6 +27,21 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitProgram(ctx: MainGrammar.ProgramContext): Nothing? {
         return ctx.defaultVisitChildren()
+    }
+
+    private fun IRNode.withLocation(ctx: ParserRuleContext): IRNode {
+        sourceMap[this] = ctx.asLocation()
+        return this
+    }
+
+    private fun IRNode.withLocation(ctx: TerminalNode): IRNode {
+        sourceMap[this] = ctx.asLocation()
+        return this
+    }
+
+    private fun IRNode.withLocation(ctx: Token): IRNode {
+        sourceMap[this] = ctx.asLocation()
+        return this
     }
 
     // --------------- Statements ---------------
@@ -38,17 +57,17 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitDeclaration(ctx: MainGrammar.DeclarationContext): Nothing? {
-        val declName = IRVar(varAllocator.newName(ctx.ID().text))
+        val declName = IRVar(varAllocator.newName(ctx.ID().text), ctx.ID().text)
         symbolTable.define(ctx.ID().text, declName)
         if (ctx.ASSIGN() != null) {
-            resultIR.add(IRAssign(declName, visit(ctx.expression())))
+            resultIR.add(IRAssign(declName, visit(ctx.expression())).withLocation(ctx))
         }
         return null
     }
 
     override fun visitAssignment(ctx: MainGrammar.AssignmentContext): Nothing? {
         val leftVar = symbolTable.lookup(ctx.ID().text) ?: error("Undefined variable ${ctx.ID().text}")
-        resultIR.add(IRAssign(leftVar, visit(ctx.expression())))
+        resultIR.add(IRAssign(leftVar, visit(ctx.expression())).withLocation(ctx))
         return null
     }
 
@@ -124,17 +143,17 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     // --------------- Expressions ---------------
 
     private fun withNewVar(block: (IRVar) -> IRNode): IRValue {
-        return IRVar(varAllocator.newName()).also {
+        return IRVar(varAllocator.newName(), null).also {
             resultIR.add(block(it))
         }
     }
 
     override fun visitTrueExpr(ctx: MainGrammar.TrueExprContext): IRValue {
-        return withNewVar { IRAssign(it, IRInt(1)) }
+        return withNewVar { IRAssign(it, IRInt(1)).withLocation(ctx) }
     }
 
     override fun visitFalseExpr(ctx: MainGrammar.FalseExprContext): IRValue {
-        return withNewVar { IRAssign(it, IRInt(0)) }
+        return withNewVar { IRAssign(it, IRInt(0)).withLocation(ctx) }
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): IRValue {
@@ -145,7 +164,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             else -> throw IllegalStateException("Unknown operator ${ctx.op.text}")
         }
         return withNewVar {
-            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right))
+            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right)).withLocation(ctx)
         }
     }
 
@@ -165,12 +184,12 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             else -> throw IllegalStateException("Unknown operator ${ctx.op.text}")
         }
         return withNewVar {
-            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right))
+            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right)).withLocation(ctx)
         }
     }
 
     override fun visitNotExpr(ctx: MainGrammar.NotExprContext): IRValue {
-        return withNewVar { IRNot(it, visit(ctx.expression())) }
+        return withNewVar { IRNot(it, visit(ctx.expression())).withLocation(ctx) }
     }
 
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): IRValue {
@@ -188,24 +207,24 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             else -> throw IllegalStateException("Unknown operator ${ctx.op.text}")
         }
         return withNewVar {
-            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right))
+            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right)).withLocation(ctx)
         }
     }
 
     private fun processShortCircuitLogic(left: ParserRuleContext, right: ParserRuleContext, isAnd: Boolean): IRValue {
-        val newVar = IRVar(varAllocator.newName())
+        val newVar = IRVar(varAllocator.newName(), null)
         val labelRight = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
-        val left = visit(left)
-        resultIR.add(IRAssign(newVar, left))
+        val leftVal = visit(left)
+        resultIR.add(IRAssign(newVar, leftVal).withLocation(left))
         if (isAnd) {
             resultIR.add(IRJumpIfTrue(newVar, labelRight, labelAfter))
         } else {
             resultIR.add(IRJumpIfTrue(newVar, labelAfter, labelRight))
         }
         resultIR.add(labelRight)
-        val right = visit(right)
-        resultIR.add(IRAssign(newVar, right))
+        val rightVal = visit(right)
+        resultIR.add(IRAssign(newVar, rightVal).withLocation(right))
         resultIR.add(labelAfter)
         return newVar
     }

@@ -7,6 +7,7 @@ import compiler.ir.IRLabel
 
 object RemoveUnusedNodes {
     fun invoke(cfg: ControlFlowGraph): ControlFlowGraph {
+        val sourceMap = SourceLocationMap.extractMap(cfg) ?: SourceLocationMap.empty()
         val replacements = findEmptyBlockReplacements(cfg)
         val newRoot = replacements[cfg.root] ?: cfg.root
         val transformer = object : BaseIRTransformer() {
@@ -17,11 +18,13 @@ object RemoveUnusedNodes {
         val newBlocks = mutableMapOf<IRLabel, CFGBlock>()
         cfg.blocks.forEach { (label, block) ->
             if (label in replacements) return@forEach
-            newBlocks[label] = block.transform(transformer)
+            newBlocks[label] = block.transformKeepSource(sourceMap, transformer)
         }
         removeUnusedBlocks(newRoot, newBlocks)
 
-        return ControlFlowGraph(newRoot, newBlocks)
+        return ControlFlowGraph(newRoot, newBlocks).apply {
+            SourceLocationMap.storeMap(sourceMap, this)
+        }
     }
     
     // Remove all unused blocks

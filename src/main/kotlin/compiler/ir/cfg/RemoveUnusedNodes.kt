@@ -9,7 +9,6 @@ object RemoveUnusedNodes {
     fun invoke(cfg: ControlFlowGraph): ControlFlowGraph {
         val sourceMap = SourceLocationMap.extractMap(cfg) ?: SourceLocationMap.empty()
         val replacements = findEmptyBlockReplacements(cfg)
-        val newRoot = replacements[cfg.root] ?: cfg.root
         val transformer = object : BaseIRTransformer() {
             override fun transformLabel(label: IRLabel): IRLabel {
                 return replacements[label] ?: label
@@ -20,9 +19,9 @@ object RemoveUnusedNodes {
             if (label in replacements) return@forEach
             newBlocks[label] = block.transformKeepSource(sourceMap, transformer)
         }
-        removeUnusedBlocks(newRoot, newBlocks)
+        removeUnusedBlocks(cfg.root, newBlocks)
 
-        return ControlFlowGraph(newRoot, newBlocks).apply {
+        return ControlFlowGraph(cfg.root, newBlocks).apply {
             SourceLocationMap.storeMap(sourceMap, this)
         }
     }
@@ -52,6 +51,9 @@ object RemoveUnusedNodes {
         for (label in keys) {
             replacements[label] = findFinalReplacement(label, replacements)
         }
+
+        // Exclude root from replacements (the root must not have any back edges)
+        replacements.remove(cfg.root)
 
         return replacements
     }

@@ -56,6 +56,14 @@ open class ControlFlowGraph(
         backEdges = blocks.mapValues { (label, _) ->
             blocks.keys.filter { label in edges(it) }.sortedBy { it.name }
         }
+
+        // Check that the entry block does not have back edges
+        check(backEdges(root).isEmpty()) {
+            // Having back edges of the entry blocks breaks data-flow analysis. In such cases
+            // the control-flow graph doesn't know that we can enter the entry block from the outside.
+            // We have to keep a separate entry block for this purpose
+            "Entry block $root has back edges: ${backEdges(root).joinToString(", ") { it.name }}"
+        }
     }
 
     companion object {

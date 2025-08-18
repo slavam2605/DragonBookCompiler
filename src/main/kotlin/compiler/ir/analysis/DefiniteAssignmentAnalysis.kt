@@ -18,7 +18,7 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
 
     init {
         val allVars = cfg.blocks.flatMap { (_, block) ->
-            block.irNodes.flatMap { node -> node.lvalues() }
+            block.irNodes.mapNotNull { node -> node.lvalue }
         }.toSet()
         cfg.blocks.keys.forEach { label ->
             outMap[label] = allVars
@@ -40,7 +40,7 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
 
                 block.irNodes.forEach { node ->
                     check(node !is IRPhi)
-                    node.lvalues().forEach {
+                    node.lvalue?.let {
                         outSet.add(it)
                     }
                 }
@@ -65,7 +65,7 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
                         errors.add(UninitializedVariableException(location, varName))
                     }
                 }
-                node.lvalues().forEach {
+                node.lvalue?.let {
                     liveSet.add(it)
                 }
             }

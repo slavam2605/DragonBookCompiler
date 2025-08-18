@@ -79,7 +79,7 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
                             globals.add(rVar)
                         }
                     }
-                    irNode.lvalues().forEach { lVar ->
+                    irNode.lvalue?.let { lVar ->
                         varKill.add(lVar)
                         blocksMap.getOrPut(lVar) { mutableSetOf() }.add(label)
                     }

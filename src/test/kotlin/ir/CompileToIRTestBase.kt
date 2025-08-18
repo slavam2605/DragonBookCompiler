@@ -122,7 +122,7 @@ abstract class CompileToIRTestBase {
             val seenLValues = mutableSetOf<IRVar>()
             ssa.blocks.forEach { (_, block) ->
                 block.irNodes.forEach { node ->
-                    node.lvalues().forEach { lvalue ->
+                    node.lvalue?.let { lvalue ->
                        assertTrue(seenLValues.add(lvalue),
                            "Variable ${lvalue.printToString()} is used more than once")
                     }

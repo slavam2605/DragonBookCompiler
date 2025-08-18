@@ -88,10 +88,8 @@ object ConstantPropagation {
 
         cfg.blocks.forEach { (_, block) ->
             block.irNodes.forEach { irNode ->
-                check(irNode.lvalues().size <= 1) { "Multiple lvalues are not supported" }
-
                 // Initialize all known constant values and form the initial worklist
-                irNode.lvalues().firstOrNull()?.let { lVar ->
+                irNode.lvalue?.let { lVar ->
                     if (irNode is IRAssign && irNode.right is IRInt) {
                         values[lVar] = SSCPValue.Value(irNode.right.value)
                         worklist.add(lVar)
@@ -109,7 +107,7 @@ object ConstantPropagation {
         while (worklist.isNotEmpty()) {
             val irVar = worklist.removeLast()
             usages[irVar]?.forEach { irNode ->
-                irNode.lvalues().firstOrNull()?.let { nodeResult ->
+                irNode.lvalue?.let { nodeResult ->
                     val oldValue = values[nodeResult] ?: SSCPValue.Any
                     val newValue = irNode.evaluateSafe()
                     if (oldValue != newValue) {
@@ -147,7 +145,7 @@ object ConstantPropagation {
         val newBlocks = cfg.blocks.mapValues { (currentLabel, block) ->
             block.transform(object : BaseIRTransformer() {
                 override fun transformNode(node: IRNode): IRNode? {
-                    node.lvalues().firstOrNull()?.let { lVar ->
+                    node.lvalue?.let { lVar ->
                         if (values[lVar] is SSCPValue.Value) {
                             // Remove assignments for known constants
                             return null

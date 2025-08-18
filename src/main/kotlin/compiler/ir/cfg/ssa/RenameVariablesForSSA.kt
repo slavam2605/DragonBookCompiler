@@ -58,11 +58,9 @@ internal class RenameVariablesForSSA(
                         val ssaIndex = peekName(it.name)
                         IRVar(it.name, ssaIndex, it.sourceName)
                     }
-                val lVars = node.lvalues()
-                check(lVars.size <= 2 || lVars.distinct().size == lVars.size)
-                val newLVars = lVars.associateWith { newName(label, it) }
+                val newLVar = node.lvalue?.let { newName(label, it) }
                 block[index] = node.transform(object : BaseIRTransformer() {
-                    override fun transformLValue(value: IRVar) = newLVars[value]!!
+                    override fun transformLValue(value: IRVar) = if (value == node.lvalue) newLVar!! else value
                     override fun transformRValue(value: IRValue) = renamedVars[value] ?: value
                 })
             }

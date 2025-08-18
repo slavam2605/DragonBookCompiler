@@ -1,29 +1,17 @@
 package ir
 
-import MainGrammar
-import MainLexer
-import compiler.frontend.CompileToIRVisitor
-import compiler.frontend.SemanticAnalysisVisitor
-import compiler.ir.IRPhi
-import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
-import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.cfg.SourceLocationMap
-import compiler.ir.analysis.DefiniteAssignmentAnalysis
-import compiler.ir.cfg.ssa.SSAControlFlowGraph
-import compiler.ir.optimization.ConstantPropagation
 import compiler.ir.print
-import compiler.ir.printToString
+import ir.TestCompilationFlow.compileToCFG
+import ir.TestCompilationFlow.compileToIR
+import ir.TestCompilationFlow.compileToOptimizedSSA
+import ir.TestCompilationFlow.compileToSSA
 import ir.interpreter.CFGInterpreter
 import ir.interpreter.ProtoIRInterpreter
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
-import parser.UnderlineErrorListener
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
 import java.io.File
 import kotlin.random.Random
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
@@ -33,65 +21,34 @@ abstract class CompileToIRTestBase {
 
     protected open val excludeModes: Set<TestMode> = emptySet()
 
-    private fun compileToIR(input: String): Pair<List<IRProtoNode>, SourceLocationMap> {
-        val lexer = MainLexer(CharStreams.fromString(input))
-        val parser = MainGrammar(CommonTokenStream(lexer)).apply {
-            removeErrorListeners()
-            addErrorListener(UnderlineErrorListener())
-        }
-        val tree = parser.program()
-        assertTrue("Test program has ${parser.numberOfSyntaxErrors} parser errors") {
-            parser.numberOfSyntaxErrors == 0
-        }
-        SemanticAnalysisVisitor().analyze(tree)
-        return CompileToIRVisitor().compileToIR(tree)
-    }
-
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
-        val (ir, sourceMap) = compileToIR(input)
         when (mode) {
             TestMode.IR -> {
-                ir.print()
+                val (ir, _) = compileToIR(input).also { (ir, _) -> ir.print() }
                 return ProtoIRInterpreter(ir).eval()
             }
             TestMode.CFG -> {
-                val cfg = ControlFlowGraph.build(ir, sourceMap)
-                cfg.print()
-                DefiniteAssignmentAnalysis(cfg).run()
+                val cfg = compileToCFG(input).also { it.print() }
                 return CFGInterpreter(cfg).eval()
             }
             TestMode.SSA -> {
-                val cfg = ControlFlowGraph.build(ir, sourceMap)
-                DefiniteAssignmentAnalysis(cfg).run()
-                val ssa = SSAControlFlowGraph.transform(cfg)
-                ssa.print()
-                testSingleAssignmentsInSSA(ssa)
-                testPhiNodeSourceSize(ssa)
+                val ssa = compileToSSA(input).also { it.print() }
                 return CFGInterpreter(ssa).eval()
             }
             TestMode.OPTIMIZED_SSA -> {
-                val cfg = ControlFlowGraph.build(ir, sourceMap)
-                DefiniteAssignmentAnalysis(cfg).run()
-                val ssa = SSAControlFlowGraph.transform(cfg)
-                testSingleAssignmentsInSSA(ssa)
-                testPhiNodeSourceSize(ssa)
-                val cp = ConstantPropagation()
-                val optimized = cp.run(ssa)
-                optimized.print()
-                return CFGInterpreter(optimized).eval().let { eval ->
-                    val result = eval.toMutableMap()
-                    val cpValues = cp.values.mapValues { (_, value) ->
-                        (value as? ConstantPropagation.SSCPValue.Value)?.value
-                    }
-                    cpValues.forEach { (irVar, value) ->
-                        if (value == null) return@forEach
-                        assertTrue(irVar !in eval, "Constant propagation didn't remove variable $irVar with value $value")
-                        result[irVar] = value
-                    }
-                    result.toMap()
-                }
+                val (ssa, cpValues) = compileToOptimizedSSA(input).also { (ssa, _) -> ssa.print() }
+                return CFGInterpreter(ssa).eval().withValues(cpValues)
             }
         }
+    }
+
+    private fun Map<IRVar, Long>.withValues(extraValues: Map<IRVar, Long>): Map<IRVar, Long> {
+        val result = toMutableMap()
+        extraValues.forEach { (irVar, value) ->
+            assertTrue(irVar !in this, "Constant propagation didn't remove variable $irVar with value $value")
+            result[irVar] = value
+        }
+        return result.toMap()
     }
 
     protected fun Map<IRVar, Long>.getVariable(varName: String) =
@@ -140,33 +97,6 @@ abstract class CompileToIRTestBase {
         return TestMode.entries.filter { it !in excludeModes }.map { mode ->
             val nodes = resourceFiles.map { file -> block(mode, file) }
             DynamicContainer.dynamicContainer("$mode", nodes)
-        }
-    }
-
-    companion object {
-        private fun testSingleAssignmentsInSSA(ssa: SSAControlFlowGraph) {
-            val seenLValues = mutableSetOf<IRVar>()
-            ssa.blocks.forEach { (_, block) ->
-                block.irNodes.forEach { node ->
-                    node.lvalue?.let { lvalue ->
-                       assertTrue(seenLValues.add(lvalue),
-                           "Variable ${lvalue.printToString()} is used more than once")
-                    }
-                }
-            }
-        }
-
-        private fun testPhiNodeSourceSize(ssa: SSAControlFlowGraph) {
-            ssa.blocks.forEach { (label, block) ->
-                val inEdgesCount = ssa.backEdges(label).size
-                block.irNodes.filterIsInstance<IRPhi>().forEach { irPhi ->
-                    assertEquals(
-                        inEdgesCount,
-                        irPhi.sources.size,
-                        "Phi node ${irPhi.printToString()} has ${irPhi.sources.size} sources, but should have $inEdgesCount"
-                    )
-                }
-            }
         }
     }
 }

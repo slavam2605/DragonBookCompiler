@@ -1,0 +1,10 @@
+bool a = true
+bool b = false
+bool result_and = a && b
+bool result_or = a || b
+bool result_not_a = !a
+bool result_not_b = !b
+// expected: result_and == 0
+// expected: result_or == 1
+// expected: result_not_a == 0
+// expected: result_not_b == 1

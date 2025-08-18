@@ -1,0 +1,14 @@
+int a = 17
+int b = 5
+bool result_eq = a == b
+bool result_nq = a != b
+bool result_lt = a < b
+bool result_le = a <= b
+bool result_gt = a > b
+bool result_ge = a >= b
+// expected: result_eq == 0
+// expected: result_nq == 1
+// expected: result_lt == 0
+// expected: result_le == 0
+// expected: result_gt == 1
+// expected: result_ge == 1

@@ -1,0 +1,8 @@
+int a = 10
+int b = 20
+int x = 100
+if (a > b) {
+    x = 999
+}
+int result = x
+// expected: result == 100

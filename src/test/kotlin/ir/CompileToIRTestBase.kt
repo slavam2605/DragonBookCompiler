@@ -20,6 +20,7 @@ abstract class CompileToIRTestBase {
     }
 
     protected open val excludeModes: Set<TestMode> = emptySet()
+    protected open val ignoreInterpretedValues: Boolean = false
 
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
         when (mode) {
@@ -43,6 +44,11 @@ abstract class CompileToIRTestBase {
     }
 
     private fun Map<IRVar, Long>.withValues(extraValues: Map<IRVar, Long>): Map<IRVar, Long> {
+        if (ignoreInterpretedValues) {
+            // Keep only values from static evaluation, ignore computed values from interpreter
+            return extraValues
+        }
+
         val result = toMutableMap()
         extraValues.forEach { (irVar, value) ->
             assertTrue(irVar !in this, "Constant propagation didn't remove variable $irVar with value $value")

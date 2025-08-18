@@ -1,0 +1,6 @@
+int x = 0
+while (0 == 1) {
+    x = x + 1
+}
+int result = x
+// expected: result == 0

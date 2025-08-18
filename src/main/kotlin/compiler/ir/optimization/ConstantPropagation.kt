@@ -91,9 +91,12 @@ class ConstantPropagation {
             block.irNodes.forEach { irNode ->
                 // Initialize all known constant values and form the initial worklist
                 irNode.lvalue?.let { lVar ->
-                    if (irNode is IRAssign && irNode.right is IRInt) {
-                        values[lVar] = SSCPValue.Value(irNode.right.value)
-                        worklist.add(lVar)
+                    if (irNode.rvalues().all { it is IRInt }) {
+                        val value = irNode.evaluateSafe()
+                        if (value is SSCPValue.Value) {
+                            values[lVar] = value
+                            worklist.add(lVar)
+                        }
                     }
                 }
 

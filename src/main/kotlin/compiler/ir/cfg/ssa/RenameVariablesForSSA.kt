@@ -75,6 +75,7 @@ internal class RenameVariablesForSSA(
             nextBlock.forEachIndexed { index, node ->
                 if (node !is IRPhi) return@forEachIndexed
                 val sourceVar = node.sources[selfIndex]
+                if (sourceVar !is IRVar) return@forEachIndexed
                 val lastSSAVer = peekName(sourceVar.name)
                 nextBlock[index] = node.replaceSourceAt(selfIndex, IRVar(sourceVar.name, lastSSAVer, sourceVar.sourceName))
             }

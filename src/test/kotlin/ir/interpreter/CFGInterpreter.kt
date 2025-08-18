@@ -21,8 +21,8 @@ class CFGInterpreter(val cfg: ControlFlowGraph) : BaseInterpreter() {
             if (isInPhiPrefix) {
                 if (currentNode is IRPhi) {
                     val jumpedFromLabel = jumpedFromLabel ?: error("Phi nodes in the entry block")
-                    val phiIndex = cfg.getBlockIndex(jumpedFromLabel, currentLabel)
-                    val targetValue = getValue(currentNode.sources[phiIndex])
+                    val targetPhiSource = currentNode.getSourceValue(jumpedFromLabel)
+                    val targetValue = getValue(targetPhiSource)
                     val oldBufferValue = tempPhiBuffer.put(currentNode.result, targetValue)
                     check(oldBufferValue == null) { "Duplicate phi node result ${currentNode.result}" }
                     currentLine++

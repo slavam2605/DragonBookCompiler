@@ -30,17 +30,26 @@ enum class IRBinOpKind { ADD, SUB, MUL, DIV, MOD, EQ, NEQ, GT, GE, LT, LE }
 
 data class IRLabel(val name: String) : IRProtoNode
 
-class IRPhi(val result: IRVar, val sources: List<IRValue>) : IRNode {
+data class IRSource(val from: IRLabel, val value: IRValue)
+
+class IRPhi(val result: IRVar, val sources: List<IRSource>) : IRNode {
     override val lvalue get() = result
-    override fun rvalues() = sources
+    override fun rvalues() = sources.map { it.value }
     override fun transform(transformer: IRTransformer) = IRPhi(
         transformer.transformLValue(result),
-        sources.map { transformer.transformRValue(it) }
+        sources.map { (from, value) -> IRSource(from, transformer.transformRValue(value)) }
     )
 
-    fun replaceSourceAt(index: Int, newSource: IRVar): IRPhi {
+    fun getSourceValue(from: IRLabel): IRValue {
+        return sources.find { it.from == from }?.value
+            ?: error("Source with label $from not found")
+    }
+
+    fun replaceSourceValue(from: IRLabel, newValue: IRVar): IRPhi {
         return IRPhi(result, sources.toMutableList().apply {
-            this[index] = newSource
+            val index = sources.indexOfFirst { it.from == from }
+            check(index != -1) { "Source with label $from not found" }
+            this[index] = IRSource(from, newValue)
         })
     }
 }

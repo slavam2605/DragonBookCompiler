@@ -3,6 +3,7 @@ package compiler.ir.cfg.ssa
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRPhi
+import compiler.ir.IRSource
 import compiler.ir.IRVar
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
@@ -58,8 +59,8 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
                             return@forEach // `phi` already inserted, skip block
                         }
 
-                        val predCount = cfg.backEdges(frontierLabel).size
-                        val phi = IRPhi(globalVar, List(predCount) { globalVar })
+                        val phiSources = cfg.backEdges(frontierLabel).map { IRSource(it, globalVar) }
+                        val phi = IRPhi(globalVar, phiSources)
                         mutableBlocks[frontierLabel]!!.add(0, phi)
                         scheduled.add(frontierLabel)
                         workList.add(frontierLabel)

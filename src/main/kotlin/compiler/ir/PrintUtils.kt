@@ -25,6 +25,8 @@ fun IRBinOpKind.printToString(): String = when (this) {
     IRBinOpKind.LE -> "<="
 }
 
+fun IRSource.printToString(): String = "${from.printToString()}: ${value.printToString()}"
+
 fun IRProtoNode.printToString(): String = when (this) {
     is IRLabel -> "$name:"
     is IRPhi -> "${result.printToString()} = phi(${sources.joinToString(", ") { it.printToString() }})"

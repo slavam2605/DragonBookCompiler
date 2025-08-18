@@ -69,13 +69,12 @@ internal class RenameVariablesForSSA(
         // Step 2. Fill in phi-nodes in **successor blocks of CFG**
         cfg.edges(label).forEach { successor ->
             val nextBlock = mutableBlocks[successor]!!
-            val selfIndex = cfg.getBlockIndex(label, successor)
             nextBlock.forEachIndexed { index, node ->
                 if (node !is IRPhi) return@forEachIndexed
-                val sourceVar = node.sources[selfIndex]
-                if (sourceVar !is IRVar) return@forEachIndexed
+                val sourceVar = node.getSourceValue(label)
+                check(sourceVar is IRVar) { "Source of phi-node must be a variable during conversion to SSA" }
                 val lastSSAVer = peekName(sourceVar.name)
-                nextBlock[index] = node.replaceSourceAt(selfIndex, IRVar(sourceVar.name, lastSSAVer, sourceVar.sourceName))
+                nextBlock[index] = node.replaceSourceValue(label, IRVar(sourceVar.name, lastSSAVer, sourceVar.sourceName))
             }
         }
 

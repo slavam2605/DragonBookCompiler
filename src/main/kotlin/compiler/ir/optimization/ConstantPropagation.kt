@@ -163,15 +163,12 @@ class ConstantPropagation {
                     if (node is IRPhi) {
                         val removedFromLabels = removedJumps[currentLabel] ?: emptySet()
                         if (removedFromLabels.isNotEmpty()) {
-                            val indicesToRemove = removedFromLabels.map { from ->
-                                cfg.getBlockIndex(from, currentLabel)
-                            }
-                            val filteredNode = IRPhi(node.result, node.sources.filterIndexed { index, _ ->
-                                index !in indicesToRemove
+                            val filteredNode = IRPhi(node.result, node.sources.filter { source ->
+                                source.from !in removedFromLabels
                             })
                             return when (filteredNode.sources.size) {
                                 0 -> error("Phi node in $currentLabel has no sources")
-                                1 -> IRAssign(node.result, filteredNode.sources.single())
+                                1 -> IRAssign(node.result, filteredNode.sources.single().value)
                                 else -> filteredNode
                             }
                         }

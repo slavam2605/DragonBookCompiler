@@ -3,15 +3,16 @@ package compiler.ir.optimization
 import compiler.ir.*
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 
-object ConstantPropagation {
+class ConstantPropagation {
     sealed interface SSCPValue {
         data class Value(val value: Long) : SSCPValue
         object Any : SSCPValue
     }
 
+    val values = mutableMapOf<IRVar, SSCPValue>()
+
     fun run(cfg: SSAControlFlowGraph): SSAControlFlowGraph {
         val worklist = mutableListOf<IRVar>()
-        val values = mutableMapOf<IRVar, SSCPValue>()
         val usages = mutableMapOf<IRVar, MutableSet<IRNode>>()
 
         fun withIntValues(vararg values: SSCPValue, block: (List<Long>) -> Long): SSCPValue {

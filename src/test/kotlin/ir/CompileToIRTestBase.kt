@@ -4,12 +4,14 @@ import MainGrammar
 import MainLexer
 import compiler.frontend.CompileToIRVisitor
 import compiler.frontend.SemanticAnalysisVisitor
+import compiler.ir.IRPhi
 import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.SourceLocationMap
 import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
+import compiler.ir.optimization.ConstantPropagation
 import compiler.ir.print
 import compiler.ir.printToString
 import ir.interpreter.CFGInterpreter
@@ -21,11 +23,12 @@ import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
 import java.io.File
 import kotlin.random.Random
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
     protected enum class TestMode {
-        IR, CFG, SSA
+        IR, CFG, SSA, OPTIMIZED_SSA
     }
 
     protected open val excludeModes: Set<TestMode> = emptySet()
@@ -63,7 +66,30 @@ abstract class CompileToIRTestBase {
                 val ssa = SSAControlFlowGraph.transform(cfg)
                 ssa.print()
                 testSingleAssignmentsInSSA(ssa)
+                testPhiNodeSourceSize(ssa)
                 return CFGInterpreter(ssa).eval()
+            }
+            TestMode.OPTIMIZED_SSA -> {
+                val cfg = ControlFlowGraph.build(ir, sourceMap)
+                DefiniteAssignmentAnalysis(cfg).run()
+                val ssa = SSAControlFlowGraph.transform(cfg)
+                testSingleAssignmentsInSSA(ssa)
+                testPhiNodeSourceSize(ssa)
+                val cp = ConstantPropagation()
+                val optimized = cp.run(ssa)
+                optimized.print()
+                return CFGInterpreter(optimized).eval().let { eval ->
+                    val result = eval.toMutableMap()
+                    val cpValues = cp.values.mapValues { (_, value) ->
+                        (value as? ConstantPropagation.SSCPValue.Value)?.value
+                    }
+                    cpValues.forEach { (irVar, value) ->
+                        if (value == null) return@forEach
+                        assertTrue(irVar !in eval, "Constant propagation didn't remove variable $irVar with value $value")
+                        result[irVar] = value
+                    }
+                    result.toMap()
+                }
             }
         }
     }
@@ -126,6 +152,19 @@ abstract class CompileToIRTestBase {
                        assertTrue(seenLValues.add(lvalue),
                            "Variable ${lvalue.printToString()} is used more than once")
                     }
+                }
+            }
+        }
+
+        private fun testPhiNodeSourceSize(ssa: SSAControlFlowGraph) {
+            ssa.blocks.forEach { (label, block) ->
+                val inEdgesCount = ssa.backEdges(label).size
+                block.irNodes.filterIsInstance<IRPhi>().forEach { irPhi ->
+                    assertEquals(
+                        inEdgesCount,
+                        irPhi.sources.size,
+                        "Phi node ${irPhi.printToString()} has ${irPhi.sources.size} sources, but should have $inEdgesCount"
+                    )
                 }
             }
         }

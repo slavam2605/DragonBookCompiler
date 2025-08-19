@@ -8,7 +8,7 @@ import java.io.File
 import kotlin.test.assertTrue
 
 abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
-    private data class ExpectedValue(val varName: String, val expectedValue: Long)
+    private data class ExpectedValue(val varName: String, val expectedValue: Long?)
     private data class ExpectedError(val line: Int, val col: Int, val message: String)
 
     /**
@@ -18,11 +18,12 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
     protected fun runTestFromFile(mode: TestMode, file: File): DynamicTest {
         return DynamicTest.dynamicTest(file.name) {
             val testProgram = file.readText()
-            val expectedRegex = "// *expected: *([a-zA-Z0-9_]+) *== *([0-9]+)".toRegex()
+            val expectedRegex = "// *expected: *([a-zA-Z0-9_]+) *== *([a-zA-Z0-9_]+)".toRegex()
             val expectedValues = testProgram.lines().mapNotNull { line ->
                 expectedRegex.find(line)?.let {
                     val (varName, expectedValue) = it.destructured
-                    ExpectedValue(varName, expectedValue.toLong())
+                    val value = if (expectedValue == "unknown") null else expectedValue.toLong()
+                    ExpectedValue(varName, value)
                 }
             }
             val errorRegex = "// *error: *([0-9]+):([0-9]+)* *\"(.*)\"".toRegex()

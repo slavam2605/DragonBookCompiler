@@ -46,7 +46,16 @@ class ConstantPropagation {
             return when (this) {
                 is IRAssign -> rValues[0]
                 is IRBinOp -> {
-                    if (rValues.any { it == SSCPValue.Any }) return SSCPValue.Any
+                    if (rValues.any { it == SSCPValue.Any }) {
+                        return when {
+                            op == IRBinOpKind.SUB && rvalues()[0] == rvalues()[1] -> SSCPValue.Value(0)
+                            op == IRBinOpKind.MUL && rValues.any { it == SSCPValue.Value(0) } -> SSCPValue.Value(0)
+                            op == IRBinOpKind.MOD && rValues[1] == SSCPValue.Value(1) -> SSCPValue.Value(0)
+                            op in equalComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.Value(1)
+                            op in notEqualComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.Value(0)
+                            else -> SSCPValue.Any
+                        }
+                    }
                     when (op) {
                         IRBinOpKind.ADD -> withIntValues(rValues[0], rValues[1]) { it[0] + it[1] }
                         IRBinOpKind.SUB -> withIntValues(rValues[0], rValues[1]) { it[0] - it[1] }
@@ -91,12 +100,10 @@ class ConstantPropagation {
             block.irNodes.forEach { irNode ->
                 // Initialize all known constant values and form the initial worklist
                 irNode.lvalue?.let { lVar ->
-                    if (irNode.rvalues().all { it is IRInt }) {
-                        val value = irNode.evaluateSafe()
-                        if (value is SSCPValue.Value) {
-                            values[lVar] = value
-                            worklist.add(lVar)
-                        }
+                    val value = irNode.evaluateSafe()
+                    if (value is SSCPValue.Value) {
+                        values[lVar] = value
+                        worklist.add(lVar)
                     }
                 }
 
@@ -188,5 +195,14 @@ class ConstantPropagation {
         }
 
         return SSAControlFlowGraph(cfg.root, newBlocks)
+    }
+
+    companion object {
+        private val equalComparisonOps = setOf(
+            IRBinOpKind.EQ, IRBinOpKind.GE, IRBinOpKind.LE
+        )
+        private val notEqualComparisonOps = setOf(
+            IRBinOpKind.NEQ, IRBinOpKind.GT, IRBinOpKind.LT
+        )
     }
 }

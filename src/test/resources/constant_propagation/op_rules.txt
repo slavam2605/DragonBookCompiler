@@ -1,0 +1,19 @@
+int a = 0
+bool b = false
+for (int i = 0; i < 42; i = i + 1) {
+    a = a + 1
+    b = !b
+}
+
+int result1 = a - a             // expected: result1 == 0
+int result2 = a % 1             // expected: result2 == 0
+int result3 = a * 0             // expected: result3 == 0
+int result4 = 0 * a             // expected: result4 == 0
+bool result5 = a == a           // expected: result5 == 1
+bool result6 = a != a           // expected: result6 == 0
+bool result7 = a < a            // expected: result7 == 0
+bool result8 = a <= a           // expected: result8 == 1
+bool result9 = a >= a           // expected: result9 == 1
+bool result10 = a > a           // expected: result10 == 0
+bool result11 = true || b       // expected: result11 == 1
+bool result12 = false && b      // expected: result12 == 0

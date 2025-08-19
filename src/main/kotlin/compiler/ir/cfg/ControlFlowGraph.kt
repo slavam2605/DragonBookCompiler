@@ -76,7 +76,7 @@ open class ControlFlowGraph(
             val cfg = ControlFlowGraph(Root, nodes).apply {
                 SourceLocationMap.storeMap(sourceMap, this)
             }
-            return RemoveUnusedNodes.invoke(cfg)
+            return RemoveUnusedBlocks(cfg).invoke()
         }
     }
 }

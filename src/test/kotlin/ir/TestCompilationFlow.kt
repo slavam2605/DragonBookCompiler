@@ -11,6 +11,7 @@ import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
+import compiler.ir.cfg.ssa.SSARemoveUnusedBlocks
 import compiler.ir.optimization.ConstantPropagation
 import compiler.ir.optimization.ConstantPropagation.SSCPValue
 import compiler.ir.printToString
@@ -52,9 +53,12 @@ object TestCompilationFlow {
 
     fun compileToOptimizedSSA(input: String): Pair<SSAControlFlowGraph, Map<IRVar, Long>> {
         val ssa = compileToSSA(input)
-        val cp = ConstantPropagation()
-        val optimized = cp.run(ssa)
-        return optimized to cp.values
+        val cp1 = ConstantPropagation()
+        val cp2 = ConstantPropagation()
+        val step1 = cp1.run(ssa)
+        val step2 = SSARemoveUnusedBlocks(step1).invoke()
+        val step3 = cp2.run(step2)
+        return step3 to (cp1.values + cp2.values)
             .filterValues { it is SSCPValue.Value }
             .mapValues { (_, value) -> (value as SSCPValue.Value).value }
     }

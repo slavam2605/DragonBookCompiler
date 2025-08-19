@@ -1,0 +1,8 @@
+int x = 1
+if (true) {
+
+} else {
+
+}
+int result = x
+// expected: result == 1

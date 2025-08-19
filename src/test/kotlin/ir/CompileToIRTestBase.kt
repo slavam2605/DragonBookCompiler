@@ -58,7 +58,7 @@ abstract class CompileToIRTestBase {
     }
 
     protected fun Map<IRVar, Long>.getVariable(varName: String) =
-        entries.singleOrNull { "x$varName[0-9]+\$".toRegex().matches(it.key.name) }?.value
+        entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
     protected fun compileAndGet(mode: TestMode, input: String, varName: String): Long? =
         compileAndRun(mode, input).getVariable(varName)

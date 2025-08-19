@@ -130,6 +130,11 @@ class ConstantPropagation {
             }
         }
 
+        if (values.all { it.value is SSCPValue.Any }) {
+            // Return the same instance if nothing has changed
+            return cfg
+        }
+
         // to -> setOf(from)
         val removedJumps = mutableMapOf<IRLabel, MutableSet<IRLabel>>()
         val transformedJumps = mutableMapOf<IRJumpNode, IRJumpNode>()

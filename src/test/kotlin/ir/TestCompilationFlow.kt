@@ -53,12 +53,23 @@ object TestCompilationFlow {
 
     fun compileToOptimizedSSA(input: String): Pair<SSAControlFlowGraph, Map<IRVar, Long>> {
         val ssa = compileToSSA(input)
-        val cp1 = ConstantPropagation()
-        val cp2 = ConstantPropagation()
-        val step1 = cp1.run(ssa)
-        val step2 = SSARemoveUnusedBlocks(step1).invoke()
-        val step3 = cp2.run(step2)
-        return step3 to (cp1.values + cp2.values)
+
+        val cpList = mutableListOf<ConstantPropagation>()
+        var currentStep = ssa
+        val maxSteps = 10
+        for (stepIndex in 0 until maxSteps) {
+            println("Constant propagation step $stepIndex")
+            val cp = ConstantPropagation()
+            cpList.add(cp)
+            val cpStep = cp.run(currentStep)
+            if (cpStep === currentStep) {
+                break
+            }
+            currentStep = SSARemoveUnusedBlocks(cpStep).invoke()
+        }
+
+        val allCp = cpList.map { it.values.toMap() }.reduce { a, b -> a + b }
+        return currentStep to allCp
             .filterValues { it is SSCPValue.Value }
             .mapValues { (_, value) -> (value as SSCPValue.Value).value }
     }

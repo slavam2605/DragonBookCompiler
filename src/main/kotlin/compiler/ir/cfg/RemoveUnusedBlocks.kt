@@ -90,14 +90,30 @@ open class RemoveUnusedBlocks(protected val cfg: ControlFlowGraph) {
      */
     private fun applyLabelReplacements() {
         cfg.blocks.forEach { (blockLabel, block) ->
-            if (blockLabel in replacements) {
-                // This block will become unused, do not add it to `newBlocks`
-                return@forEach
-            }
+            val takenTargets = mutableSetOf<IRLabel>()
+            block.irNodes
+                .filterIsInstance<IRJumpNode>()
+                .forEach { node ->
+                    node.labels().forEach { target ->
+                        if (target !in replacements) {
+                            // Initialize targets that will not be replaced
+                            // Otherwise, if a replacement candidate goes before such a target,
+                            // it will be replaced and lead to phi source duplicates
+                            takenTargets.add(target)
+                        }
+                    }
+                }
 
             val transformer = object : BaseIRTransformer() {
                 override fun transformLabel(label: IRLabel): IRLabel {
                     val replacement = replacements[label] ?: return label
+                    if (replacement.newTarget in takenTargets) {
+                        // Do not replace more than one label to the same target
+                        // Otherwise, phi nodes in the target block will have duplicated source blocks
+                        return label
+                    }
+
+                    takenTargets.add(replacement.newTarget)
                     usedReplacements.add(blockLabel to replacement)
                     return replacement.newTarget
                 }
@@ -107,8 +123,7 @@ open class RemoveUnusedBlocks(protected val cfg: ControlFlowGraph) {
     }
 
     /**
-     * Removes all unused blocks. They were unused initially, because
-     * label transformation removes new unused blocks by itself.
+     * Removes all unused blocks, if they were unused initially or after applying label replacements.
      */
     private fun removeUnusedBlocks() {
         val usedBlocks = newBlocks.values.flatMap { block ->

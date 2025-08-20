@@ -13,6 +13,10 @@ import compiler.ir.cfg.extensions.DominanceFrontiers
  * Special marker implementation of [compiler.ir.cfg.ControlFlowGraph] that guarantees that it is in SSA form.
  */
 class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : ControlFlowGraph(root, blocks) {
+    override fun new(root: IRLabel, blocks: Map<IRLabel, CFGBlock>): ControlFlowGraph {
+        return SSAControlFlowGraph(root, blocks)
+    }
+
     companion object {
         /**
          * Transforms the given [ControlFlowGraph] into an [SSAControlFlowGraph].

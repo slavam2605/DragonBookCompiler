@@ -6,7 +6,7 @@ import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRProtoNode
 import compiler.ir.cfg.extensions.SourceLocationMap
-import compiler.ir.optimization.RemoveUnusedBlocks
+import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.printToString
 
 open class ControlFlowGraph(
@@ -50,6 +50,10 @@ open class ControlFlowGraph(
         }
     }
 
+    open fun new(root: IRLabel, blocks: Map<IRLabel, CFGBlock>): ControlFlowGraph {
+        return ControlFlowGraph(root, blocks)
+    }
+
     companion object {
         private val Root = IRLabel("<root>")
 
@@ -78,7 +82,7 @@ open class ControlFlowGraph(
             val cfg = ControlFlowGraph(Root, nodes).apply {
                 SourceLocationMap.storeMap(sourceMap, this)
             }
-            return RemoveUnusedBlocks(cfg).invoke()
+            return CleanCFG.invoke(cfg)
         }
     }
 }

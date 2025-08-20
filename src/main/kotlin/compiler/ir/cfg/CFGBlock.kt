@@ -1,5 +1,7 @@
 package compiler.ir.cfg
 
+import compiler.ir.BaseIRTransformer
+import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRTransformer
 import compiler.ir.cfg.extensions.SourceLocationMap
@@ -19,4 +21,15 @@ class CFGBlock(val irNodes: List<IRNode>) {
                 }
             }
         })
+}
+
+fun CFGBlock.transformLabel(
+    sourceMap: SourceLocationMap? = null,
+    transformer: (IRLabel) -> IRLabel
+): CFGBlock {
+    return transform(object : BaseIRTransformer() {
+        override fun transformLabel(label: IRLabel): IRLabel {
+            return transformer(label)
+        }
+    }, sourceMap)
 }

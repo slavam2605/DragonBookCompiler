@@ -11,9 +11,9 @@ import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
-import compiler.ir.cfg.ssa.SSARemoveUnusedBlocks
 import compiler.ir.optimization.ConstantPropagation
 import compiler.ir.optimization.ConstantPropagation.SSCPValue
+import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.printToString
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -65,7 +65,7 @@ object TestCompilationFlow {
             if (cpStep === currentStep) {
                 break
             }
-            currentStep = SSARemoveUnusedBlocks(cpStep).invoke()
+            currentStep = CleanCFG.invoke(cpStep) as SSAControlFlowGraph
         }
 
         val allCp = cpList.map { it.values.toMap() }.reduce { a, b -> a + b }

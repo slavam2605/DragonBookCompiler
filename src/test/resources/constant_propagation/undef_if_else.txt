@@ -1,0 +1,11 @@
+int x = undef
+bool y = undef
+
+if (y) {
+
+} else {
+
+}
+
+int result_x = undef // expected: result_x == unknown
+int result_y = undef // expected: result_y == unknown

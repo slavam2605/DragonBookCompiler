@@ -116,6 +116,10 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return FrontendType.BOOL
     }
 
+    override fun visitUndefExpr(ctx: MainGrammar.UndefExprContext?): FrontendType {
+        return FrontendType.NOTHING
+    }
+
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {
         visit(ctx.left).checkType(ctx.left, FrontendType.INT)
         visit(ctx.right).checkType(ctx.right, FrontendType.INT)
@@ -171,12 +175,13 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return FrontendType.BOOL
     }
 
-    private fun FrontendType.checkType(ctx: ParserRuleContext, expected: FrontendType): FrontendType {
-        if (this == FrontendType.ERROR_TYPE || expected == FrontendType.ERROR_TYPE) return this
+    private fun FrontendType.checkType(ctx: ParserRuleContext, expected: FrontendType) {
+        if (this == FrontendType.ERROR_TYPE || expected == FrontendType.ERROR_TYPE) return
+        if (this == FrontendType.NOTHING) return // Nothing is a subtype of every type
         if (this != expected) {
             errors.add(MismatchedTypeException(ctx.asLocation(), expected, this))
         }
-        return this
+        return
     }
 
     private fun checkOperatorSyntax(ctx: SourceLocation, op: String, vararg expectedOps: String) {

@@ -15,6 +15,7 @@ abstract class BaseInterpreter {
     protected fun getValue(value: IRValue): Long = when (value) {
         is IRInt -> value.value
         is IRVar -> vars[value] ?: error("Variable ${value.printToString()} is not initialized")
+        is IRUndef -> error("Undefined value in interpreter")
     }
 
     protected fun baseEval(node: IRProtoNode): Command {

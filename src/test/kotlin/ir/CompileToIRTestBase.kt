@@ -38,17 +38,16 @@ abstract class CompileToIRTestBase {
             }
             TestMode.OPTIMIZED_SSA -> {
                 val (ssa, cpValues) = compileToOptimizedSSA(input).also { (ssa, _) -> ssa.print() }
+                if (ignoreInterpretedValues) {
+                    return cpValues
+                }
+
                 return CFGInterpreter(ssa).eval().withValues(cpValues)
             }
         }
     }
 
     private fun Map<IRVar, Long>.withValues(extraValues: Map<IRVar, Long>): Map<IRVar, Long> {
-        if (ignoreInterpretedValues) {
-            // Keep only values from static evaluation, ignore computed values from interpreter
-            return extraValues
-        }
-
         val result = toMutableMap()
         extraValues.forEach { (irVar, value) ->
             assertTrue(irVar !in this, "Constant propagation didn't remove variable $irVar with value $value")

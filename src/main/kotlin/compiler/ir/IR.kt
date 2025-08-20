@@ -10,6 +10,8 @@ data class IRVar(val name: String, val ssaVer: Int, val sourceName: String?) : I
 
 data class IRInt(val value: Long) : IRValue
 
+object IRUndef : IRValue
+
 // interfaces
 
 sealed interface IRProtoNode

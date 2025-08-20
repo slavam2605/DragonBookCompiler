@@ -9,6 +9,7 @@ FOR : 'for' ;
 WHILE : 'while' ;
 TRUE : 'true' ;
 FALSE : 'false' ;
+UNDEF : 'undef' ;
 
 // Operators
 ASSIGN : '=' ;

@@ -1,9 +1,5 @@
-int a = 0
-bool b = false
-for (int i = 0; i < 42; i = i + 1) {
-    a = a + 1
-    b = !b
-}
+int a = undef                   // expected: a == unknown
+bool b = undef                  // expected: b == unknown
 
 int result1 = a - a             // expected: result1 == 0
 int result2 = a % 1             // expected: result2 == 0

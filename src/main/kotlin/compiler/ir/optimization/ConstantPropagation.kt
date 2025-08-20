@@ -6,7 +6,8 @@ import compiler.ir.cfg.ssa.SSAControlFlowGraph
 class ConstantPropagation {
     sealed interface SSCPValue {
         data class Value(val value: Long) : SSCPValue
-        object Any : SSCPValue
+        object Top : SSCPValue
+        object Bottom : SSCPValue
     }
 
     val values = mutableMapOf<IRVar, SSCPValue>()
@@ -39,21 +40,22 @@ class ConstantPropagation {
         fun IRNode.evaluate(): SSCPValue {
             val rValues = rvalues().map {
                 when (it) {
-                    is IRVar -> values[it] ?: SSCPValue.Any
+                    is IRVar -> values[it] ?: SSCPValue.Top
                     is IRInt -> SSCPValue.Value(it.value)
+                    is IRUndef -> SSCPValue.Bottom
                 }
             }
             return when (this) {
                 is IRAssign -> rValues[0]
                 is IRBinOp -> {
-                    if (rValues.any { it == SSCPValue.Any }) {
+                    if (rValues.any { it !is SSCPValue.Value }) {
                         return when {
                             op == IRBinOpKind.SUB && rvalues()[0] == rvalues()[1] -> SSCPValue.Value(0)
                             op == IRBinOpKind.MUL && rValues.any { it == SSCPValue.Value(0) } -> SSCPValue.Value(0)
                             op == IRBinOpKind.MOD && rValues[1] == SSCPValue.Value(1) -> SSCPValue.Value(0)
                             op in equalComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.Value(1)
                             op in notEqualComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.Value(0)
-                            else -> SSCPValue.Any
+                            else -> if (rValues.any { it == SSCPValue.Bottom }) SSCPValue.Bottom else SSCPValue.Top
                         }
                     }
                     when (op) {
@@ -71,16 +73,27 @@ class ConstantPropagation {
                     }
                 }
                 is IRNot -> {
-                    if (rValues[0] == SSCPValue.Any) return SSCPValue.Any
+                    if (rValues[0] == SSCPValue.Top) return SSCPValue.Top
+                    if (rValues[0] == SSCPValue.Bottom) return SSCPValue.Bottom
                     withBoolValues(rValues[0]) { !it[0] }
                 }
                 is IRPhi -> {
-                    if (rValues.any { it == SSCPValue.Any }) return SSCPValue.Any
-                    val constants = rValues.map { (it as SSCPValue.Value).value }
-                    if (constants.all { it == constants[0] })
-                        SSCPValue.Value(constants[0])
-                    else
-                        SSCPValue.Any
+                    // Meet all values using semi-lattice rules:
+                    //  - `forall a: a * Bottom = Bottom`
+                    //  - `forall a: a * Top = Top`
+                    //  - `forall constant c: c * c = c`
+                    //  - `forall constants c1, c2, c1 != c2: c1 * c2 = Bottom`
+                    rValues.reduce { a, b ->
+                        when {
+                            a == SSCPValue.Bottom || b == SSCPValue.Bottom -> SSCPValue.Bottom
+                            a == SSCPValue.Top -> b
+                            b == SSCPValue.Top -> a
+                            a is SSCPValue.Value && b is SSCPValue.Value -> {
+                                if (a.value == b.value) a else SSCPValue.Bottom
+                            }
+                            else -> error("Unhandled case: $a, $b")
+                        }
+                    }
                 }
                 is IRJump, is IRJumpIfTrue -> {
                     error("Cannot evaluate node without lvalues: $this")
@@ -92,7 +105,7 @@ class ConstantPropagation {
             return try {
                 evaluate()
             } catch (_: ArithmeticException) {
-                SSCPValue.Any
+                SSCPValue.Top
             }
         }
 
@@ -101,7 +114,7 @@ class ConstantPropagation {
                 // Initialize all known constant values and form the initial worklist
                 irNode.lvalue?.let { lVar ->
                     val value = irNode.evaluateSafe()
-                    if (value is SSCPValue.Value) {
+                    if (value !is SSCPValue.Top) {
                         values[lVar] = value
                         worklist.add(lVar)
                     }
@@ -119,10 +132,15 @@ class ConstantPropagation {
             val irVar = worklist.removeLast()
             usages[irVar]?.forEach { irNode ->
                 irNode.lvalue?.let { nodeResult ->
-                    val oldValue = values[nodeResult] ?: SSCPValue.Any
+                    if (values[nodeResult] is SSCPValue.Bottom) {
+                        // Can't get further in lattice than the bottom,
+                        // it doesn't make sense recomputing this value
+                        return@let
+                    }
+
+                    val oldValue = values[nodeResult] ?: SSCPValue.Top
                     val newValue = irNode.evaluateSafe()
                     if (oldValue != newValue) {
-                        check(oldValue is SSCPValue.Any)
                         values[nodeResult] = newValue
                         worklist.add(nodeResult)
                     }
@@ -130,7 +148,7 @@ class ConstantPropagation {
             }
         }
 
-        if (values.all { it.value is SSCPValue.Any }) {
+        if (values.all { it.value is SSCPValue.Top }) {
             // Return the same instance if nothing has changed
             return cfg
         }
@@ -143,6 +161,7 @@ class ConstantPropagation {
                 val constantCond = when (jumpNode.cond) {
                     is IRInt -> jumpNode.cond.value
                     is IRVar -> (values[jumpNode.cond] as? SSCPValue.Value)?.value
+                    is IRUndef -> null
                 }
                 if (constantCond == null) {
                     return@forEach

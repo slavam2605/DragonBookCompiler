@@ -60,6 +60,7 @@ expression
     | INT_LITERAL                                               # IntExpr
     | TRUE                                                      # TrueExpr
     | FALSE                                                     # FalseExpr
+    | UNDEF                                                     # UndefExpr
     ;
 
 /* ------------- Helper and synthetic rules ------------- */

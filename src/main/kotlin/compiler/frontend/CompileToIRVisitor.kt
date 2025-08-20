@@ -158,6 +158,10 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return withNewVar { IRAssign(it, IRInt(0)).withLocation(ctx) }
     }
 
+    override fun visitUndefExpr(ctx: MainGrammar.UndefExprContext): IRValue {
+        return withNewVar { IRAssign(it, IRUndef).withLocation(ctx) }
+    }
+
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): IRValue {
         val opKind = when (ctx.op.text) {
             "*" -> IRBinOpKind.MUL

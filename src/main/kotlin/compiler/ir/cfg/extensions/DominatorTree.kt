@@ -1,6 +1,9 @@
-package compiler.ir.cfg
+package compiler.ir.cfg.extensions
 
 import compiler.ir.IRLabel
+import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.ExtensionKey
+import kotlin.collections.get
 
 class DominatorTree(
     private val edges: Map<IRLabel, Set<IRLabel>>,

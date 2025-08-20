@@ -5,10 +5,10 @@ import compiler.ir.IRJump
 import compiler.ir.IRJumpIfTrue
 import compiler.ir.IRLabel
 import compiler.ir.cfg.CFGBlock
-import compiler.ir.cfg.CFGDominance
+import compiler.ir.cfg.extensions.CFGDominance
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.cfg.DominanceFrontiers
-import compiler.ir.cfg.DominatorTree
+import compiler.ir.cfg.extensions.DominanceFrontiers
+import compiler.ir.cfg.extensions.DominatorTree
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -1,6 +1,9 @@
-package compiler.ir.cfg
+package compiler.ir.cfg.extensions
 
 import compiler.ir.IRLabel
+import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.ExtensionKey
+import kotlin.collections.get
 
 object DominanceFrontiers {
     private val Key = ExtensionKey<Map<IRLabel, Set<IRLabel>>>("DominanceFrontiers")

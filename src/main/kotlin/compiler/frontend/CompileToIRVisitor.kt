@@ -2,7 +2,7 @@ package compiler.frontend
 
 import MainGrammarBaseVisitor
 import compiler.ir.*
-import compiler.ir.cfg.SourceLocationMap
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.utils.NameAllocator
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.Token

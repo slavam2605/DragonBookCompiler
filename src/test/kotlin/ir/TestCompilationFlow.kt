@@ -9,7 +9,7 @@ import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
 import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.cfg.SourceLocationMap
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.cfg.ssa.SSARemoveUnusedBlocks
 import compiler.ir.optimization.ConstantPropagation

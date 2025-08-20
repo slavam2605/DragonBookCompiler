@@ -1,7 +1,9 @@
-package compiler.ir.cfg
+package compiler.ir.cfg.extensions
 
 import compiler.frontend.SourceLocation
 import compiler.ir.IRNode
+import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.ExtensionKey
 
 class SourceLocationMap {
     private val map = mutableMapOf<IRNode, SourceLocation>()

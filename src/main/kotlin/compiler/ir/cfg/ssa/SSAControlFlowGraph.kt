@@ -7,7 +7,7 @@ import compiler.ir.IRSource
 import compiler.ir.IRVar
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.cfg.DominanceFrontiers
+import compiler.ir.cfg.extensions.DominanceFrontiers
 
 /**
  * Special marker implementation of [compiler.ir.cfg.ControlFlowGraph] that guarantees that it is in SSA form.

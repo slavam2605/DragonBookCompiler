@@ -1,9 +1,12 @@
-package compiler.ir.cfg
+package compiler.ir.optimization
 
 import compiler.ir.BaseIRTransformer
 import compiler.ir.IRJump
 import compiler.ir.IRJumpNode
 import compiler.ir.IRLabel
+import compiler.ir.cfg.CFGBlock
+import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.cfg.ssa.SSARemoveUnusedBlocks
 

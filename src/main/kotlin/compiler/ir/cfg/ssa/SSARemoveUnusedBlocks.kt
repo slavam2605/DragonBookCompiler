@@ -5,7 +5,7 @@ import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRPhi
 import compiler.ir.IRSource
-import compiler.ir.cfg.RemoveUnusedBlocks
+import compiler.ir.optimization.RemoveUnusedBlocks
 import compiler.ir.printToString
 import kotlin.collections.forEach
 import kotlin.collections.ifEmpty

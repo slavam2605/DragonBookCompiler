@@ -7,7 +7,7 @@ import compiler.ir.IRPhi
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.cfg.DominatorTree
+import compiler.ir.cfg.extensions.DominatorTree
 import kotlin.collections.forEach
 import kotlin.collections.forEachIndexed
 import kotlin.collections.get

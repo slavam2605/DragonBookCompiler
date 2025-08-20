@@ -1,6 +1,9 @@
-package compiler.ir.cfg
+package compiler.ir.cfg.extensions
 
 import compiler.ir.IRLabel
+import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.ExtensionKey
+import compiler.ir.cfg.ReversedPostOrderTraversal
 
 object CFGDominance {
     private val Key = ExtensionKey<Map<IRLabel, Set<IRLabel>>>("DominanceSets")

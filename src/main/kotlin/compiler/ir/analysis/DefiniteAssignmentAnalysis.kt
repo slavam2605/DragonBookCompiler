@@ -8,7 +8,7 @@ import compiler.ir.IRPhi
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.ReversedPostOrderTraversal
-import compiler.ir.cfg.SourceLocationMap
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.printToString
 
 class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {

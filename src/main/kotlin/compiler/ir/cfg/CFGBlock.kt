@@ -2,6 +2,7 @@ package compiler.ir.cfg
 
 import compiler.ir.IRNode
 import compiler.ir.IRTransformer
+import compiler.ir.cfg.extensions.SourceLocationMap
 
 class CFGBlock(val irNodes: List<IRNode>) {
     /**

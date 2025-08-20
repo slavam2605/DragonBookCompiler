@@ -5,6 +5,8 @@ import compiler.ir.IRJumpNode
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRProtoNode
+import compiler.ir.cfg.extensions.SourceLocationMap
+import compiler.ir.optimization.RemoveUnusedBlocks
 import compiler.ir.printToString
 
 open class ControlFlowGraph(

@@ -2,7 +2,7 @@ package ir.interpreter
 
 import compiler.ir.*
 
-open class ProtoIRInterpreter(val ir: List<IRProtoNode>) : BaseInterpreter() {
+open class ProtoIRInterpreter(val ir: List<IRProtoNode>, simulateUndef: Boolean = false) : BaseInterpreter(simulateUndef) {
     private val labelMap = mutableMapOf<IRLabel, Int>()
     private var currentLine: Int = 0
 

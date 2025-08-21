@@ -51,7 +51,7 @@ object TestCompilationFlow {
         return ssa
     }
 
-    fun compileToOptimizedSSA(input: String): Pair<SSAControlFlowGraph, Map<IRVar, Long>> {
+    fun compileToOptimizedSSA(input: String): Triple<SSAControlFlowGraph, SSAControlFlowGraph, Map<IRVar, Long>> {
         val ssa = compileToSSA(input)
 
         val cpList = mutableListOf<ConstantPropagation>()
@@ -69,9 +69,9 @@ object TestCompilationFlow {
         }
 
         val allCp = cpList.map { it.values.toMap() }.reduce { a, b -> a + b }
-        return currentStep to allCp
+        return Triple(ssa, currentStep, allCp
             .filterValues { it is SSCPValue.Value }
-            .mapValues { (_, value) -> (value as SSCPValue.Value).value }
+            .mapValues { (_, value) -> (value as SSCPValue.Value).value })
     }
 
     // -------- compilation consistency checks --------

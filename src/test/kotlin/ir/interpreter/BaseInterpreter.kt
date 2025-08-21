@@ -1,8 +1,9 @@
 package ir.interpreter
 
 import compiler.ir.*
+import kotlin.random.Random
 
-abstract class BaseInterpreter {
+abstract class BaseInterpreter(private val simulateUndef: Boolean) {
     protected val vars = mutableMapOf<IRVar, Long>()
 
     abstract fun eval(): Map<IRVar, Long>
@@ -15,7 +16,12 @@ abstract class BaseInterpreter {
     protected fun getValue(value: IRValue): Long = when (value) {
         is IRInt -> value.value
         is IRVar -> vars[value] ?: error("Variable ${value.printToString()} is not initialized")
-        is IRUndef -> error("Undefined value in interpreter")
+        is IRUndef -> if (simulateUndef) {
+            // TODO add types to IRVar and 0/1 only for booleans, use random big number for ints
+            Random(this.hashCode()).nextLong(2) // stable random per test run
+        } else {
+            error("Undefined value in interpreter")
+        }
     }
 
     protected fun baseEval(node: IRProtoNode): Command {

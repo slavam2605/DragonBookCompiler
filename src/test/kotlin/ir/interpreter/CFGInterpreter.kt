@@ -5,7 +5,7 @@ import compiler.ir.IRPhi
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
-class CFGInterpreter(val cfg: ControlFlowGraph) : BaseInterpreter() {
+class CFGInterpreter(val cfg: ControlFlowGraph, simulateUndef: Boolean = false) : BaseInterpreter(simulateUndef) {
     private var jumpedFromLabel: IRLabel? = null
     private var currentLabel: IRLabel = cfg.root
     private var currentLine: Int = 0

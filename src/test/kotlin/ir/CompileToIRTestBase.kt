@@ -1,7 +1,9 @@
 package ir
 
 import compiler.ir.IRVar
+import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.print
+import compiler.ir.printToString
 import ir.TestCompilationFlow.compileToCFG
 import ir.TestCompilationFlow.compileToIR
 import ir.TestCompilationFlow.compileToOptimizedSSA
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
 import java.io.File
 import kotlin.random.Random
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
@@ -37,7 +40,8 @@ abstract class CompileToIRTestBase {
                 return CFGInterpreter(ssa).eval()
             }
             TestMode.OPTIMIZED_SSA -> {
-                val (ssa, cpValues) = compileToOptimizedSSA(input).also { (ssa, _) -> ssa.print() }
+                val (unoptimizedSsa, ssa, cpValues) = compileToOptimizedSSA(input).also { (_, ssa, _) -> ssa.print() }
+                checkStaticallyEvaluatedValues(unoptimizedSsa, cpValues)
                 if (ignoreInterpretedValues) {
                     return cpValues
                 }
@@ -107,6 +111,19 @@ abstract class CompileToIRTestBase {
         return TestMode.entries.filter { it !in excludeModes }.map { mode ->
             val nodes = resourceFiles.map { file -> block(mode, file) }
             DynamicContainer.dynamicContainer("$mode", nodes)
+        }
+    }
+
+    companion object {
+        private fun checkStaticallyEvaluatedValues(
+            unoptimized: SSAControlFlowGraph,
+            cpValues: Map<IRVar, Long>
+        ) {
+            val expected = CFGInterpreter(unoptimized, simulateUndef = true).eval()
+            (cpValues.keys.intersect(expected.keys)).forEach {
+                assertEquals(expected[it], cpValues[it],
+                    "Expected ${it.printToString()} to be ${expected[it]}, but was ${cpValues[it]}")
+            }
         }
     }
 }

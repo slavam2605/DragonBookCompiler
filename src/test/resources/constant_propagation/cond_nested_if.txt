@@ -1,0 +1,8 @@
+bool b = undef
+
+if (b) {
+    if (b) {
+        bool x = true
+    }
+    bool result = b // expected: result == 1
+}

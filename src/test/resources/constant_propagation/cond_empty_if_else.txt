@@ -1,0 +1,5 @@
+bool b = undef
+
+bool result1 = b // expected: result1 == unknown
+if (b) {} else {}
+bool result6 = b // expected: result6 == unknown

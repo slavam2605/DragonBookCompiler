@@ -8,6 +8,23 @@ class ConstantPropagation {
         data class Value(val value: Long) : SSCPValue
         object Top : SSCPValue
         object Bottom : SSCPValue
+
+        /**
+         * Meet operator for lattice values:
+         *  - `forall a: a * Bottom = Bottom`
+         *  - `forall a: a * Top = Top`
+         *  - `forall constants c: c * c = c`
+         *  - `forall constants c1, c2, c1 != c2: c1 * c2 = Bottom`
+         */
+        operator fun times(other: SSCPValue): SSCPValue = when {
+            this is Bottom || other is Bottom -> Bottom
+            this is Top -> other
+            other is Top -> this
+            this is Value && other is Value -> {
+                if (this.value == other.value) this else Bottom
+            }
+            else -> error("Unhandled case: $this, $other")
+        }
     }
 
     val values = mutableMapOf<IRVar, SSCPValue>()
@@ -78,22 +95,7 @@ class ConstantPropagation {
                     withBoolValues(rValues[0]) { !it[0] }
                 }
                 is IRPhi -> {
-                    // Meet all values using semi-lattice rules:
-                    //  - `forall a: a * Bottom = Bottom`
-                    //  - `forall a: a * Top = Top`
-                    //  - `forall constant c: c * c = c`
-                    //  - `forall constants c1, c2, c1 != c2: c1 * c2 = Bottom`
-                    rValues.reduce { a, b ->
-                        when {
-                            a == SSCPValue.Bottom || b == SSCPValue.Bottom -> SSCPValue.Bottom
-                            a == SSCPValue.Top -> b
-                            b == SSCPValue.Top -> a
-                            a is SSCPValue.Value && b is SSCPValue.Value -> {
-                                if (a.value == b.value) a else SSCPValue.Bottom
-                            }
-                            else -> error("Unhandled case: $a, $b")
-                        }
-                    }
+                    rValues.reduce(SSCPValue::times)
                 }
                 is IRJump, is IRJumpIfTrue -> {
                     error("Cannot evaluate node without lvalues: $this")
@@ -156,6 +158,7 @@ class ConstantPropagation {
         // to -> setOf(from)
         val removedJumps = mutableMapOf<IRLabel, MutableSet<IRLabel>>()
         val transformedJumps = mutableMapOf<IRJumpNode, IRJumpNode>()
+        val conditionalValues = mutableMapOf<IRLabel, MutableMap<IRLabel, MutableMap<IRVar, SSCPValue>>>()
         cfg.blocks.forEach { (fromLabel, fromBlock) ->
             fromBlock.irNodes.filterIsInstance<IRJumpIfTrue>().forEach { jumpNode ->
                 val constantCond = when (jumpNode.cond) {
@@ -164,6 +167,23 @@ class ConstantPropagation {
                     is IRUndef -> null
                 }
                 if (constantCond == null) {
+                    (jumpNode.cond as? IRVar)?.let { condVar ->
+                        if (jumpNode.target == jumpNode.elseTarget) {
+                            // Do not push conditional values to the same target,
+                            // it would become Bottom anyway
+                            return@let
+                        }
+
+                        val trueValues = conditionalValues
+                            .getOrPut(jumpNode.target) { mutableMapOf() }
+                            .getOrPut(fromLabel) { mutableMapOf() }
+                        val falseValues = conditionalValues
+                            .getOrPut(jumpNode.elseTarget) { mutableMapOf() }
+                            .getOrPut(fromLabel) { mutableMapOf() }
+
+                        check(trueValues.put(condVar, SSCPValue.Value(1)) == null)
+                        check(falseValues.put(condVar, SSCPValue.Value(0)) == null)
+                    }
                     return@forEach
                 }
 
@@ -211,6 +231,15 @@ class ConstantPropagation {
                     if (value is IRVar) {
                         (values[value] as? SSCPValue.Value)?.let {
                             return IRInt(it.value)
+                        }
+                        conditionalValues[currentLabel]?.let { currentValues ->
+                            val condValue = cfg.backEdges(currentLabel)
+                                .map { currentValues[it]?.get(value) ?: SSCPValue.Bottom }
+                                .reduce(SSCPValue::times)
+
+                            if (condValue is SSCPValue.Value) {
+                                return IRInt(condValue.value)
+                            }
                         }
                     }
                     return value

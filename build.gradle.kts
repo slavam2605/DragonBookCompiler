@@ -46,6 +46,10 @@ tasks.compileTestKotlin {
 
 tasks.test {
     useJUnitPlatform()
+
+    System.getProperty("testNames")?.let {
+        systemProperty("testNames", it)
+    }
 }
 
 kotlin {

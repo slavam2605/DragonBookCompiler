@@ -98,7 +98,12 @@ abstract class CompileToIRTestBase {
     }
 
     protected fun withFiles(resourceFolder: String, block: (TestMode, File) -> DynamicNode): List<DynamicContainer> {
-        val resourceFiles = listResourceFiles(resourceFolder)
+        val testNames = System.getProperty("testNames")?.split(",")?.toSet()
+        val resourceFiles = listResourceFiles(resourceFolder).let { files ->
+            if (testNames == null) files
+            else files.filter { it.name in testNames }
+        }
+
         return TestMode.entries.filter { it !in excludeModes }.map { mode ->
             val nodes = resourceFiles.map { file -> block(mode, file) }
             DynamicContainer.dynamicContainer("$mode", nodes)

@@ -143,6 +143,7 @@ class ConstantPropagation {
                     val oldValue = values[nodeResult] ?: SSCPValue.Top
                     val newValue = irNode.evaluateSafe()
                     if (oldValue != newValue) {
+                        check(newValue == oldValue * newValue)
                         values[nodeResult] = newValue
                         worklist.add(nodeResult)
                     }

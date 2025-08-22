@@ -1,6 +1,7 @@
 package ir
 
 import compiler.frontend.CompilationFailed
+import compiler.ir.printToString
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
@@ -37,6 +38,13 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
             val visitedErrors = mutableSetOf<ExpectedError>()
             try {
                 val result = compileAndRun(mode, testProgram)
+                if (PRINT_DEBUG_INFO) {
+                    println("\nResults:")
+                    result.forEach { (varName, value) ->
+                        println("\t${varName.printToString()} == $value")
+                    }
+                }
+
                 expectedValues.forEach { (varName, expectedValue) ->
                     val actualValue = result.getVariable(varName)
                     assertEquals(expectedValue, actualValue) {
@@ -51,7 +59,9 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                     }
                     assertTrue(expectedError != null, "Unexpected error: ${ctx.line}:${ctx.start} \"${exception.message}\"")
                     visitedErrors.add(expectedError)
-                    println("Expected exception: ${exception.message} at ${ctx.line}:${ctx.start}")
+                    if (PRINT_DEBUG_INFO) {
+                        println("Expected exception: ${exception.message} at ${ctx.line}:${ctx.start}")
+                    }
                 }
             }
             expectedErrors.forEach { error ->

@@ -15,6 +15,7 @@ import compiler.ir.optimization.ConstantPropagation
 import compiler.ir.optimization.ConstantPropagation.SSCPValue
 import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.printToString
+import ir.CompileToIRTestBase.Companion.PRINT_DEBUG_INFO
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import parser.UnderlineErrorListener
@@ -58,7 +59,9 @@ object TestCompilationFlow {
         var currentStep = ssa
         val maxSteps = 10
         for (stepIndex in 0 until maxSteps) {
-            println("Constant propagation step $stepIndex")
+            if (PRINT_DEBUG_INFO) {
+                println("Constant propagation step $stepIndex")
+            }
             val cp = ConstantPropagation()
             cpList.add(cp)
             val cpStep = cp.run(currentStep)

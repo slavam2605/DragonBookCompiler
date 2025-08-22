@@ -28,19 +28,27 @@ abstract class CompileToIRTestBase {
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
         when (mode) {
             TestMode.IR -> {
-                val (ir, _) = compileToIR(input).also { (ir, _) -> ir.print() }
+                val (ir, _) = compileToIR(input).also { (ir, _) ->
+                    if (PRINT_DEBUG_INFO) ir.print()
+                }
                 return ProtoIRInterpreter(ir).eval()
             }
             TestMode.CFG -> {
-                val cfg = compileToCFG(input).also { it.print() }
+                val cfg = compileToCFG(input).also {
+                    if (PRINT_DEBUG_INFO) it.print()
+                }
                 return CFGInterpreter(cfg).eval()
             }
             TestMode.SSA -> {
-                val ssa = compileToSSA(input).also { it.print() }
+                val ssa = compileToSSA(input).also {
+                    if (PRINT_DEBUG_INFO) it.print()
+                }
                 return CFGInterpreter(ssa).eval()
             }
             TestMode.OPTIMIZED_SSA -> {
-                val (unoptimizedSsa, ssa, cpValues) = compileToOptimizedSSA(input).also { (_, ssa, _) -> ssa.print() }
+                val (unoptimizedSsa, ssa, cpValues) = compileToOptimizedSSA(input).also { (_, ssa, _) ->
+                    if (PRINT_DEBUG_INFO) ssa.print()
+                }
                 checkStaticallyEvaluatedValues(unoptimizedSsa, cpValues)
                 if (ignoreInterpretedValues) {
                     return cpValues
@@ -115,6 +123,8 @@ abstract class CompileToIRTestBase {
     }
 
     companion object {
+        const val PRINT_DEBUG_INFO = false
+
         private fun checkStaticallyEvaluatedValues(
             unoptimized: SSAControlFlowGraph,
             cpValues: Map<IRVar, Long>

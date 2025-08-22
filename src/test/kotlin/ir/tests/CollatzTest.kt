@@ -22,7 +22,9 @@ class CollatzTest : CompileToIRTestBase() {
             DynamicTest.dynamicTest("${file.name} [n = $n]") {
                 val program = readWithPattern(file, "n" to n)
                 val result = compileAndGet(mode, program, "result")
-                println("collatz steps for $n = $result")
+                if (PRINT_DEBUG_INFO) {
+                    println("collatz steps for $n = $result")
+                }
                 assertEquals(collatz(n).toLong(), result)
             }
         }

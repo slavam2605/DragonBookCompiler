@@ -13,7 +13,9 @@ class FactorialTest : CompileToIRTestBase() {
         DynamicTest.dynamicTest("${file.name} [n = $n]") {
             val program = readWithPattern(file, "n" to n)
             val result = compileAndGet(mode, program, "result")
-            println("factorial($n) = $result")
+            if (PRINT_DEBUG_INFO) {
+                println("factorial($n) = $result")
+            }
             assertEquals(factorial(n), result)
         }
     }

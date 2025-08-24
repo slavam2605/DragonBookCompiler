@@ -39,7 +39,7 @@ class IRPhi(val result: IRVar, val sources: List<IRSource>) : IRNode {
     override fun rvalues() = sources.map { it.value }
     override fun transform(transformer: IRTransformer) = IRPhi(
         transformer.transformLValue(result),
-        sources.map { (from, value) -> IRSource(from, transformer.transformRValue(value)) }
+        sources.mapIndexed { index, (from, value) -> IRSource(from, transformer.transformRValue(this, index, value)) }
     )
 
     fun getSourceValue(from: IRLabel): IRValue {
@@ -61,7 +61,7 @@ class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
     override fun rvalues() = listOf(right)
     override fun transform(transformer: IRTransformer) = IRAssign(
         transformer.transformLValue(result),
-        transformer.transformRValue(right)
+        transformer.transformRValue(this, 0, right)
     )
 }
 
@@ -71,8 +71,8 @@ class IRBinOp(val op: IRBinOpKind, val result: IRVar, val left: IRValue, val rig
     override fun transform(transformer: IRTransformer) = IRBinOp(
         op,
         transformer.transformLValue(result),
-        transformer.transformRValue(left),
-        transformer.transformRValue(right)
+        transformer.transformRValue(this, 0, left),
+        transformer.transformRValue(this, 1, right)
     )
 }
 
@@ -81,7 +81,7 @@ class IRNot(val result: IRVar, val value: IRValue) : IRNode {
     override fun rvalues() = listOf(value)
     override fun transform(transformer: IRTransformer) = IRNot(
         transformer.transformLValue(result),
-        transformer.transformRValue(value)
+        transformer.transformRValue(this, 0, value)
     )
 }
 
@@ -90,7 +90,7 @@ class IRJumpIfTrue(val cond: IRValue, val target: IRLabel, val elseTarget: IRLab
     override fun rvalues() = listOf(cond)
     override fun labels() = listOf(target, elseTarget)
     override fun transform(transformer: IRTransformer) = IRJumpIfTrue(
-        transformer.transformRValue(cond),
+        transformer.transformRValue(this, 0, cond),
         transformer.transformLabel(target),
         transformer.transformLabel(elseTarget)
     )

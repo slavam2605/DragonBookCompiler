@@ -11,8 +11,8 @@ import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
-import compiler.ir.optimization.ConstantPropagation
-import compiler.ir.optimization.ConstantPropagation.SSCPValue
+import compiler.ir.optimization.constant.ConstantPropagation
+import compiler.ir.optimization.constant.SSCPValue
 import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.printToString
 import ir.CompileToIRTestBase.Companion.PRINT_DEBUG_INFO

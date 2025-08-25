@@ -107,16 +107,36 @@ private fun fixPhiNodes(
     newBlocks: MutableMap<IRLabel, CFGBlock>,
     changed: Map<Pair<OriginalPredecessor, NewTarget>, List<CFGEdgeChanged>>
 ) {
+    val reachableBlocks = findReachableBlocks(newRoot, newBlocks)
     newBlocks.forEach { (label, block) ->
         newBlocks[label] = block.transform(
-            PhiTransformer(label, newRoot, newBlocks, changed)
+            PhiTransformer(label, newRoot, reachableBlocks, newBlocks, changed)
         )
     }
+}
+
+private fun findReachableBlocks(root: IRLabel, blocks: Map<IRLabel, CFGBlock>): Set<IRLabel> {
+    val visited = mutableSetOf<IRLabel>()
+    val worklist = mutableListOf(root)
+    while (worklist.isNotEmpty()) {
+        val label = worklist.removeLast()
+        if (label in visited) continue
+        visited.add(label)
+        blocks[label]!!.irNodes.filterIsInstance<IRJumpNode>().forEach { jump ->
+            jump.labels().forEach { target ->
+                if (target !in visited) {
+                    worklist.add(target)
+                }
+            }
+        }
+    }
+    return visited
 }
 
 private class PhiTransformer(
     private val currentBlock: IRLabel,
     private val newRoot: IRLabel,
+    private val reachableBlocks: Set<IRLabel>,
     private val newBlocks: Map<IRLabel, CFGBlock>,
     private val changed: Map<Pair<OriginalPredecessor, NewTarget>, List<CFGEdgeChanged>>
 ) : BaseIRTransformer() {
@@ -148,6 +168,10 @@ private class PhiTransformer(
                 if (currentBlock == newRoot && node.sources.size == 1) {
                     // TODO move assign *after* all phi nodes
                     return IRAssign(node.result, node.sources.single().value)
+                }
+                if (currentBlock !in reachableBlocks) {
+                    // This block is unreachable and will be removed later
+                    return IRPhi(node.result, emptyList())
                 }
                 error("Phi node ${node.printToString()} now has no sources")
             }

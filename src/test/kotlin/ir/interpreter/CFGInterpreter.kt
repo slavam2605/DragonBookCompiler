@@ -5,7 +5,11 @@ import compiler.ir.IRPhi
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
-class CFGInterpreter(val cfg: ControlFlowGraph, simulateUndef: Boolean = false) : BaseInterpreter(simulateUndef) {
+class CFGInterpreter(
+    val cfg: ControlFlowGraph,
+    simulateUndef: Boolean = false,
+    exitAfterMaxSteps: Boolean = false
+) : BaseInterpreter(simulateUndef, exitAfterMaxSteps) {
     private var jumpedFromLabel: IRLabel? = null
     private var currentLabel: IRLabel = cfg.root
     private var currentLine: Int = 0
@@ -45,6 +49,7 @@ class CFGInterpreter(val cfg: ControlFlowGraph, simulateUndef: Boolean = false) 
                     isInPhiPrefix = true
                 }
                 is Command.Continue -> currentLine++
+                is Command.Exit -> break
             }
         }
         return vars.toMap()

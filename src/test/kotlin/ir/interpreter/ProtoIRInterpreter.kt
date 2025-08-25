@@ -2,7 +2,11 @@ package ir.interpreter
 
 import compiler.ir.*
 
-open class ProtoIRInterpreter(val ir: List<IRProtoNode>, simulateUndef: Boolean = false) : BaseInterpreter(simulateUndef) {
+open class ProtoIRInterpreter(
+    val ir: List<IRProtoNode>,
+    simulateUndef: Boolean = false,
+    exitAfterMaxSteps: Boolean = false
+) : BaseInterpreter(simulateUndef, exitAfterMaxSteps) {
     private val labelMap = mutableMapOf<IRLabel, Int>()
     private var currentLine: Int = 0
 
@@ -22,6 +26,7 @@ open class ProtoIRInterpreter(val ir: List<IRProtoNode>, simulateUndef: Boolean 
             when (val command = baseEval(ir[currentLine])) {
                 is Command.Jump -> currentLine = findLabel(command.label)
                 is Command.Continue -> currentLine++
+                is Command.Exit -> break
             }
         }
         return vars.toMap()

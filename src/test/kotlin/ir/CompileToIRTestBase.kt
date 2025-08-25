@@ -129,7 +129,7 @@ abstract class CompileToIRTestBase {
             unoptimized: SSAControlFlowGraph,
             cpValues: Map<IRVar, Long>
         ) {
-            val expected = CFGInterpreter(unoptimized, simulateUndef = true).eval()
+            val expected = CFGInterpreter(unoptimized, simulateUndef = true, exitAfterMaxSteps = true).eval()
             (cpValues.keys.intersect(expected.keys)).forEach {
                 assertEquals(expected[it], cpValues[it],
                     "Expected ${it.printToString()} to be ${expected[it]}, but was ${cpValues[it]}")

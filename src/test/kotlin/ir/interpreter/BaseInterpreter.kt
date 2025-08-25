@@ -3,14 +3,19 @@ package ir.interpreter
 import compiler.ir.*
 import kotlin.random.Random
 
-abstract class BaseInterpreter(private val simulateUndef: Boolean) {
+abstract class BaseInterpreter(
+    private val simulateUndef: Boolean,
+    private val exitAfterMaxSteps: Boolean
+) {
     protected val vars = mutableMapOf<IRVar, Long>()
+    private var stepCounter = 0
 
     abstract fun eval(): Map<IRVar, Long>
 
     protected sealed interface Command {
         class Jump(val label: IRLabel) : Command
         object Continue : Command
+        object Exit : Command
     }
 
     protected fun getValue(value: IRValue): Long = when (value) {
@@ -25,6 +30,7 @@ abstract class BaseInterpreter(private val simulateUndef: Boolean) {
     }
 
     protected fun baseEval(node: IRProtoNode): Command {
+        incrementStep()?.let { return it }
         when (node) {
             is IRLabel -> { /* skip */ }
             is IRPhi -> {
@@ -63,5 +69,20 @@ abstract class BaseInterpreter(private val simulateUndef: Boolean) {
             }
         }
         return Command.Continue
+    }
+
+    private fun incrementStep(): Command? {
+        stepCounter++
+        if (stepCounter < MAX_STEPS) return null
+        if (exitAfterMaxSteps) return Command.Exit
+        throw ExceededEvaluationStepsException(MAX_STEPS)
+    }
+
+    companion object {
+        /**
+         * Maximum number of steps to execute before stopping interpretation of the program.
+         * Used to prevent infinite loops in the program.
+         */
+        private const val MAX_STEPS = 10_000_000
     }
 }

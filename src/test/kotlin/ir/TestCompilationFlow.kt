@@ -11,9 +11,9 @@ import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
-import compiler.ir.optimization.constant.ConstantPropagation
 import compiler.ir.optimization.constant.SSCPValue
 import compiler.ir.optimization.clean.CleanCFG
+import compiler.ir.optimization.constant.SparseConditionalConstantPropagation
 import compiler.ir.printToString
 import ir.CompileToIRTestBase.Companion.PRINT_DEBUG_INFO
 import org.antlr.v4.runtime.CharStreams
@@ -55,23 +55,25 @@ object TestCompilationFlow {
     fun compileToOptimizedSSA(input: String): Triple<SSAControlFlowGraph, SSAControlFlowGraph, Map<IRVar, Long>> {
         val ssa = compileToSSA(input)
 
-        val cpList = mutableListOf<ConstantPropagation>()
+        val cpList = mutableListOf<SparseConditionalConstantPropagation>()
         var currentStep = ssa
-        val maxSteps = 10
-        for (stepIndex in 0 until maxSteps) {
-            if (PRINT_DEBUG_INFO) {
-                println("Constant propagation step $stepIndex")
+        var changed = true
+        var stepIndex = 0
+        while (changed) {
+            if (PRINT_DEBUG_INFO) println("SCCP step $stepIndex")
+            stepIndex++
+            val initialStep = currentStep
+
+            currentStep = SparseConditionalConstantPropagation(currentStep).let {
+                cpList.add(it)
+                it.run()
             }
-            val cp = ConstantPropagation()
-            cpList.add(cp)
-            val cpStep = cp.run(currentStep)
-            if (cpStep === currentStep) {
-                break
-            }
-            currentStep = CleanCFG.invoke(cpStep) as SSAControlFlowGraph
+            currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
+
+            changed = initialStep !== currentStep
         }
 
-        val allCp = cpList.map { it.values.toMap() }.reduce { a, b -> a + b }
+        val allCp = cpList.map { it.staticValues.toMap() }.reduce { a, b -> a + b }
         return Triple(ssa, currentStep, allCp
             .filterValues { it is SSCPValue.Value }
             .mapValues { (_, value) -> (value as SSCPValue.Value).value })

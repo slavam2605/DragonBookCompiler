@@ -3,6 +3,7 @@ package compiler.ir.optimization.constant
 import compiler.ir.*
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 
+@Deprecated("Use SparseConditionalConstantPropagation instead")
 class ConstantPropagation {
     val values = mutableMapOf<IRVar, SSCPValue>()
 

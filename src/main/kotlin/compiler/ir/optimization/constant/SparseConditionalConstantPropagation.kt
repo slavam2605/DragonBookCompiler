@@ -19,7 +19,10 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph)
     private fun defValue(irVar: IRVar) = defValue[irVar] ?: SSCPValue.Top
     private fun useValue(irUse: IRUse) = useValue[irUse] ?: SSCPValue.Top
 
-    fun run(): Pair<SSAControlFlowGraph, Map<IRVar, SSCPValue>> {
+    val staticValues: Map<IRVar, SSCPValue>
+        get() = defValue.toMap()
+
+    fun run(): SSAControlFlowGraph {
         cfgWorklist.add(CFGEdge(IRLabel("<fake-entry>"), cfg.root))
 
         while (cfgWorklist.isNotEmpty() || ssaWorklist.isNotEmpty()) {
@@ -32,8 +35,7 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph)
             }
         }
 
-        val newCfg = FoldConstantJumps.run(cfg, defValue)
-        return newCfg to defValue
+        return FoldConstantJumps.run(cfg, defValue)
     }
 
     private fun handleCFGEdge(cfgEdge: CFGEdge) {

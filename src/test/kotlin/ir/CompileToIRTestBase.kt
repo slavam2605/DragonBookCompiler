@@ -85,7 +85,7 @@ abstract class CompileToIRTestBase {
         val url = javaClass.getResource(path) ?: error("Resource not found: $path")
         return when (url.protocol) {
             "file" -> {
-                File(url.toURI()).listFiles()?.toList() ?: emptyList()
+                File(url.toURI()).walk().toList().filter { it.isFile }
             }
             else -> error("Unsupported protocol: ${url.protocol}")
         }

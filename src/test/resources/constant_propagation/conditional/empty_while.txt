@@ -1,0 +1,3 @@
+bool b = undef
+while (b) {}
+bool result = b // expected: result == 0

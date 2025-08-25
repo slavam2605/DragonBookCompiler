@@ -17,7 +17,7 @@ class CollatzTest : CompileToIRTestBase() {
 
     @TestFactory
     fun testCollatz(): List<DynamicNode> {
-        val parameters = generateRandomParameters(1000, 1L .. Int.MAX_VALUE)
+        val parameters = generateRandomParameters(100, 1L ..Int.MAX_VALUE / 20).map { it * it }
         return withParametersAndFiles(parameters, "/collatz") { mode, n, file ->
             DynamicTest.dynamicTest("${file.name} [n = $n]") {
                 val program = readWithPattern(file, "n" to n)

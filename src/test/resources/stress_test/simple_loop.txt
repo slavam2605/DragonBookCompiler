@@ -1,0 +1,5 @@
+int n = 100000
+while (n != 1) {
+    n = n - 1
+}
+int result = n // expected: result == 1

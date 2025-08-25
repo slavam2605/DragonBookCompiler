@@ -29,6 +29,8 @@ fun ControlFlowGraph.transformLabels(
     changedEdges: List<CFGEdgeChanged>,
     removedBlocks: Set<IRLabel>
 ): ControlFlowGraph {
+    // Remove identity replacements `label -> label`
+    val changedEdges = changedEdges.filter { it.oldTarget != it.newTarget }
     if (changedEdges.isEmpty() && removedBlocks.isEmpty()) {
         // Return the same instance to mark that nothing changed
         return this

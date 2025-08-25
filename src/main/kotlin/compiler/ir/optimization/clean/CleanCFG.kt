@@ -11,7 +11,7 @@ object CleanCFG {
             changed = false
             val initialStep = currentStep
             currentStep = RemoveEmptyBlocksChangeEdges(currentStep).invoke()
-            currentStep = RemoveEmptyBlocksRemoveBlocks(currentStep).invoke()
+            currentStep = RemoveUnreachableBlocks(currentStep).invoke()
             if (currentStep !== initialStep) changed = true
         }
 

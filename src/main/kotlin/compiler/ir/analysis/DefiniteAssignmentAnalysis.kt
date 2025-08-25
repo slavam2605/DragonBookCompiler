@@ -3,60 +3,42 @@ package compiler.ir.analysis
 import compiler.frontend.CompilationException
 import compiler.frontend.CompilationFailed
 import compiler.frontend.UninitializedVariableException
-import compiler.ir.IRLabel
 import compiler.ir.IRPhi
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.cfg.ReversedPostOrderTraversal
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.printToString
 
 class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
-    private val inMap = mutableMapOf<IRLabel, Set<IRVar>>()
-    private val outMap = mutableMapOf<IRLabel, Set<IRVar>>()
     private val errors = mutableListOf<CompilationException>()
 
-    init {
+    fun run() {
         val allVars = cfg.blocks.flatMap { (_, block) ->
             block.irNodes.mapNotNull { node -> node.lvalue }
         }.toSet()
-        cfg.blocks.keys.forEach { label ->
-            outMap[label] = allVars
-        }
-        outMap[cfg.root] = emptySet()
-    }
 
-    fun run() {
-        var changed = true
-        while (changed) {
-            changed = false
-            ReversedPostOrderTraversal.traverse(cfg) { label, block ->
-                val predOuts = cfg.backEdges(label)
-                    .map { outMap.getOrPut(it) { emptySet()} }
-                    .ifEmpty { listOf(emptySet()) }
-                val inSet = predOuts
-                    .reduce { acc, set -> acc.intersect(set) }
+        val dfa = DataFlowFramework(
+            cfg = cfg,
+            bottom = emptySet(),
+            meet = { a, b -> a.intersect(b) },
+            transfer = { label, inSet ->
                 val outSet = inSet.toMutableSet()
-
-                block.irNodes.forEach { node ->
+                cfg.blocks[label]!!.irNodes.forEach { node ->
                     check(node !is IRPhi)
                     node.lvalue?.let {
                         outSet.add(it)
                     }
                 }
-
-                val oldInSet = inMap.getOrPut(label) { emptySet() }
-                val oldOutSet = outMap.getOrPut(label) { emptySet() }
-                if (inSet != oldInSet || outSet != oldOutSet) {
-                    inMap[label] = inSet
-                    outMap[label] = outSet
-                    changed = true
-                }
+                outSet
+            },
+            initialOut = { label ->
+                if (label == cfg.root) emptySet() else allVars
             }
-        }
+        )
+        dfa.run()
 
         cfg.blocks.forEach { (label, block) ->
-            val liveSet = inMap[label]!!.toMutableSet()
+            val liveSet = dfa.inValues[label]!!.toMutableSet()
             block.irNodes.forEach { node ->
                 node.rvalues().filterIsInstance<IRVar>().forEach { irVar ->
                     if (irVar !in liveSet) {

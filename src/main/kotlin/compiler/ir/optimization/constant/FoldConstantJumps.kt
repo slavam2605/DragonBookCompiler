@@ -20,7 +20,6 @@ object FoldConstantJumps {
     fun run(cfg: SSAControlFlowGraph, cpValues: Map<IRVar, SSCPValue>): SSAControlFlowGraph {
         val removedJumps = mutableMapOf<IRLabel, MutableSet<IRLabel>>() // to -> setOf(from)
         val transformedJumps = mutableMapOf<IRJumpNode, IRJumpNode>()
-        val conditionalValues = mutableMapOf<IRLabel, MutableMap<IRLabel, MutableMap<IRVar, SSCPValue>>>()
         var changed = false
 
         cfg.blocks.forEach { (fromLabel, fromBlock) ->
@@ -31,23 +30,6 @@ object FoldConstantJumps {
                     is IRUndef -> null
                 }
                 if (constantCond == null) {
-                    (jumpNode.cond as? IRVar)?.let { condVar ->
-                        if (jumpNode.target == jumpNode.elseTarget) {
-                            // Do not push conditional values to the same target,
-                            // it would become Bottom anyway
-                            return@let
-                        }
-
-                        val trueValues = conditionalValues
-                            .getOrPut(jumpNode.target) { mutableMapOf() }
-                            .getOrPut(fromLabel) { mutableMapOf() }
-                        val falseValues = conditionalValues
-                            .getOrPut(jumpNode.elseTarget) { mutableMapOf() }
-                            .getOrPut(fromLabel) { mutableMapOf() }
-
-                        check(trueValues.put(condVar, SSCPValue.Value(1)) == null)
-                        check(falseValues.put(condVar, SSCPValue.Value(0)) == null)
-                    }
                     return@forEach
                 }
 
@@ -99,17 +81,6 @@ object FoldConstantJumps {
                         (cpValues[value] as? SSCPValue.Value)?.let {
                             changed = true
                             return IRInt(it.value)
-                        }
-
-                        conditionalValues[currentLabel]?.let { currentValues ->
-                            val condValue = cfg.backEdges(currentLabel)
-                                .map { currentValues[it]?.get(value) ?: SSCPValue.Bottom }
-                                .reduce(SSCPValue::times)
-
-                            if (condValue is SSCPValue.Value) {
-                                changed = true
-                                return IRInt(condValue.value)
-                            }
                         }
                     }
                     return value

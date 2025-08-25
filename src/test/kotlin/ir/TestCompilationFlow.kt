@@ -13,6 +13,7 @@ import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.optimization.constant.SSCPValue
 import compiler.ir.optimization.clean.CleanCFG
+import compiler.ir.optimization.constant.ConditionalJumpValues
 import compiler.ir.optimization.constant.SparseConditionalConstantPropagation
 import compiler.ir.printToString
 import ir.CompileToIRTestBase.Companion.PRINT_DEBUG_INFO
@@ -69,6 +70,7 @@ object TestCompilationFlow {
                 it.run()
             }
             currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
+            currentStep = ConditionalJumpValues(currentStep).run()
 
             changed = initialStep !== currentStep
         }

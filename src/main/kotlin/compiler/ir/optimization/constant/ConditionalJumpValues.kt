@@ -5,6 +5,7 @@ import compiler.ir.IRInt
 import compiler.ir.IRJumpIfTrue
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
+import compiler.ir.IRPhi
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.analysis.DataFlowFramework
@@ -27,18 +28,7 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
                     (a[it] ?: SSCPValue.Bottom) * (b[it] ?: SSCPValue.Bottom)
                 }
             },
-            modifyOutEdge = modifyEdge@ { from, to, outMap ->
-                val jump = cfg.blocks[from]!!.irNodes.lastOrNull() as? IRJumpIfTrue
-                if (jump == null || jump.cond !is IRVar || jump.target == jump.elseTarget) {
-                    return@modifyEdge outMap
-                }
-
-                outMap.toMutableMap().also { newMap ->
-                    check(jump.target != jump.elseTarget)
-                    if (to == jump.target) newMap[jump.cond] = SSCPValue.Value(1L)
-                    if (to == jump.elseTarget) newMap[jump.cond] = SSCPValue.Value(0L)
-                }
-            },
+            modifyOutEdge = ::modifyOutEdge,
             transfer = { label, inMap ->
                 cfg.blocks[label]!!.irNodes.forEach { node ->
                     node.lvalue?.let {
@@ -58,13 +48,38 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
             newBlocks[label] = block.transform(object : BaseIRTransformer() {
                 override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue {
                     if (value !is IRVar) return value
-                    val sscpValue = condVars[value] as? SSCPValue.Value ?: return value
-                    cfgChanged = true
-                    return IRInt(sscpValue.value)
+                    (condVars[value] as? SSCPValue.Value)?.let { sscpValue ->
+                        cfgChanged = true
+                        return IRInt(sscpValue.value)
+                    }
+
+                    // Update phi-node sources along the edge
+                    if (node !is IRPhi) return value
+                    val from = node.sources[index].from
+                    val edgeOut = modifyOutEdge(from, label, dfa.outValues[from]!!)
+                    (edgeOut[value] as? SSCPValue.Value)?.let { sscpValue ->
+                        cfgChanged = true
+                        return IRInt(sscpValue.value)
+                    }
+
+                    return value
                 }
             })
         }
         if (!cfgChanged) return cfg
         return SSAControlFlowGraph(cfg.root, newBlocks)
+    }
+
+    private fun modifyOutEdge(from: IRLabel, to: IRLabel, outMap: Map<IRVar, SSCPValue>): Map<IRVar, SSCPValue> {
+        val jump = cfg.blocks[from]!!.irNodes.lastOrNull() as? IRJumpIfTrue
+        if (jump == null || jump.cond !is IRVar || jump.target == jump.elseTarget) {
+            return outMap
+        }
+
+        return outMap.toMutableMap().also { newMap ->
+            check(jump.target != jump.elseTarget)
+            if (to == jump.target) newMap[jump.cond] = SSCPValue.Value(1L)
+            if (to == jump.elseTarget) newMap[jump.cond] = SSCPValue.Value(0L)
+        }
     }
 }

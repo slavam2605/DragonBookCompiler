@@ -9,3 +9,5 @@ bool result_b = b
 bool result1 = b || true
 bool result2 = b && false
 assertStaticUnknown(result_b)
+assertStaticEquals(result1, true)
+assertStaticEquals(result2, false)

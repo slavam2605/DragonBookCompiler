@@ -6,6 +6,7 @@ import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.ExtensionKey
 import compiler.ir.printToString
+import java.util.IdentityHashMap
 
 data class IRUse(val blockLabel: IRLabel, val node: IRNode, val opIndex: Int)
 data class IRNodeInBlock(val blockLabel: IRLabel, val node: IRNode)
@@ -57,7 +58,7 @@ class SSAGraph(
 
         private fun compute(cfg: ControlFlowGraph) : SSAGraph {
             val defMap = mutableMapOf<IRVar, IRNodeInBlock>()
-            val useDefMap = mutableMapOf<IRNode, Array<IRNodeInBlock?>>()
+            val useDefMap = IdentityHashMap<IRNode, Array<IRNodeInBlock?>>()
             fun createDefs(node: IRNode): Array<IRNodeInBlock?> {
                 check(node !in useDefMap) { "Duplicate IR node $node" }
                 return arrayOfNulls<IRNodeInBlock>(node.rvalues().size).also {

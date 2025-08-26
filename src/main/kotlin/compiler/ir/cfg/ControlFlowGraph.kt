@@ -54,6 +54,21 @@ open class ControlFlowGraph(
         return ControlFlowGraph(root, blocks)
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as ControlFlowGraph
+        if (root != other.root) return false
+        if (blocks != other.blocks) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = root.hashCode()
+        result = 31 * result + blocks.hashCode()
+        return result
+    }
+
     companion object {
         private val Root = IRLabel("<root>")
 

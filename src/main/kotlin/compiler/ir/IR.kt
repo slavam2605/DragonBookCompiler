@@ -34,7 +34,7 @@ data class IRLabel(val name: String) : IRProtoNode
 
 data class IRSource(val from: IRLabel, val value: IRValue)
 
-class IRPhi(val result: IRVar, val sources: List<IRSource>) : IRNode {
+data class IRPhi(val result: IRVar, val sources: List<IRSource>) : IRNode {
     override val lvalue get() = result
     override fun rvalues() = sources.map { it.value }
     override fun transform(transformer: IRTransformer) = IRPhi(
@@ -56,7 +56,7 @@ class IRPhi(val result: IRVar, val sources: List<IRSource>) : IRNode {
     }
 }
 
-class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
+data class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
     override val lvalue get() = result
     override fun rvalues() = listOf(right)
     override fun transform(transformer: IRTransformer) = IRAssign(
@@ -65,7 +65,7 @@ class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
     )
 }
 
-class IRBinOp(val op: IRBinOpKind, val result: IRVar, val left: IRValue, val right: IRValue) : IRNode {
+data class IRBinOp(val op: IRBinOpKind, val result: IRVar, val left: IRValue, val right: IRValue) : IRNode {
     override val lvalue get() = result
     override fun rvalues() = listOf(left, right)
     override fun transform(transformer: IRTransformer) = IRBinOp(
@@ -76,7 +76,7 @@ class IRBinOp(val op: IRBinOpKind, val result: IRVar, val left: IRValue, val rig
     )
 }
 
-class IRNot(val result: IRVar, val value: IRValue) : IRNode {
+data class IRNot(val result: IRVar, val value: IRValue) : IRNode {
     override val lvalue get() = result
     override fun rvalues() = listOf(value)
     override fun transform(transformer: IRTransformer) = IRNot(
@@ -85,7 +85,7 @@ class IRNot(val result: IRVar, val value: IRValue) : IRNode {
     )
 }
 
-class IRJumpIfTrue(val cond: IRValue, val target: IRLabel, val elseTarget: IRLabel) : IRJumpNode {
+data class IRJumpIfTrue(val cond: IRValue, val target: IRLabel, val elseTarget: IRLabel) : IRJumpNode {
     override val lvalue get() = null
     override fun rvalues() = listOf(cond)
     override fun labels() = listOf(target, elseTarget)
@@ -96,7 +96,7 @@ class IRJumpIfTrue(val cond: IRValue, val target: IRLabel, val elseTarget: IRLab
     )
 }
 
-class IRJump(val target: IRLabel) : IRJumpNode {
+data class IRJump(val target: IRLabel) : IRJumpNode {
     override val lvalue get() = null
     override fun rvalues() = emptyList<IRValue>()
     override fun labels() = listOf(target)

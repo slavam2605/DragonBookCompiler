@@ -21,6 +21,17 @@ class CFGBlock(val irNodes: List<IRNode>) {
                 }
             }
         })
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as CFGBlock
+        return irNodes == other.irNodes
+    }
+
+    override fun hashCode(): Int {
+        return irNodes.hashCode()
+    }
 }
 
 fun CFGBlock.transformLabel(

@@ -1,0 +1,20 @@
+bool b = undef
+
+bool result1 = b; assertStaticUnknown(result1)
+if (b) {
+    bool result2 = b; assertStaticEquals(result2, true)
+    bool true1 = b; assertStaticEquals(true1, true)
+    if (b) {
+        bool true2 = b; assertStaticEquals(true2, true)
+    }
+    bool result3 = b; assertStaticEquals(result3, true)
+} else {
+    bool result4 = b; assertStaticEquals(result4, false)
+    bool false1 = b; assertStaticEquals(false1, false)
+    if (b) {
+        bool false2 = b
+        assertStaticUnreachable()
+    }
+    bool result5 = b; assertStaticEquals(result5, false)
+}
+bool result6 = b; assertStaticUnknown(result6)

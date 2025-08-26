@@ -4,5 +4,6 @@ if (b) {
     if (b) {
         bool x = true
     }
-    bool result = b // expected: result == 1
+    bool result = b
+    assertStaticEquals(result, 1)
 }

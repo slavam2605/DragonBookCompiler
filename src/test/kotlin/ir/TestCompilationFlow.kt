@@ -80,16 +80,12 @@ object TestCompilationFlow {
             }
             currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
             currentStep = ConditionalJumpValues(currentStep).run()
+            currentStep = EqualityPropagation(currentStep).let {
+                equalityList.add(it)
+                it.invoke()
+            }
 
             changed = initialStep !== currentStep
-        }
-        // Apply equality propagation only when CJV is settled
-        // For example, if `L0: jump-if-true x L1 else L2; L1: y = x`
-        // and we propagate `y = x` everywhere, `x` will not be replaced by `true` from CJV
-        // TODO this is not true, and true only for tests. Replace "expected" by `expected(b)` and this will be fixed
-        currentStep = EqualityPropagation(currentStep).let {
-            equalityList.add(it)
-            it.invoke()
         }
 
         val (cpValues, equalities) = buildStaticValues(cpList, equalityList)

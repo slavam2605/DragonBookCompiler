@@ -5,8 +5,8 @@ int result_sub = a - b
 int result_mul = a * b
 int result_div = a / b
 int result_mod = a % b
-// expected: result_add == 22
-// expected: result_sub == 12
-// expected: result_mul == 85
-// expected: result_div == 3
-// expected: result_mod == 2
+assertStaticEquals(result_add, 22)
+assertStaticEquals(result_sub, 12)
+assertStaticEquals(result_mul, 85)
+assertStaticEquals(result_div, 3)
+assertStaticEquals(result_mod, 2)

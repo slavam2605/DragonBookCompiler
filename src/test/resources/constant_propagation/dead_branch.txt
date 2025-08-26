@@ -5,4 +5,4 @@ if (a > b) {
     x = 999
 }
 int result = x
-// expected: result == 100
+assertStaticEquals(result, 100)

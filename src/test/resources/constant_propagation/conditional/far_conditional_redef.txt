@@ -2,8 +2,8 @@ bool b = true
 while (b) {
     b = undef
     if (b) {
-        bool result = b // expected: result == 1
+        bool result = b; assertStaticEquals(result, 1)
     }
     b = true
 }
-bool result2 = b
+bool result2 = b; assertStaticUnreachable()

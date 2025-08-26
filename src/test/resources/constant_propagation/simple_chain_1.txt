@@ -2,4 +2,4 @@ int a = 10
 int b = a + 5
 int c = b * 2
 int result = c - 3
-// expected: result == 27
+assertStaticEquals(result, 27)

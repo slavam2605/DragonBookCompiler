@@ -13,4 +13,4 @@ if (0 == 1) {
     z = z + 1000
 }
 int result = z + 1
-// expected: result == 30
+assertStaticEquals(result, 30)

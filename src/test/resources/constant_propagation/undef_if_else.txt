@@ -7,5 +7,5 @@ if (y) {
 
 }
 
-int result_x = undef // expected: result_x == unknown
-int result_y = undef // expected: result_y == unknown
+int result_x = undef; assertStaticUnknown(result_x)
+int result_y = undef; assertStaticUnknown(result_y)

@@ -5,4 +5,4 @@ if (true) {
 
 }
 int result = x
-// expected: result == 1
+assertStaticEquals(result, 1)

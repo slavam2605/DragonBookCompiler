@@ -6,9 +6,9 @@ bool result_lt = a < b
 bool result_le = a <= b
 bool result_gt = a > b
 bool result_ge = a >= b
-// expected: result_eq == 0
-// expected: result_nq == 1
-// expected: result_lt == 0
-// expected: result_le == 0
-// expected: result_gt == 1
-// expected: result_ge == 1
+assertStaticEquals(result_eq, 0)
+assertStaticEquals(result_nq, 1)
+assertStaticEquals(result_lt, 0)
+assertStaticEquals(result_le, 0)
+assertStaticEquals(result_gt, 1)
+assertStaticEquals(result_ge, 1)

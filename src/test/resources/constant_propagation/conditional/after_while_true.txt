@@ -2,4 +2,4 @@ bool b = undef
 if (b) {
     while (true) {}
 }
-bool result = b // expected: result == 0
+bool result = b; assertStaticEquals(result, 0)

@@ -1,5 +1,5 @@
 bool b = undef
 
-bool result1 = b // expected: result1 == unknown
+bool result1 = b; assertStaticUnknown(result1)
 if (b) {} else {}
-bool result6 = b // expected: result6 == unknown
+bool result2 = b; assertStaticUnknown(result2)

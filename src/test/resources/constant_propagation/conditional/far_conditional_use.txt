@@ -2,6 +2,6 @@ bool a = undef
 bool b = undef
 if (b) {
     if (a) {
-        bool result = b // expected: result == 1
+        bool result = b; assertStaticEquals(result, 1)
     }
 }

@@ -3,4 +3,4 @@ while (0 == 1) {
     x = x + 1
 }
 int result = x
-// expected: result == 0
+assertStaticEquals(result, 0)

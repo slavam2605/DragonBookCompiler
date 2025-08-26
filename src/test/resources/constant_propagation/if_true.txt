@@ -3,4 +3,4 @@ if (1 == 1) {
     x = 42
 }
 int result = x
-// expected: result == 42
+assertStaticEquals(result, 42)

@@ -8,4 +8,4 @@ while (i < 1) {
 bool result_b = b
 bool result1 = b || true
 bool result2 = b && false
-// expected: result_b == unknown
+assertStaticUnknown(result_b)

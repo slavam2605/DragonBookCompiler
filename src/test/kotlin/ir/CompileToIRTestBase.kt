@@ -1,5 +1,7 @@
 package ir
 
+import compiler.ir.IRFunctionCall
+import compiler.ir.IRInt
 import compiler.ir.IRVar
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.print
@@ -31,30 +33,31 @@ abstract class CompileToIRTestBase {
                 val (ir, _) = compileToIR(input).also { (ir, _) ->
                     if (PRINT_DEBUG_INFO) ir.print()
                 }
-                return ProtoIRInterpreter(ir).eval()
+                return ProtoIRInterpreter(ir, TestFunctionHandler).eval()
             }
             TestMode.CFG -> {
                 val cfg = compileToCFG(input).also {
                     if (PRINT_DEBUG_INFO) it.print()
                 }
-                return CFGInterpreter(cfg).eval()
+                return CFGInterpreter(cfg, TestFunctionHandler).eval()
             }
             TestMode.SSA -> {
                 val ssa = compileToSSA(input).also {
                     if (PRINT_DEBUG_INFO) it.print()
                 }
-                return CFGInterpreter(ssa).eval()
+                return CFGInterpreter(ssa, TestFunctionHandler).eval()
             }
             TestMode.OPTIMIZED_SSA -> {
                 val (unoptimizedSSA, optimizedSSA, cpValues, equalities) = compileToOptimizedSSA(input)
                     .also { (_, ssa) -> if (PRINT_DEBUG_INFO) ssa.print() }
 
-                checkStaticallyEvaluatedValues(unoptimizedSSA, cpValues)
+                checkStaticallyEvaluatedValues(unoptimizedSSA, optimizedSSA, cpValues)
                 if (ignoreInterpretedValues) {
                     return cpValues
                 }
 
-                return CFGInterpreter(optimizedSSA).eval().withValues(cpValues, equalities)
+                return CFGInterpreter(optimizedSSA, TestFunctionHandler).eval()
+                    .withValues(cpValues, equalities)
             }
         }
     }
@@ -129,11 +132,53 @@ abstract class CompileToIRTestBase {
     companion object {
         const val PRINT_DEBUG_INFO = false
 
+        @JvmStatic
+        protected val TestFunctionHandler = { name: String, args: List<Long> ->
+            when (name) {
+                "assertEquals", "assertStaticEquals" -> {
+                    assertEquals(args[0], args[1], "Wrong values in assertEquals")
+                }
+                "assertStaticUnknown" -> { /* ignore on runtime */ }
+                else -> error("Unknown function: $name")
+            }
+        }
+
         private fun checkStaticallyEvaluatedValues(
             unoptimized: SSAControlFlowGraph,
+            optimized: SSAControlFlowGraph,
             cpValues: Map<IRVar, Long>
         ) {
-            val expected = CFGInterpreter(unoptimized, simulateUndef = true, exitAfterMaxSteps = true).eval()
+            // Statically check equality after optimization
+            optimized.blocks.forEach { (_, block) ->
+                block.irNodes.filterIsInstance<IRFunctionCall>().forEach { node ->
+                    when (node.name) {
+                        "assertStaticEquals" -> {
+                            check(node.arguments.size == 2)
+                            check(node.arguments[1] is IRInt)
+                            val expected = node.arguments[1] as IRInt
+                            val actual = node.arguments[0]
+                            assertTrue(actual is IRInt, "Expected ${actual.printToString()} to be statically known")
+                            assertEquals(expected.value, actual.value, "assertStaticEquals failed")
+                        }
+                        "assertStaticUnknown" -> {
+                            check(node.arguments.size == 1)
+                            val actual = node.arguments[0]
+                            assertTrue(actual is IRVar, "Expected ${actual.printToString()} to be unknown")
+                        }
+                        "assertStaticUnreachable" -> {
+                            check(node.arguments.isEmpty())
+                            error("assertStaticUnreachable was not removed during optimization")
+                        }
+                    }
+                }
+            }
+
+            val expected = CFGInterpreter(
+                cfg = unoptimized,
+                simulateUndef = true,
+                exitAfterMaxSteps = true,
+                functionHandler = { _, _ -> /* ignore assertions, they are checked statically */ }
+            ).eval()
             (cpValues.keys.intersect(expected.keys)).forEach {
                 assertEquals(expected[it], cpValues[it],
                     "Expected ${it.printToString()} to be ${expected[it]}, but was ${cpValues[it]}")

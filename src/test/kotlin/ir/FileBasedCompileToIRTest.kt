@@ -67,10 +67,6 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
             expectedErrors.forEach { error ->
                 assertTrue(error in visitedErrors, "Expected error was not thrown: ${error.line}:${error.col} \"${error.message}\"")
             }
-
-            check(expectedValues.isNotEmpty() || expectedErrors.isNotEmpty()) {
-                "No assertions found in file $file"
-            }
         }
     }
 

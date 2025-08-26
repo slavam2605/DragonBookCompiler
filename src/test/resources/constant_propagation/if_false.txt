@@ -3,4 +3,4 @@ if (0 == 1) {
     x = 99
 }
 int result = x
-// expected: result == 1
+assertStaticEquals(result, 1)

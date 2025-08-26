@@ -3,9 +3,10 @@ package compiler.ir.optimization.clean
 import compiler.ir.*
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.utils.CFGEdgeChanged
+import compiler.ir.cfg.utils.hasPhiNodes
 import compiler.ir.cfg.utils.transformLabels
 
-class RemoveEmptyBlocksChangeEdges(private val cfg: ControlFlowGraph) {
+class RemoveEmptyBlocks(private val cfg: ControlFlowGraph) {
     data class IRTargetReplacement(val originalPredecessor: IRLabel, val newTarget: IRLabel)
 
     private val replacements = mutableMapOf<IRLabel, IRTargetReplacement>()
@@ -81,7 +82,7 @@ class RemoveEmptyBlocksChangeEdges(private val cfg: ControlFlowGraph) {
             block.irNodes.filterIsInstance<IRJumpNode>().forEach { jump ->
                 for (oldTarget in jump.labels()) {
                     val replacement = replacements[oldTarget] ?: continue
-                    if (replacement.newTarget in takenTargets && replacement.newTarget.hasPhiNodes()) {
+                    if (replacement.newTarget in takenTargets && replacement.newTarget.hasPhiNodes(cfg)) {
                         // Do not replace more than one label to the same target (if the target has phi nodes)
                         // Otherwise, phi nodes in the target block will have duplicated source blocks
                         continue
@@ -99,10 +100,6 @@ class RemoveEmptyBlocksChangeEdges(private val cfg: ControlFlowGraph) {
                 }
             }
         }
-    }
-
-    private fun IRLabel.hasPhiNodes(): Boolean {
-        return cfg.blocks[this]!!.irNodes.any { it is IRPhi }
     }
 
     /**

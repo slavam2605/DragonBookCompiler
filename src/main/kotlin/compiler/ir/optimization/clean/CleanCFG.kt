@@ -10,7 +10,9 @@ object CleanCFG {
         while (changed) {
             changed = false
             val initialStep = currentStep
-            currentStep = RemoveEmptyBlocksChangeEdges(currentStep).invoke()
+            currentStep = FoldRedundantBranches(currentStep).invoke()
+            currentStep = RemoveEmptyBlocks(currentStep).invoke()
+            currentStep = CombineBlocks(currentStep).invoke()
             currentStep = RemoveUnreachableBlocks(currentStep).invoke()
             if (currentStep !== initialStep) changed = true
         }

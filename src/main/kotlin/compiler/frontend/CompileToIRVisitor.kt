@@ -132,7 +132,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             val labelStart = IRLabel(labelAllocator.newName())
             val labelAfter = IRLabel(labelAllocator.newName())
             resultIR.add(labelStart)
-            val condVar = visit(ctx.cond)
+            val condVar = ctx.cond?.let { visit(it) } ?: IRInt(1)
             resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
 
             // Push another scope for the loop body
@@ -141,7 +141,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
                 visit(ctx.statement())
             }
 
-            visit(ctx.inc)
+            ctx.inc?.let { visit(it) }
             resultIR.add(IRJump(labelStart))
             resultIR.add(labelAfter)
         }

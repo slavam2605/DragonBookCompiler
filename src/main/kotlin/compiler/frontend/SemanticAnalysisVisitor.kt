@@ -44,6 +44,12 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return ctx.defaultVisitChildren()
     }
 
+    override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
+        // TODO resolve function name
+        ctx.callArguments()?.expression()?.map { visit(it) }
+        return null
+    }
+
     override fun visitBlock(ctx: MainGrammar.BlockContext): Nothing? {
         return symbolTable.withScope {
             ctx.defaultVisitChildren()

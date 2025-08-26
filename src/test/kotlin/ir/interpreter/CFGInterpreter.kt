@@ -7,9 +7,10 @@ import compiler.ir.cfg.ControlFlowGraph
 
 class CFGInterpreter(
     val cfg: ControlFlowGraph,
+    functionHandler: (String, List<Long>) -> Unit = DEFAULT_FUNCTION_HANDLER,
     simulateUndef: Boolean = false,
     exitAfterMaxSteps: Boolean = false
-) : BaseInterpreter(simulateUndef, exitAfterMaxSteps) {
+) : BaseInterpreter(functionHandler, simulateUndef, exitAfterMaxSteps) {
     private var jumpedFromLabel: IRLabel? = null
     private var currentLabel: IRLabel = cfg.root
     private var currentLine: Int = 0

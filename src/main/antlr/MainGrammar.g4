@@ -13,10 +13,19 @@ program
 statement
     : declaration end
     | assignment end
+    | functionCall end
     | ifStatement
     | whileStatement
     | forStatement
     | block
+    ;
+
+functionCall
+    : ID LPAR callArguments? RPAR
+    ;
+
+callArguments
+    : expression (COMMA expression)*
     ;
 
 block

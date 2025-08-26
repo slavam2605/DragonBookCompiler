@@ -4,9 +4,10 @@ import compiler.ir.*
 
 open class ProtoIRInterpreter(
     val ir: List<IRProtoNode>,
+    functionHandler: (String, List<Long>) -> Unit = DEFAULT_FUNCTION_HANDLER,
     simulateUndef: Boolean = false,
     exitAfterMaxSteps: Boolean = false
-) : BaseInterpreter(simulateUndef, exitAfterMaxSteps) {
+) : BaseInterpreter(functionHandler, simulateUndef, exitAfterMaxSteps) {
     private val labelMap = mutableMapOf<IRLabel, Int>()
     private var currentLine: Int = 0
 

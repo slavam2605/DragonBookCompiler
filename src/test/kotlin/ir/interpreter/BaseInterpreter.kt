@@ -4,6 +4,7 @@ import compiler.ir.*
 import kotlin.random.Random
 
 abstract class BaseInterpreter(
+    private val functionHandler: (String, List<Long>) -> Unit,
     private val simulateUndef: Boolean,
     private val exitAfterMaxSteps: Boolean
 ) {
@@ -61,6 +62,11 @@ abstract class BaseInterpreter(
                 val value = getValue(node.value)
                 vars[node.result] = if (value == 0L) 1 else 0
             }
+            is IRFunctionCall -> {
+                check(node.result == null) { "Function calls with result are not supported" }
+                val arguments = node.arguments.map { getValue(it) }
+                functionHandler(node.name, arguments)
+            }
             is IRJump -> return Command.Jump(node.target)
             is IRJumpIfTrue -> {
                 val condition = getValue(node.cond)
@@ -84,5 +90,10 @@ abstract class BaseInterpreter(
          * Used to prevent infinite loops in the program.
          */
         private const val MAX_STEPS = 10_000_000
+
+        @JvmStatic
+        protected val DEFAULT_FUNCTION_HANDLER: (String, List<Long>) -> Unit = { name, _ ->
+            error("Unknown function: $name")
+        }
     }
 }

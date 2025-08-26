@@ -34,6 +34,7 @@ fun IRProtoNode.printToString(): String = when (this) {
     is IRAssign -> "${result.printToString()} = ${right.printToString()}"
     is IRBinOp -> "${result.printToString()} = ${left.printToString()} ${op.printToString()} ${right.printToString()}"
     is IRNot -> "${result.printToString()} = ! ${value.printToString()}"
+    is IRFunctionCall -> (if (result != null) "${result.printToString()} = " else "") + "$name(${arguments.joinToString(", ") { it.printToString() }})"
     is IRJump -> "jump ${target.printToString()}"
     is IRJumpIfTrue -> "jump-if-true ${cond.printToString()} ${target.printToString()} else ${elseTarget.printToString()}"
 }

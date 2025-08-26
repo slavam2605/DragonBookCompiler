@@ -14,6 +14,7 @@ UNDEF : 'undef' ;
 // Operators
 ASSIGN : '=' ;
 SEMICOLON : ';' ;
+COMMA : ',' ;
 STAR : '*' ;
 DIV : '/' ;
 MOD : '%' ;

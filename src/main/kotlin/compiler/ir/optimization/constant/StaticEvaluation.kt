@@ -3,6 +3,7 @@ package compiler.ir.optimization.constant
 import compiler.ir.IRAssign
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
+import compiler.ir.IRFunctionCall
 import compiler.ir.IRInt
 import compiler.ir.IRJump
 import compiler.ir.IRJumpIfTrue
@@ -71,6 +72,7 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
         is IRPhi -> {
             rValues.reduce(SSCPValue::times)
         }
+        is IRFunctionCall -> SSCPValue.Bottom
         is IRJump, is IRJumpIfTrue -> {
             error("Cannot evaluate node without lvalues: $this")
         }

@@ -85,6 +85,16 @@ data class IRNot(val result: IRVar, val value: IRValue) : IRNode {
     )
 }
 
+data class IRFunctionCall(val name: String, val result: IRVar?, val arguments: List<IRValue>) : IRNode {
+    override val lvalue get() = result
+    override fun rvalues() = arguments
+    override fun transform(transformer: IRTransformer) = IRFunctionCall(
+        name,
+        result?.let { transformer.transformLValue(it) },
+        arguments.mapIndexed { index, value -> transformer.transformRValue(this, index, value) }
+    )
+}
+
 data class IRJumpIfTrue(val cond: IRValue, val target: IRLabel, val elseTarget: IRLabel) : IRJumpNode {
     override val lvalue get() = null
     override fun rvalues() = listOf(cond)

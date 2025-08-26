@@ -50,6 +50,12 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return ctx.defaultVisitChildren()
     }
 
+    override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
+        val arguments = ctx.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
+        resultIR.add(IRFunctionCall(ctx.ID().text, null, arguments))
+        return null
+    }
+
     override fun visitBlock(ctx: MainGrammar.BlockContext): Nothing? {
         return symbolTable.withScope {
             ctx.defaultVisitChildren()

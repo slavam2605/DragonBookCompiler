@@ -5,6 +5,7 @@ import compiler.ir.IRJumpNode
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRProtoNode
+import compiler.ir.IRTransformer
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.printToString
@@ -52,6 +53,10 @@ open class ControlFlowGraph(
 
     open fun new(root: IRLabel, blocks: Map<IRLabel, CFGBlock>): ControlFlowGraph {
         return ControlFlowGraph(root, blocks)
+    }
+
+    fun transform(transformer: IRTransformer): ControlFlowGraph {
+        return new(root, blocks.mapValues { (_, block) -> block.transform(transformer) })
     }
 
     override fun equals(other: Any?): Boolean {

@@ -11,6 +11,7 @@ import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
+import compiler.ir.optimization.EqualityPropagation
 import compiler.ir.optimization.constant.SSCPValue
 import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.optimization.constant.ConditionalJumpValues
@@ -53,10 +54,18 @@ object TestCompilationFlow {
         return ssa
     }
 
-    fun compileToOptimizedSSA(input: String): Triple<SSAControlFlowGraph, SSAControlFlowGraph, Map<IRVar, Long>> {
+    data class OptimizedResult(
+        val originalSSA: SSAControlFlowGraph,
+        val optimizedSSA: SSAControlFlowGraph,
+        val cpValues: Map<IRVar, Long>,
+        val equalities: Map<IRVar, IRVar>
+    )
+
+    fun compileToOptimizedSSA(input: String): OptimizedResult {
         val ssa = compileToSSA(input)
 
         val cpList = mutableListOf<SparseConditionalConstantPropagation>()
+        val equalityList = mutableListOf<EqualityPropagation>()
         var currentStep = ssa
         var changed = true
         var stepIndex = 0
@@ -74,11 +83,40 @@ object TestCompilationFlow {
 
             changed = initialStep !== currentStep
         }
+        // Apply equality propagation only when CJV is settled
+        // For example, if `L0: jump-if-true x L1 else L2; L1: y = x`
+        // and we propagate `y = x` everywhere, `x` will not be replaced by `true` from CJV
+        // TODO this is not true, and true only for tests. Replace "expected" by `expected(b)` and this will be fixed
+        currentStep = EqualityPropagation(currentStep).let {
+            equalityList.add(it)
+            it.invoke()
+        }
 
-        val allCp = cpList.map { it.staticValues.toMap() }.reduce { a, b -> a + b }
-        return Triple(ssa, currentStep, allCp
+        val (cpValues, equalities) = buildStaticValues(cpList, equalityList)
+        return OptimizedResult(ssa, currentStep, cpValues, equalities)
+    }
+
+    private fun buildStaticValues(
+        cpList: List<SparseConditionalConstantPropagation>,
+        eqList: List<EqualityPropagation>
+    ): Pair<Map<IRVar, Long>, Map<IRVar, IRVar>> {
+        val cpValues = cpList
+            .map { it.staticValues.toMap() }
+            .reduce { a, b -> a + b }
             .filterValues { it is SSCPValue.Value }
-            .mapValues { (_, value) -> (value as SSCPValue.Value).value })
+            .mapValues { (_, value) -> (value as SSCPValue.Value).value }
+            .toMutableMap()
+
+        val equalities = eqList
+            .map { it.equalities }
+            .reduce { a, b -> a + b }
+
+        equalities.forEach { (var1, var2) ->
+            check(cpValues[var1] == null)
+            cpValues[var1] = cpValues[var2] ?: return@forEach
+        }
+
+        return cpValues to equalities
     }
 
     // -------- compilation consistency checks --------

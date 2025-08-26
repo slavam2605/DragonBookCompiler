@@ -46,24 +46,28 @@ abstract class CompileToIRTestBase {
                 return CFGInterpreter(ssa).eval()
             }
             TestMode.OPTIMIZED_SSA -> {
-                val (unoptimizedSsa, ssa, cpValues) = compileToOptimizedSSA(input).also { (_, ssa, _) ->
-                    if (PRINT_DEBUG_INFO) ssa.print()
-                }
-                checkStaticallyEvaluatedValues(unoptimizedSsa, cpValues)
+                val (unoptimizedSSA, optimizedSSA, cpValues, equalities) = compileToOptimizedSSA(input)
+                    .also { (_, ssa) -> if (PRINT_DEBUG_INFO) ssa.print() }
+
+                checkStaticallyEvaluatedValues(unoptimizedSSA, cpValues)
                 if (ignoreInterpretedValues) {
                     return cpValues
                 }
 
-                return CFGInterpreter(ssa).eval().withValues(cpValues)
+                return CFGInterpreter(optimizedSSA).eval().withValues(cpValues, equalities)
             }
         }
     }
 
-    private fun Map<IRVar, Long>.withValues(extraValues: Map<IRVar, Long>): Map<IRVar, Long> {
+    private fun Map<IRVar, Long>.withValues(extraValues: Map<IRVar, Long>, equalities: Map<IRVar, IRVar>): Map<IRVar, Long> {
         val result = toMutableMap()
         extraValues.forEach { (irVar, value) ->
             assertTrue(irVar !in this, "Constant propagation didn't remove variable $irVar with value $value")
             result[irVar] = value
+        }
+        equalities.forEach { (irVar, otherVar) ->
+            check(irVar !in result)
+            result[irVar] = result[otherVar] ?: return@forEach
         }
         return result.toMap()
     }

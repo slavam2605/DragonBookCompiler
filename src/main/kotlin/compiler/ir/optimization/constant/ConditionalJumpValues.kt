@@ -30,13 +30,13 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
             },
             modifyOutEdge = ::modifyOutEdge,
             transfer = { label, inMap ->
+                val outMap = inMap.toMutableMap()
                 cfg.blocks[label]!!.irNodes.forEach { node ->
                     node.lvalue?.let {
-                        // If this check is false, then `transformRValue` below may be incorrect
-                        check(it !in inMap || inMap[it] is SSCPValue.Bottom)
+                        outMap.remove(it)
                     }
                 }
-                inMap
+                outMap
             }
         )
         dfa.run()
@@ -44,27 +44,34 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
         var cfgChanged = false
         val newBlocks = mutableMapOf<IRLabel, CFGBlock>()
         cfg.blocks.forEach { (label, block) ->
-            val condVars = dfa.inValues[label]!!
-            newBlocks[label] = block.transform(object : BaseIRTransformer() {
-                override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue {
-                    if (value !is IRVar) return value
-                    (condVars[value] as? SSCPValue.Value)?.let { sscpValue ->
-                        cfgChanged = true
-                        return IRInt(sscpValue.value)
-                    }
+            val condVars = dfa.inValues[label]!!.toMutableMap()
+            val transformedBlock = mutableListOf<IRNode>()
+            block.irNodes.forEach { node ->
+                transformedBlock.add(node.transform(object : BaseIRTransformer() {
+                    override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue {
+                        if (value !is IRVar) return value
+                        (condVars[value] as? SSCPValue.Value)?.let { sscpValue ->
+                            cfgChanged = true
+                            return IRInt(sscpValue.value)
+                        }
 
-                    // Update phi-node sources along the edge
-                    if (node !is IRPhi) return value
-                    val from = node.sources[index].from
-                    val edgeOut = modifyOutEdge(from, label, dfa.outValues[from]!!)
-                    (edgeOut[value] as? SSCPValue.Value)?.let { sscpValue ->
-                        cfgChanged = true
-                        return IRInt(sscpValue.value)
-                    }
+                        // Update phi-node sources along the edge
+                        if (node !is IRPhi) return value
+                        val from = node.sources[index].from
+                        val edgeOut = modifyOutEdge(from, label, dfa.outValues[from]!!)
+                        (edgeOut[value] as? SSCPValue.Value)?.let { sscpValue ->
+                            cfgChanged = true
+                            return IRInt(sscpValue.value)
+                        }
 
-                    return value
+                        return value
+                    }
+                }))
+                node.lvalue?.let {
+                    condVars.remove(it)
                 }
-            })
+            }
+            newBlocks[label] = CFGBlock(transformedBlock)
         }
         if (!cfgChanged) return cfg
         return SSAControlFlowGraph(cfg.root, newBlocks)

@@ -60,7 +60,7 @@ internal class RenameVariablesForSSA(
                     }
                 val newLVar = node.lvalue?.let { newName(label, it) }
                 block[index] = node.transform(object : BaseIRTransformer() {
-                    override fun transformLValue(value: IRVar) = if (value == node.lvalue) newLVar!! else value
+                    override fun transformLValue(value: IRVar) = newLVar!!
                     override fun transformRValue(node: IRNode, index: Int, value: IRValue) = renamedVars[value] ?: value
                 })
             }

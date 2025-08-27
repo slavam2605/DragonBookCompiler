@@ -1,18 +1,9 @@
 package compiler.ir.optimization.constant
 
-import compiler.ir.BaseIRTransformer
-import compiler.ir.IRInt
-import compiler.ir.IRJumpIfTrue
-import compiler.ir.IRLabel
-import compiler.ir.IRNode
-import compiler.ir.IRPhi
-import compiler.ir.IRValue
-import compiler.ir.IRVar
+import compiler.ir.*
 import compiler.ir.analysis.DataFlowFramework
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 /**
  * Must be called after [compiler.ir.optimization.clean.RemoveUnreachableBlocks], because
@@ -20,15 +11,17 @@ import kotlin.collections.component2
  */
 class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
     fun run(): SSAControlFlowGraph {
-        val dfa = DataFlowFramework<Map<IRVar, SSCPValue>>(
+        val dfa = DataFlowFramework(
             cfg = cfg,
-            bottom = emptyMap(),
-            meet = { a, b ->
-                (a.keys + b.keys).associateWith {
-                    (a[it] ?: SSCPValue.Bottom) * (b[it] ?: SSCPValue.Bottom)
+            direction = DataFlowFramework.Direction.FORWARD,
+            identity = emptyMap(),
+            meet = { acc, a ->
+                (acc.keys + a.keys).associateWith {
+                    (acc[it] ?: SSCPValue.Top) * (a[it] ?: SSCPValue.Bottom)
                 }
             },
-            modifyOutEdge = ::modifyOutEdge,
+            modifyEdgeValue = ::modifyOutEdge,
+            initialOut = { _ -> emptyMap() },
             transfer = { label, inMap ->
                 val outMap = inMap.toMutableMap()
                 cfg.blocks[label]!!.irNodes.forEach { node ->
@@ -38,8 +31,7 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
                 }
                 outMap
             }
-        )
-        dfa.run()
+        ).run()
 
         var cfgChanged = false
         val newBlocks = mutableMapOf<IRLabel, CFGBlock>()

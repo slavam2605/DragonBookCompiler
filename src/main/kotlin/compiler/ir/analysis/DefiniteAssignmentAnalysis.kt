@@ -19,7 +19,8 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
 
         val dfa = DataFlowFramework(
             cfg = cfg,
-            bottom = emptySet(),
+            identity = allVars,
+            direction = DataFlowFramework.Direction.FORWARD,
             meet = { a, b -> a.intersect(b) },
             transfer = { label, inSet ->
                 val outSet = inSet.toMutableSet()
@@ -31,6 +32,7 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
                 }
                 outSet
             },
+            boundaryIn = { emptySet() },
             initialOut = { label ->
                 if (label == cfg.root) emptySet() else allVars
             }
@@ -38,17 +40,17 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
         dfa.run()
 
         cfg.blocks.forEach { (label, block) ->
-            val liveSet = dfa.inValues[label]!!.toMutableSet()
+            val defSet = dfa.inValues[label]!!.toMutableSet()
             block.irNodes.forEach { node ->
                 node.rvalues().filterIsInstance<IRVar>().forEach { irVar ->
-                    if (irVar !in liveSet) {
+                    if (irVar !in defSet) {
                         val location = SourceLocationMap.get(cfg, node)
                         val varName = irVar.sourceName ?: irVar.printToString()
                         errors.add(UninitializedVariableException(location, varName))
                     }
                 }
                 node.lvalue?.let {
-                    liveSet.add(it)
+                    defSet.add(it)
                 }
             }
         }

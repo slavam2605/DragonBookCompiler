@@ -5,6 +5,7 @@ import compiler.ir.IRNode
 import compiler.ir.IRPhi
 import compiler.ir.IRSource
 import compiler.ir.IRVar
+import compiler.ir.analysis.LiveVarAnalysis
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.DominanceFrontiers
@@ -50,6 +51,7 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
             mutableBlocks: MutableMap<IRLabel, MutableList<IRNode>>
         ) {
             val df = DominanceFrontiers.get(cfg)
+            val liveIn = LiveVarAnalysis(cfg).run().inValues
             globals.forEach { globalVar ->
                 // If `block in scheduled`, then `block` already has `x = phi(...)`
                 // and `block` is in the work list now, or was already processed
@@ -61,6 +63,9 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
                     df[currentLabel]!!.forEach { frontierLabel ->
                         if (frontierLabel in scheduled) {
                             return@forEach // `phi` already inserted, skip block
+                        }
+                        if (!liveIn[frontierLabel]!!.contains(globalVar)) {
+                            return@forEach // Pruned SSA => no phi-nodes for dead variables
                         }
 
                         val phiSources = cfg.backEdges(frontierLabel).map { IRSource(it, globalVar) }

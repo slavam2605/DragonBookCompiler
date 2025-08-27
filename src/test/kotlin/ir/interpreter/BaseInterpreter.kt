@@ -9,6 +9,7 @@ abstract class BaseInterpreter(
     private val exitAfterMaxSteps: Boolean
 ) {
     protected val vars = mutableMapOf<IRVar, Long>()
+    private val random = Random(this.hashCode())
     private var stepCounter = 0
 
     abstract fun eval(): Map<IRVar, Long>
@@ -24,7 +25,7 @@ abstract class BaseInterpreter(
         is IRVar -> vars[value] ?: error("Variable ${value.printToString()} is not initialized")
         is IRUndef -> if (simulateUndef) {
             // TODO add types to IRVar and 0/1 only for booleans, use random big number for ints
-            Random(this.hashCode()).nextLong(2) // stable random per test run
+            random.nextLong(2) // stable random per test run
         } else {
             error("Undefined value in interpreter")
         }
@@ -89,7 +90,7 @@ abstract class BaseInterpreter(
          * Maximum number of steps to execute before stopping interpretation of the program.
          * Used to prevent infinite loops in the program.
          */
-        private const val MAX_STEPS = 10_000_000
+        private const val MAX_STEPS = 1_000_000
 
         @JvmStatic
         protected val DEFAULT_FUNCTION_HANDLER: (String, List<Long>) -> Unit = { name, _ ->

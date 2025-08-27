@@ -9,11 +9,14 @@ import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.tree.TerminalNode
 
 class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
-    val resultIR = mutableListOf<IRProtoNode>()
-    val sourceMap = SourceLocationMap()
-    val symbolTable = SymbolTable<IRVar>()
-    val varAllocator = NameAllocator("x")
-    val labelAllocator = NameAllocator("L")
+    private val resultIR = mutableListOf<IRProtoNode>()
+    private val sourceMap = SourceLocationMap()
+    private val symbolTable = SymbolTable<IRVar>()
+    private val loopStack = mutableListOf<LoopContext>()
+    private val varAllocator = NameAllocator("x")
+    private val labelAllocator = NameAllocator("L")
+
+    private data class LoopContext(val continueLabel: IRLabel, val breakLabel: IRLabel)
 
     fun compileToIR(tree: MainGrammar.ProgramContext): Pair<List<IRProtoNode>, SourceLocationMap> {
         visit(tree)
@@ -48,6 +51,20 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitStatement(ctx: MainGrammar.StatementContext): Nothing? {
         return ctx.defaultVisitChildren()
+    }
+
+    override fun visitBreakStatement(ctx: MainGrammar.BreakStatementContext): Nothing? {
+        val loop = loopStack.lastOrNull() ?: error("'break' used outside of a loop during IR generation")
+        resultIR.add(IRJump(loop.breakLabel).withLocation(ctx))
+        resultIR.add(IRLabel(labelAllocator.newName()))
+        return null
+    }
+
+    override fun visitContinueStatement(ctx: MainGrammar.ContinueStatementContext): Nothing? {
+        val loop = loopStack.lastOrNull() ?: error("'continue' used outside of a loop during IR generation")
+        resultIR.add(IRJump(loop.continueLabel).withLocation(ctx))
+        resultIR.add(IRLabel(labelAllocator.newName()))
+        return null
     }
 
     override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
@@ -114,8 +131,10 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         
         // Loop body with its own scope
         resultIR.add(labelBody)
-        symbolTable.withScope {
-            visit(ctx.statement())
+        withLoop(continueLabel = labelStart, breakLabel = labelAfter) {
+            symbolTable.withScope {
+                visit(ctx.statement())
+            }
         }
         
         resultIR.add(IRJump(labelStart))
@@ -131,16 +150,21 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             val labelBody = IRLabel(labelAllocator.newName())
             val labelStart = IRLabel(labelAllocator.newName())
             val labelAfter = IRLabel(labelAllocator.newName())
+            val labelInc = IRLabel(labelAllocator.newName())
             resultIR.add(labelStart)
             val condVar = ctx.cond?.let { visit(it) } ?: IRInt(1)
             resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
 
             // Push another scope for the loop body
             resultIR.add(labelBody)
-            symbolTable.withScope {
-                visit(ctx.statement())
+            withLoop(continueLabel = labelInc, breakLabel = labelAfter) {
+                symbolTable.withScope {
+                    visit(ctx.statement())
+                }
             }
 
+            resultIR.add(IRJump(labelInc))
+            resultIR.add(labelInc)
             ctx.inc?.let { visit(it) }
             resultIR.add(IRJump(labelStart))
             resultIR.add(labelAfter)
@@ -247,5 +271,14 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitOrExpr(ctx: MainGrammar.OrExprContext): IRValue {
         return processShortCircuitLogic(ctx.left, ctx.right, false)
+    }
+
+    private fun <T> withLoop(continueLabel: IRLabel, breakLabel: IRLabel, block: () -> T): T {
+        loopStack.add(LoopContext(continueLabel, breakLabel))
+        try {
+            return block()
+        } finally {
+            loopStack.removeLast()
+        }
     }
 }

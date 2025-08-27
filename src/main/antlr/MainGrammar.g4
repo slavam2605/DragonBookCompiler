@@ -14,6 +14,8 @@ statement
     : declaration end
     | assignment end
     | functionCall end
+    | breakStatement end
+    | continueStatement end
     | ifStatement
     | whileStatement
     | forStatement
@@ -55,6 +57,14 @@ whileStatement
 
 forStatement
     : FOR LPAR (initDecl=declaration | initAssign=assignment)? SEMICOLON cond=expression? SEMICOLON inc=assignment? RPAR statement
+    ;
+
+breakStatement
+    : BREAK
+    ;
+
+continueStatement
+    : CONTINUE
     ;
 
 expression

@@ -6,8 +6,9 @@ import org.antlr.v4.runtime.ParserRuleContext
 
 // TODO store symbol tables in nodes as a tree property and reuse in IR generation
 class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
-    val symbolTable = SymbolTable<FrontendType>()
-    val errors = mutableListOf<CompilationException>()
+    private var loopDepth: Int = 0
+    private val symbolTable = SymbolTable<FrontendType>()
+    private val errors = mutableListOf<CompilationException>()
 
     fun analyze(tree: MainGrammar.ProgramContext) {
         visit(tree)
@@ -42,6 +43,20 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
 
     override fun visitStatement(ctx: MainGrammar.StatementContext): Nothing? {
         return ctx.defaultVisitChildren()
+    }
+
+    override fun visitBreakStatement(ctx: MainGrammar.BreakStatementContext): Nothing? {
+        if (loopDepth == 0) {
+            errors.add(SyntaxErrorException(ctx.asLocation(), "'break' is not allowed outside loops"))
+        }
+        return null
+    }
+
+    override fun visitContinueStatement(ctx: MainGrammar.ContinueStatementContext): Nothing? {
+        if (loopDepth == 0) {
+            errors.add(SyntaxErrorException(ctx.asLocation(), "'continue' is not allowed outside loops"))
+        }
+        return null
     }
 
     override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
@@ -94,8 +109,10 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
 
     override fun visitWhileStatement(ctx: MainGrammar.WhileStatementContext): Nothing? {
         visit(ctx.expression()).checkType(ctx.expression(), FrontendType.BOOL)
-        symbolTable.withScope {
-            visit(ctx.statement())
+        withLoopLevel {
+            symbolTable.withScope {
+                visit(ctx.statement())
+            }
         }
         return null
     }
@@ -105,8 +122,10 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
             (ctx.initAssign ?: ctx.initDecl)?.let { visit(it) }
             ctx.cond?.let { visit(it).checkType(it, FrontendType.BOOL) }
             ctx.inc?.let { visit(it) }
-            symbolTable.withScope {
-                visit(ctx.statement())
+            withLoopLevel {
+                symbolTable.withScope {
+                    visit(ctx.statement())
+                }
             }
         }
         return null
@@ -179,6 +198,15 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         visit(ctx.left).checkType(ctx.left, FrontendType.BOOL)
         visit(ctx.right).checkType(ctx.right, FrontendType.BOOL)
         return FrontendType.BOOL
+    }
+
+    private fun <T> withLoopLevel(block: () -> T): T {
+        loopDepth++
+        try {
+            return block()
+        } finally {
+            loopDepth--
+        }
     }
 
     private fun FrontendType.checkType(ctx: ParserRuleContext, expected: FrontendType) {

@@ -7,6 +7,8 @@ IF : 'if' ;
 ELSE : 'else' ;
 FOR : 'for' ;
 WHILE : 'while' ;
+BREAK : 'break' ;
+CONTINUE : 'continue' ;
 TRUE : 'true' ;
 FALSE : 'false' ;
 UNDEF : 'undef' ;

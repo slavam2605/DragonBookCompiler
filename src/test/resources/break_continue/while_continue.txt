@@ -1,0 +1,9 @@
+int i; i = 0;
+int sum; sum = 0;
+while (i < 6) {
+    i = i + 1;
+    if ((i % 2) == 0) continue;
+    sum = sum + i;
+}
+int result = sum
+assertEquals(result, 9)

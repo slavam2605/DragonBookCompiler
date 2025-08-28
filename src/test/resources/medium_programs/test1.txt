@@ -1,0 +1,29 @@
+bool t = true;
+bool f = false;
+int a = 1;
+int b = 2;
+int x;
+if (t) {
+    x = a + b;
+} else {
+    x = 0;
+}
+int y;
+if (f) {
+    y = 100;
+} else {
+    y = x * 2;
+}
+bool g = (a < b) && t;
+bool h = f || (a > b);
+assertStaticEquals(g, true);
+assertStaticEquals(h, false);
+assertStaticEquals(x, 3);
+assertStaticEquals(y, 6);
+int i = 0;
+int s = 0;
+while (i < 3) {
+    s = s + i;
+    i = i + 1;
+}
+assertEquals(s, 3);

@@ -1,0 +1,44 @@
+// #allow_undef
+
+bool p = undef;
+bool q = undef;
+
+bool alwaysTrue = p || true;
+bool alwaysFalse = q && false;
+assertStaticEquals(alwaysTrue, true);
+assertStaticEquals(alwaysFalse, false);
+
+bool unknown1 = !p;
+assertStaticUnknown(unknown1);
+
+int z;
+if (p) {
+    z = 5;
+} else {
+    z = 5;
+}
+assertStaticEquals(z, 5);
+
+int w;
+if (false) {
+    w = 1;
+} else {
+    if (true) {
+        w = 2;
+    } else {
+        w = 3;
+    }
+}
+assertStaticEquals(w, 2);
+
+int i = 0;
+int acc = 0;
+while (i < 4) {
+    if ((i % 2) == 0) {
+        acc = acc + i;
+        i = i + 1;
+        continue;
+    }
+    i = i + 1;
+}
+assertEquals(acc, 2);

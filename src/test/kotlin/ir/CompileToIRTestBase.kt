@@ -27,25 +27,25 @@ abstract class CompileToIRTestBase {
     protected open val excludeModes: Set<TestMode> = emptySet()
     protected open val ignoreInterpretedValues: Boolean = false
 
-    protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
+    protected fun compileAndRun(mode: TestMode, input: String, simulateUndef: Boolean): Map<IRVar, Long> {
         when (mode) {
             TestMode.IR -> {
                 val (ir, _) = compileToIR(input).also { (ir, _) ->
                     if (PRINT_DEBUG_INFO) ir.print()
                 }
-                return ProtoIRInterpreter(ir, TestFunctionHandler).eval()
+                return ProtoIRInterpreter(ir, TestFunctionHandler, simulateUndef = simulateUndef).eval()
             }
             TestMode.CFG -> {
                 val cfg = compileToCFG(input).also {
                     if (PRINT_DEBUG_INFO) it.print()
                 }
-                return CFGInterpreter(cfg, TestFunctionHandler).eval()
+                return CFGInterpreter(cfg, TestFunctionHandler, simulateUndef = simulateUndef).eval()
             }
             TestMode.SSA -> {
                 val ssa = compileToSSA(input).also {
                     if (PRINT_DEBUG_INFO) it.print()
                 }
-                return CFGInterpreter(ssa, TestFunctionHandler).eval()
+                return CFGInterpreter(ssa, TestFunctionHandler, simulateUndef = simulateUndef).eval()
             }
             TestMode.OPTIMIZED_SSA -> {
                 val (unoptimizedSSA, optimizedSSA, cpValues, equalities) = compileToOptimizedSSA(input)
@@ -56,7 +56,7 @@ abstract class CompileToIRTestBase {
                     return cpValues
                 }
 
-                return CFGInterpreter(optimizedSSA, TestFunctionHandler).eval()
+                return CFGInterpreter(optimizedSSA, TestFunctionHandler, simulateUndef = simulateUndef).eval()
                     .withValues(cpValues, equalities)
             }
         }
@@ -69,7 +69,7 @@ abstract class CompileToIRTestBase {
             result[irVar] = value
         }
         equalities.forEach { (irVar, otherVar) ->
-            check(irVar !in result)
+            check(irVar !in result || result[irVar] == result[otherVar])
             result[irVar] = result[otherVar] ?: return@forEach
         }
         return result.toMap()
@@ -79,7 +79,7 @@ abstract class CompileToIRTestBase {
         entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
     protected fun compileAndGet(mode: TestMode, input: String, varName: String): Long? =
-        compileAndRun(mode, input).getVariable(varName)
+        compileAndRun(mode, input, simulateUndef = false).getVariable(varName)
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
         file.readText().let {

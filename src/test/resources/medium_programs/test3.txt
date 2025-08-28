@@ -1,0 +1,30 @@
+int prod = 1;
+for (int i = 1; i <= 5; i = i + 1) {
+    prod = prod * i;
+}
+assertEquals(prod, 120);
+
+int sum = 0;
+for (int j = 0; j < 10; j = j + 1) {
+    if ((j % 3) == 0) {
+        continue;
+    }
+    if (j == 8) {
+        break;
+    }
+    sum = sum + j;
+}
+assertEquals(sum, 19);
+
+int c = (1 + 2) * (3 + 4);
+assertStaticEquals(c, 21);
+
+bool t = true;
+bool f = false;
+int k;
+if (t && !f) {
+    k = 7;
+} else {
+    k = 0;
+}
+assertStaticEquals(k, 7);

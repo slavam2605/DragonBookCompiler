@@ -1,0 +1,27 @@
+// #allow_undef
+
+bool b = undef;
+while (true) {
+    if (b) break;
+    b = true;
+}
+assertStaticEquals(b, true);
+
+int i = 0;
+int sum = 0;
+while (i < 10) {
+    i = i + 1;
+    if ((i % 2) == 1) {
+        continue;
+    }
+    sum = sum + i;
+}
+assertEquals(sum, 30);
+
+bool u1 = b || false;
+bool u2 = b && true;
+assertStaticEquals(u1, true);
+assertStaticEquals(u2, true);
+
+bool unk = !undef;
+assertStaticUnknown(unk);

@@ -1,0 +1,30 @@
+int outer = 0;
+int innerSum = 0;
+int i = 0;
+while (i < 4) {
+    int j = 0;
+    while (j < 4) {
+        if (j == i) {
+            j = j + 1;
+            continue;
+        }
+        innerSum = innerSum + (i + j);
+        if ((i + j) >= 5) {
+            break;
+        }
+        j = j + 1;
+    }
+    outer = outer + 1;
+    i = i + 1;
+}
+assertEquals(outer, 4);
+assertEquals(innerSum, 36);
+
+bool c1 = true || (1 == 0);
+bool c2 = false && (1 == 1);
+assertStaticEquals(c1, true);
+assertStaticEquals(c2, false);
+
+int keep = 42;
+while (false) { keep = 0; }
+assertStaticEquals(keep, 42);

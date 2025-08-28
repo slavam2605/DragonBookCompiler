@@ -34,10 +34,15 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                     ExpectedError(line.toInt(), col.toInt(), message)
                 }
             }
+            val directiveRegex = "// *#([a-zA-Z_0-9]+)".toRegex()
+            val directives = testProgram.lines().mapNotNull { line ->
+                directiveRegex.find(line)?.let { it.groupValues[1] }
+            }
+            val allowUndef = "allow_undef" in directives
 
             val visitedErrors = mutableSetOf<ExpectedError>()
             try {
-                val result = compileAndRun(mode, testProgram)
+                val result = compileAndRun(mode, testProgram, simulateUndef = allowUndef)
                 if (PRINT_DEBUG_INFO) {
                     println("\nResults:")
                     result.forEach { (varName, value) ->

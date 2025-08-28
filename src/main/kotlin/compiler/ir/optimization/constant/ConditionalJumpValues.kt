@@ -11,17 +11,21 @@ import compiler.ir.cfg.ssa.SSAControlFlowGraph
  */
 class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
     fun run(): SSAControlFlowGraph {
+        val allTop = cfg.blocks.flatMap { (_, block) ->
+            block.irNodes.flatMap { it.rvalues().filterIsInstance<IRVar>() }
+        }.toSet().associateWith { SSCPValue.Top as SSCPValue }
+
         val dfa = DataFlowFramework(
             cfg = cfg,
             direction = DataFlowFramework.Direction.FORWARD,
-            identity = emptyMap(),
+            identity = allTop,
             meet = { acc, a ->
                 (acc.keys + a.keys).associateWith {
-                    (acc[it] ?: SSCPValue.Top) * (a[it] ?: SSCPValue.Bottom)
+                    acc[it]!! * (a[it] ?: SSCPValue.Bottom)
                 }
             },
             modifyEdgeValue = ::modifyOutEdge,
-            initialOut = { _ -> emptyMap() },
+            initialOut = { _ -> allTop },
             transfer = { label, inMap ->
                 val outMap = inMap.toMutableMap()
                 cfg.blocks[label]!!.irNodes.forEach { node ->

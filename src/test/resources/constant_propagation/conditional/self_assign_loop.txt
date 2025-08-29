@@ -1,0 +1,8 @@
+int x = undef
+int t = x
+
+while (x < 10) {
+    x = x
+}
+
+assertStaticEquals(x, t)

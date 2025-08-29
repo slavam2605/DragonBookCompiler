@@ -58,7 +58,7 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                 }
             } catch (e: CompilationFailed) {
                 e.exceptions.forEach { exception ->
-                    val ctx = exception.location ?: error("Exceptions without location are not supported")
+                    val ctx = exception.location ?: throw RuntimeException("Exceptions without location are not supported", exception)
                     val expectedError = expectedErrors.find {
                         it.line == ctx.line && it.col == ctx.start && it.message == exception.message
                     }

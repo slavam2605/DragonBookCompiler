@@ -18,6 +18,7 @@ statement
     | continueStatement end
     | ifStatement
     | whileStatement
+    | doWhileStatement
     | forStatement
     | block
     ;
@@ -53,6 +54,10 @@ ifStatement
 
 whileStatement
     : WHILE LPAR expression RPAR statement
+    ;
+
+doWhileStatement
+    : DO statement WHILE LPAR expression RPAR end
     ;
 
 forStatement

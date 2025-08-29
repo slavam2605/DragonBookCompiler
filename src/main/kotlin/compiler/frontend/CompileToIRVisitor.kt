@@ -142,6 +142,25 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return null
     }
 
+    override fun visitDoWhileStatement(ctx: MainGrammar.DoWhileStatementContext): Nothing? {
+        val labelBody = IRLabel(labelAllocator.newName())
+        val labelCheck = IRLabel(labelAllocator.newName())
+        val labelAfter = IRLabel(labelAllocator.newName())
+
+        resultIR.add(labelBody)
+        withLoop(continueLabel = labelCheck, breakLabel = labelAfter) {
+            symbolTable.withScope {
+                visit(ctx.statement())
+            }
+        }
+
+        resultIR.add(labelCheck)
+        val condVar = visit(ctx.expression())
+        resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
+        resultIR.add(labelAfter)
+        return null
+    }
+
     override fun visitForStatement(ctx: MainGrammar.ForStatementContext): Nothing? {
         // Push scope for the entire for loop (including init)
         symbolTable.withScope {

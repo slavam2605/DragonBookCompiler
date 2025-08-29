@@ -117,6 +117,16 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return null
     }
 
+    override fun visitDoWhileStatement(ctx: MainGrammar.DoWhileStatementContext): Nothing? {
+        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.BOOL)
+        withLoopLevel {
+            symbolTable.withScope {
+                visit(ctx.statement())
+            }
+        }
+        return null
+    }
+
     override fun visitForStatement(ctx: MainGrammar.ForStatementContext): Nothing? {
         symbolTable.withScope {
             (ctx.initAssign ?: ctx.initDecl)?.let { visit(it) }

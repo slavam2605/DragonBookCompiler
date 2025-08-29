@@ -1,8 +1,11 @@
 package compiler.ir
 
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.utils.toGraphviz
 import kotlin.collections.component1
 import kotlin.collections.component2
+
+private const val USE_GRAPHVIZ = false
 
 fun IRLabel.printToString(): String = name
 
@@ -44,6 +47,10 @@ fun List<IRProtoNode>.print() {
 }
 
 fun ControlFlowGraph.print() {
+    if (USE_GRAPHVIZ) {
+        return println(toGraphviz())
+    }
+
     println("${root.printToString()}:")
     blocks[root]!!.irNodes.forEach {
         println("\t${it.printToString()}")

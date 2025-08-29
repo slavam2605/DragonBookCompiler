@@ -1,0 +1,11 @@
+// #allow_undef
+
+int i = 0
+int acc = 0
+while (i < 3) {
+    acc = acc + 1
+    i = i + 1
+}
+int result = acc
+// TODO: assertStaticEquals(result, 3)
+assertStaticUnknown(result)

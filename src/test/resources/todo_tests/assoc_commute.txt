@@ -1,0 +1,7 @@
+// #allow_undef
+int a = undef
+int b = undef
+int c = undef
+
+// TODO: assertStaticEquals((a + (b + c)) == ((c + a) + b), true)
+assertStaticUnknown((a + (b + c)) == ((c + a) + b))

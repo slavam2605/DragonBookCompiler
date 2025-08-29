@@ -91,31 +91,24 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
     private fun mergePhiSources(node: IRNode, label: IRLabel, dfa: DataFlowFramework<Map<IRVar, SSCPValue>>): IRNode {
         if (node !is IRPhi) return node
         val sourceVars = node.sources.mapNotNull { it.value as? IRVar }.distinct()
-        if (sourceVars.size > 1) return node
+        if (sourceVars.size != 1) return node
 
-        val inEdgeValues = cfg.backEdges(label).associateWith { from ->
-            modifyOutEdge(from, label, dfa.outValues[from]!!)
-        }
-
-        val allVars = if (sourceVars.isEmpty()) {
-            inEdgeValues.values.map { it.keys }.reduce { acc, vars -> acc.union(vars) }
-            error("Slow branch: this assertion notifies about this case")
-        } else {
-            setOf(sourceVars.single())
-        }
-
-        loop@ for (irVar in allVars) {
-            node.sources.forEach { source ->
-                val thisValue = (source.value as? IRInt)?.value
-                val fromValue = (inEdgeValues[source.from]!![irVar] as? SSCPValue.Value)?.value
-                if (source.value != irVar && (thisValue == null || thisValue != fromValue)) {
-                    continue@loop
-                }
+        val irVar = sourceVars.single()
+        node.sources.forEach { source ->
+            if (source.value == irVar) {
+                return@forEach // success, check next source
             }
-            return IRAssign(node.lvalue, irVar)
-        }
 
-        return node
+            val thisValue = (source.value as? IRInt)?.value
+                ?: return node // failure, source value must be IRInt or `irVar`
+
+            val edgeValues = modifyOutEdge(source.from, label, dfa.outValues[source.from]!!)
+            val fromValue = (edgeValues[irVar] as? SSCPValue.Value)?.value
+            if (thisValue != fromValue) {
+                return node // failure, constant value doesn't match
+            }
+        }
+        return IRAssign(node.lvalue, irVar)
     }
 
     private fun modifyOutEdge(from: IRLabel, to: IRLabel, outMap: Map<IRVar, SSCPValue>): Map<IRVar, SSCPValue> {

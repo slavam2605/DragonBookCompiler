@@ -1,7 +1,10 @@
 package ir
 
+import MainLexer
 import compiler.frontend.CompilationFailed
 import compiler.ir.printToString
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
@@ -52,6 +55,11 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                     }
                 }
             } catch (e: CompilationFailed) {
+                // Print
+                val lexer = MainLexer(CharStreams.fromString(testProgram))
+                val tokens = CommonTokenStream(lexer)
+                e.printErrors(tokens)
+
                 e.exceptions.forEach { exception ->
                     val ctx = exception.location ?: throw RuntimeException("Exceptions without location are not supported", exception)
                     val expectedError = expectedErrors.find {

@@ -43,7 +43,10 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
             val condVars = dfa.inValues[label]!!.toMutableMap()
             val transformedBlock = mutableListOf<IRNode>()
             block.irNodes.forEach { node ->
-                transformedBlock.add(node.transform(object : BaseIRTransformer() {
+                val newNode = mergePhiSources(node, label, dfa)
+                if (node !== newNode) cfgChanged = true
+
+                transformedBlock.add(newNode.transform(object : BaseIRTransformer() {
                     override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue {
                         if (value !is IRVar) return value
                         (condVars[value] as? SSCPValue.Value)?.let { sscpValue ->
@@ -71,6 +74,48 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
         }
         if (!cfgChanged) return cfg
         return SSAControlFlowGraph(cfg.root, newBlocks)
+    }
+
+    /**
+     * Tries to replace a phi-node with a single assignment by finding a variable
+     * that has the same value as the source values of the phi-node.
+     *
+     * Example:
+     * ```
+     *  L0: jump-if-true x L1 else L2
+     *  L1: y = phi(L3: x, L0: 1)
+     * ```
+     * In this case, value from `L3` is `x`, and value from `L0` is `1`.
+     * But `x == 1` along the edge `L0 -> L1`, so `y = phi(L3: x, L0: x)` => `y = x`.
+     */
+    private fun mergePhiSources(node: IRNode, label: IRLabel, dfa: DataFlowFramework<Map<IRVar, SSCPValue>>): IRNode {
+        if (node !is IRPhi) return node
+        val sourceVars = node.sources.mapNotNull { it.value as? IRVar }.distinct()
+        if (sourceVars.size > 1) return node
+
+        val inEdgeValues = cfg.backEdges(label).associateWith { from ->
+            modifyOutEdge(from, label, dfa.outValues[from]!!)
+        }
+
+        val allVars = if (sourceVars.isEmpty()) {
+            inEdgeValues.values.map { it.keys }.reduce { acc, vars -> acc.union(vars) }
+            error("Slow branch: this assertion notifies about this case")
+        } else {
+            setOf(sourceVars.single())
+        }
+
+        loop@ for (irVar in allVars) {
+            node.sources.forEach { source ->
+                val thisValue = (source.value as? IRInt)?.value
+                val fromValue = (inEdgeValues[source.from]!![irVar] as? SSCPValue.Value)?.value
+                if (source.value != irVar && (thisValue == null || thisValue != fromValue)) {
+                    continue@loop
+                }
+            }
+            return IRAssign(node.lvalue, irVar)
+        }
+
+        return node
     }
 
     private fun modifyOutEdge(from: IRLabel, to: IRLabel, outMap: Map<IRVar, SSCPValue>): Map<IRVar, SSCPValue> {

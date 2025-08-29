@@ -1,0 +1,11 @@
+bool p = undef
+bool q = undef
+
+assertStaticEquals((p && !p) == false, true)
+assertStaticEquals((p || !p) == true, true)
+assertStaticEquals((p == q) == (q == p), true)
+assertStaticEquals((p != q) == (q != p), true)
+assertStaticEquals((p && true) == p, true)
+assertStaticEquals((p || false) == p, true)
+assertStaticEquals((p && p) == p, true)
+assertStaticEquals((p || p) == p, true)

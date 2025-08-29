@@ -16,6 +16,7 @@ import compiler.ir.optimization.constant.SSCPValue
 import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.optimization.constant.ConditionalJumpValues
 import compiler.ir.optimization.constant.SparseConditionalConstantPropagation
+import compiler.ir.optimization.valueNumbering.GlobalValueNumbering
 import compiler.ir.printToString
 import ir.CompileToIRTestBase.Companion.PRINT_DEBUG_INFO
 import org.antlr.v4.runtime.CharStreams
@@ -79,11 +80,12 @@ object TestCompilationFlow {
                 it.run()
             }
             currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
-            currentStep = ConditionalJumpValues(currentStep).run()
+            currentStep = GlobalValueNumbering(currentStep).run()
             currentStep = EqualityPropagation(currentStep).let {
                 equalityList.add(it)
                 it.invoke()
             }
+            currentStep = ConditionalJumpValues(currentStep).run()
 
             changed = initialStep !== currentStep
         }

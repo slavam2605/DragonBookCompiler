@@ -188,8 +188,10 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return withNewVar { IRAssign(it, IRInt(0)).withLocation(ctx) }
     }
 
-    override fun visitUndefExpr(ctx: MainGrammar.UndefExprContext): IRValue {
-        return withNewVar { IRAssign(it, IRUndef).withLocation(ctx) }
+    override fun visitCallExpr(ctx: MainGrammar.CallExprContext): IRValue {
+        val call = ctx.functionCall()
+        val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
+        return withNewVar { IRFunctionCall(call.ID().text, it, arguments) }
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): IRValue {

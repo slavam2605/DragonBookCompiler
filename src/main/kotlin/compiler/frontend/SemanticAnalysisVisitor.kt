@@ -143,6 +143,12 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
 
     override fun visitUndefExpr(ctx: MainGrammar.UndefExprContext?): FrontendType {
         return FrontendType.NOTHING
+    override fun visitCallExpr(ctx: MainGrammar.CallExprContext): FrontendType {
+        // TODO resolve function name, check argument types
+        val call = ctx.functionCall()
+        val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
+        val functionName = call.ID().text
+        throw SyntaxErrorException(ctx.asLocation(), "Unknown function $functionName")
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {

@@ -75,6 +75,7 @@ expression
     | left=expression op=comparisonOp right=expression          # ComparisonExpr
     | left=expression AND right=expression                      # AndExpr
     | left=expression OR right=expression                       # OrExpr
+    | functionCall                                              # CallExpr
     | ID                                                        # IdExpr
     | INT_LITERAL                                               # IntExpr
     | TRUE                                                      # TrueExpr

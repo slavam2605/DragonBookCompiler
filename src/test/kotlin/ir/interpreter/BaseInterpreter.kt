@@ -4,8 +4,8 @@ import compiler.ir.*
 import kotlin.random.Random
 
 abstract class BaseInterpreter(
-    private val functionHandler: (String, List<Long>) -> Unit,
     private val simulateUndef: Boolean,
+    private val functionHandler: (String, List<Long>) -> Long,
     private val exitAfterMaxSteps: Boolean
 ) {
     protected val vars = mutableMapOf<IRVar, Long>()
@@ -64,9 +64,9 @@ abstract class BaseInterpreter(
                 vars[node.result] = if (value == 0L) 1 else 0
             }
             is IRFunctionCall -> {
-                check(node.result == null) { "Function calls with result are not supported" }
                 val arguments = node.arguments.map { getValue(it) }
-                functionHandler(node.name, arguments)
+                val result = functionHandler(node.name, arguments)
+                if (node.result != null) vars[node.result] = result
             }
             is IRJump -> return Command.Jump(node.target)
             is IRJumpIfTrue -> {
@@ -93,7 +93,7 @@ abstract class BaseInterpreter(
         private const val MAX_STEPS = 1_000_000
 
         @JvmStatic
-        protected val DEFAULT_FUNCTION_HANDLER: (String, List<Long>) -> Unit = { name, _ ->
+        protected val DEFAULT_FUNCTION_HANDLER: (String, List<Long>) -> Long = { name, _ ->
             error("Unknown function: $name")
         }
     }

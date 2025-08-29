@@ -133,14 +133,15 @@ abstract class CompileToIRTestBase {
         const val PRINT_DEBUG_INFO = false
 
         @JvmStatic
-        protected val TestFunctionHandler = { name: String, args: List<Long> ->
+        protected val TestFunctionHandler = handler@ { name: String, args: List<Long> ->
             when (name) {
                 "assertEquals", "assertStaticEquals" -> {
-                    assertEquals(args[0], args[1], "Wrong values in assertEquals")
+                    assertEquals(args[1], args[0], "Wrong values in assertEquals")
                 }
                 "assertStaticUnknown" -> { /* ignore on runtime */ }
                 else -> error("Unknown function: $name")
             }
+            0L // default return value
         }
 
         private fun checkStaticallyEvaluatedValues(
@@ -180,7 +181,7 @@ abstract class CompileToIRTestBase {
                 cfg = unoptimized,
                 simulateUndef = true,
                 exitAfterMaxSteps = true,
-                functionHandler = { _, _ -> /* ignore assertions, they are checked statically */ }
+                functionHandler = { _, _ -> 0L /* ignore assertions, they are checked statically */ }
             ).eval()
             (cpValues.keys.intersect(expected.keys)).forEach {
                 assertEquals(expected[it], cpValues[it],

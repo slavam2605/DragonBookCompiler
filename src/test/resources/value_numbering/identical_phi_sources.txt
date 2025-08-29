@@ -1,0 +1,10 @@
+// #allow_undef
+
+int a = undef
+int b = undef
+int x = a + b
+
+bool c = undef
+int v
+if (c) { v = x; } else { v = x; }
+assertStaticEquals(v == x, true)

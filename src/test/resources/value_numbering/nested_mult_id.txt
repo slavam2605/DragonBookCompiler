@@ -1,0 +1,9 @@
+// #allow_undef
+
+int a = undef
+int b = undef
+int t1 = (a * 0) + b
+assertStaticEquals(t1 == b, true)
+
+int t2 = (1 * a) + (b * 0)
+assertStaticEquals(t2 == a, true)

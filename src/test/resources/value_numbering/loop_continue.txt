@@ -1,0 +1,11 @@
+int i = 0
+int s = 0
+while (i < 5) {
+    if (i % 2 == 0) { i = i + 1; continue; }
+    int t1 = i + 2
+    int t2 = 2 + i
+    assertStaticEquals(t1 == t2, true)
+    s = s + (t1 - t2)
+    i = i + 1
+}
+assertEquals(s, 0)

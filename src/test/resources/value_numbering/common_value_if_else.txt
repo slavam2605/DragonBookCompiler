@@ -1,0 +1,11 @@
+// #allow_undef
+int y = undef
+int z = undef
+bool c = undef
+
+if (c) {
+    int x = y + z
+} else {
+    int t = y + z
+}
+int u = y + z

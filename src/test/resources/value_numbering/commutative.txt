@@ -1,0 +1,7 @@
+// #allow_undef
+
+int a = undef
+int b = undef
+if (a + b == 10) {
+    assertStaticEquals(b + a == 10, true)
+}

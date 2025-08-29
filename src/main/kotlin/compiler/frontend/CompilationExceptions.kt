@@ -27,8 +27,22 @@ abstract class CompilationException(val location: SourceLocation?, message: Stri
 
 class SyntaxErrorException(location: SourceLocation, message: String) : CompilationException(location, message)
 
-class MismatchedTypeException(location: SourceLocation, expectedType: FrontendType, actualType: FrontendType)
-    : CompilationException(location, "Expected type '$expectedType', got '$actualType'")
+class MismatchedTypeException(location: SourceLocation, expectedTypes: List<FrontendType>, actualType: FrontendType)
+    : CompilationException(location, getErrorMessage(expectedTypes, actualType)) {
+
+    constructor(location: SourceLocation, expectedType: FrontendType, actualType: FrontendType)
+            : this(location, listOf(expectedType), actualType)
+
+    companion object {
+        private fun getErrorMessage(expectedTypes: List<FrontendType>, actualType: FrontendType): String {
+            expectedTypes.singleOrNull()?.let { expectedType ->
+                return "Expected type '$expectedType', got '$actualType'"
+            }
+            val expectedTypesStr = expectedTypes.joinToString(separator = " or ") { "'$it'" }
+            return "Mismatched types: expected $expectedTypesStr, got $actualType"
+        }
+    }
+}
 
 class UndefinedVariableException(location: SourceLocation, name: String) : CompilationException(location, "Undefined variable '$name'")
 

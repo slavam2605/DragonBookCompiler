@@ -162,8 +162,18 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitComparisonExpr(ctx: MainGrammar.ComparisonExprContext): FrontendType {
-        visit(ctx.left).checkType(ctx.left, FrontendType.INT)
-        visit(ctx.right).checkType(ctx.right, FrontendType.INT)
+        val left = visit(ctx.left)
+        val right = visit(ctx.right)
+        when (left) {
+            FrontendType.INT -> right.checkType(ctx.right, FrontendType.INT)
+            FrontendType.BOOL if (ctx.op.text == "==" || ctx.op.text == "!=") ->
+                right.checkType(ctx.right, FrontendType.BOOL)
+            else -> throw MismatchedTypeException(
+                location = ctx.left.asLocation(),
+                expectedTypes = listOf(FrontendType.INT, FrontendType.BOOL),
+                actualType = left
+            )
+        }
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "<", ">", "<=", ">=", "==", "!=")
         return FrontendType.BOOL
     }

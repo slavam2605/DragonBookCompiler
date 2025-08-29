@@ -16,7 +16,10 @@ import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import kotlin.collections.component1
 import kotlin.collections.component2
 
-object FoldConstantJumps {
+/**
+ * Substitutes known constants to the CFG and folds jumps with constant conditions.
+ */
+object FoldConstantExpressions {
     fun run(cfg: SSAControlFlowGraph, cpValues: Map<IRVar, SSCPValue>): SSAControlFlowGraph {
         val removedJumps = mutableMapOf<IRLabel, MutableSet<IRLabel>>() // to -> setOf(from)
         val transformedJumps = mutableMapOf<IRJumpNode, IRJumpNode>()
@@ -46,19 +49,29 @@ object FoldConstantJumps {
         val newBlocks = cfg.blocks.mapValues { (currentLabel, block) ->
             block.transform(object : BaseIRTransformer() {
                 override fun transformNode(node: IRNode): IRNode? {
+                    // Remove assignments for known constants
                     node.lvalue?.let { lVar ->
                         if (cpValues[lVar] is SSCPValue.Value) {
                             changed = true
-                            // Remove assignments for known constants
                             return null
                         }
                     }
+
+                    // Simplify expressions, e.g. x + 0 => x
+                    ArithmeticRules.simplifyNode(node)?.let {
+                        changed = true
+                        return it
+                    }
+
+                    // Replace transformed jumps
                     if (node is IRJumpNode) {
                         transformedJumps[node]?.let {
                             changed = true
                             return it
                         }
                     }
+
+                    // Fix phi-nodes after modifying jumps
                     if (node is IRPhi) {
                         val removedFromLabels = removedJumps[currentLabel] ?: emptySet()
                         if (removedFromLabels.isNotEmpty()) {
@@ -73,6 +86,7 @@ object FoldConstantJumps {
                             }
                         }
                     }
+
                     return node
                 }
 

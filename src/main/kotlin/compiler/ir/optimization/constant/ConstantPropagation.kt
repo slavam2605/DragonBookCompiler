@@ -51,6 +51,6 @@ class ConstantPropagation {
             }
         }
 
-        return FoldConstantJumps.run(cfg, values)
+        return FoldConstantExpressions.run(cfg, values)
     }
 }

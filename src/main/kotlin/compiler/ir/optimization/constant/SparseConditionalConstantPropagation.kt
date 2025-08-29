@@ -35,7 +35,7 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph)
             }
         }
 
-        return FoldConstantJumps.run(cfg, defValue)
+        return FoldConstantExpressions.run(cfg, defValue)
     }
 
     private fun handleCFGEdge(cfgEdge: CFGEdge) {

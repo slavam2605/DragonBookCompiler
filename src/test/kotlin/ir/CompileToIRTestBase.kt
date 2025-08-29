@@ -27,25 +27,25 @@ abstract class CompileToIRTestBase {
     protected open val excludeModes: Set<TestMode> = emptySet()
     protected open val ignoreInterpretedValues: Boolean = false
 
-    protected fun compileAndRun(mode: TestMode, input: String, simulateUndef: Boolean): Map<IRVar, Long> {
+    protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
         when (mode) {
             TestMode.IR -> {
                 val (ir, _) = compileToIR(input).also { (ir, _) ->
                     if (PRINT_DEBUG_INFO) ir.print()
                 }
-                return ProtoIRInterpreter(ir, TestFunctionHandler, simulateUndef = simulateUndef).eval()
+                return ProtoIRInterpreter(ir, TestFunctionHandler).eval()
             }
             TestMode.CFG -> {
                 val cfg = compileToCFG(input).also {
                     if (PRINT_DEBUG_INFO) it.print()
                 }
-                return CFGInterpreter(cfg, TestFunctionHandler, simulateUndef = simulateUndef).eval()
+                return CFGInterpreter(cfg, TestFunctionHandler).eval()
             }
             TestMode.SSA -> {
                 val ssa = compileToSSA(input).also {
                     if (PRINT_DEBUG_INFO) it.print()
                 }
-                return CFGInterpreter(ssa, TestFunctionHandler, simulateUndef = simulateUndef).eval()
+                return CFGInterpreter(ssa, TestFunctionHandler).eval()
             }
             TestMode.OPTIMIZED_SSA -> {
                 val (unoptimizedSSA, optimizedSSA, cpValues, equalities) = compileToOptimizedSSA(input)
@@ -56,7 +56,7 @@ abstract class CompileToIRTestBase {
                     return cpValues
                 }
 
-                return CFGInterpreter(optimizedSSA, TestFunctionHandler, simulateUndef = simulateUndef).eval()
+                return CFGInterpreter(optimizedSSA, TestFunctionHandler).eval()
                     .withValues(cpValues, equalities)
             }
         }
@@ -79,7 +79,7 @@ abstract class CompileToIRTestBase {
         entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
     protected fun compileAndGet(mode: TestMode, input: String, varName: String): Long? =
-        compileAndRun(mode, input, simulateUndef = false).getVariable(varName)
+        compileAndRun(mode, input).getVariable(varName)
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
         file.readText().let {
@@ -139,6 +139,7 @@ abstract class CompileToIRTestBase {
                     assertEquals(args[1], args[0], "Wrong values in assertEquals")
                 }
                 "assertStaticUnknown" -> { /* ignore on runtime */ }
+                "undef" -> return@handler args[0]
                 else -> error("Unknown function: $name")
             }
             0L // default return value
@@ -179,7 +180,6 @@ abstract class CompileToIRTestBase {
 
             val expected = CFGInterpreter(
                 cfg = unoptimized,
-                simulateUndef = true,
                 exitAfterMaxSteps = true,
                 functionHandler = { _, _ -> 0L /* ignore assertions, they are checked statically */ }
             ).eval()

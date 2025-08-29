@@ -10,7 +10,6 @@ import compiler.ir.IRJumpIfTrue
 import compiler.ir.IRNode
 import compiler.ir.IRNot
 import compiler.ir.IRPhi
-import compiler.ir.IRUndef
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 
@@ -33,7 +32,6 @@ fun IRNode.evaluateSafe(values: Map<IRVar, SSCPValue>): SSCPValue =
 fun IRValue.evaluateOneValue(varValue: (IRVar) -> SSCPValue?): SSCPValue = when (this) {
     is IRVar -> varValue(this) ?: SSCPValue.Top
     is IRInt -> SSCPValue.Value(value)
-    is IRUndef -> SSCPValue.Bottom
 }
 
 private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {

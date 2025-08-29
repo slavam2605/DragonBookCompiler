@@ -11,7 +11,6 @@ BREAK : 'break' ;
 CONTINUE : 'continue' ;
 TRUE : 'true' ;
 FALSE : 'false' ;
-UNDEF : 'undef' ;
 
 // Operators
 ASSIGN : '=' ;

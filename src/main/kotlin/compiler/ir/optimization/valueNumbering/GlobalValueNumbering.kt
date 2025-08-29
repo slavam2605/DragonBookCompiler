@@ -4,7 +4,6 @@ import compiler.ir.BaseIRTransformer
 import compiler.ir.IRAssign
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
-import compiler.ir.IRUndef
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.cfg.CFGBlock
@@ -57,8 +56,6 @@ class GlobalValueNumbering(private val cfg: SSAControlFlowGraph) {
             override fun transformNode(node: IRNode): IRNode {
                 val irVar = node.lvalue ?: return node
                 val rNumbers = node.rvalues().map { irValue ->
-                    // Each "undef" is a new value
-                    if (irValue is IRUndef) return@map nextNumber()
                     numberMap.get(irValue)
                         ?: nextNumber().also { numberMap.put(irValue, it) }
                 }

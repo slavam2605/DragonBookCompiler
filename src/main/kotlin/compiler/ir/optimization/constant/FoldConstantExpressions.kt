@@ -9,7 +9,6 @@ import compiler.ir.IRJumpNode
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRPhi
-import compiler.ir.IRUndef
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
@@ -30,7 +29,6 @@ object FoldConstantExpressions {
                 val constantCond = when (jumpNode.cond) {
                     is IRInt -> jumpNode.cond.value
                     is IRVar -> (cpValues[jumpNode.cond] as? SSCPValue.Value)?.value
-                    is IRUndef -> null
                 }
                 if (constantCond == null) {
                     return@forEach

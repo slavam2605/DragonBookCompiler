@@ -154,11 +154,14 @@ abstract class CompileToIRTestBase {
                     when (node.name) {
                         "assertStaticEquals" -> {
                             check(node.arguments.size == 2)
-                            check(node.arguments[1] is IRInt)
-                            val expected = node.arguments[1] as IRInt
+                            val expected = node.arguments[1]
                             val actual = node.arguments[0]
-                            assertTrue(actual is IRInt, "Expected ${actual.printToString()} to be statically known")
-                            assertEquals(expected.value, actual.value, "assertStaticEquals failed")
+                            if (expected is IRInt) {
+                                assertTrue(actual is IRInt, "Expected ${actual.printToString()} to be statically known")
+                                assertEquals(expected.value, actual.value, "assertStaticEquals failed")
+                            } else {
+                                assertEquals(expected, actual, "assertStaticEquals failed")
+                            }
                         }
                         "assertStaticUnknown" -> {
                             check(node.arguments.size == 1)

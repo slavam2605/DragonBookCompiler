@@ -1,7 +1,6 @@
-// #allow_undef
-int y = undef
-int z = undef
-bool c = undef
+int y = undef(0)
+int z = undef(0)
+bool c = undef(false)
 
 if (c) {
     int x = y + z

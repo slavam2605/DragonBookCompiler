@@ -1,7 +1,5 @@
-// #allow_undef
-
-bool p = undef;
-bool q = undef;
+bool p = undef(false);
+bool q = undef(false);
 
 bool alwaysTrue = p || true;
 bool alwaysFalse = q && false;

@@ -1,4 +1,4 @@
-int x = undef
+int x = undef(0)
 int t = x
 
 while (x < 10) {

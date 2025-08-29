@@ -1,6 +1,6 @@
 bool b = true
 while (b) {
-    b = undef
+    b = undef(false)
     if (b) {
         bool result = b; assertStaticEquals(result, 1)
     }

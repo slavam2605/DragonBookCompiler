@@ -1,5 +1,5 @@
-int x = undef
-bool y = undef
+int x = undef(0)
+bool y = undef(false)
 
 if (y) {
 
@@ -7,5 +7,5 @@ if (y) {
 
 }
 
-int result_x = undef; assertStaticUnknown(result_x)
-int result_y = undef; assertStaticUnknown(result_y)
+int result_x = x; assertStaticUnknown(result_x)
+bool result_y = y; assertStaticUnknown(result_y)

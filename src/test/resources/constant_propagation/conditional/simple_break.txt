@@ -1,4 +1,4 @@
-bool b = undef
+bool b = undef(false)
 while (true) {
     if (b) break
 }

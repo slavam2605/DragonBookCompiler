@@ -1,4 +1,4 @@
-bool b = undef
+bool b = undef(false)
 
 bool result1 = b; assertStaticUnknown(result1)
 if (b) {

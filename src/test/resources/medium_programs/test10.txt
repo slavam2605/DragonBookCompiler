@@ -1,5 +1,3 @@
-// #allow_undef
-
 for (; ; ) { break; }
 
 int n = 5;
@@ -10,11 +8,11 @@ while (n > 0) {
 }
 assertEquals(fact, 120);
 
-int x = undef;
+int x = undef(0);
 int y = x * 0;
 assertStaticEquals(y, 0);
 
-bool b1 = undef;
+bool b1 = undef(false);
 bool b2 = !b1;
 assertStaticUnknown(b2);
 

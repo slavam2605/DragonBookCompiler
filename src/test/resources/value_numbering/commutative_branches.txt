@@ -1,10 +1,8 @@
-// #allow_undef
-
-int y = undef
-int z = undef
+int y = undef(0)
+int z = undef(0)
 int x = y + z
 
-if (undef) {
+if (undef(false)) {
     int t = y + z
     assertStaticEquals(t == x, true)
 } else {

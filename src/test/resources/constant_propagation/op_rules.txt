@@ -1,5 +1,5 @@
-int a = undef;                   assertStaticUnknown(a)
-bool b = undef;                  assertStaticUnknown(b)
+int a = undef(0);                assertStaticUnknown(a)
+bool b = undef(false);           assertStaticUnknown(b)
 
 int result1 = a - a;             assertStaticEquals(result1, 0)
 int result2 = a % 1;             assertStaticEquals(result2, 0)

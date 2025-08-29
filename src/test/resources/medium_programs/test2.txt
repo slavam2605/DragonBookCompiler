@@ -1,6 +1,4 @@
-// #allow_undef
-
-bool b = undef;
+bool b = undef(false);
 while (true) {
     if (b) break;
     b = true;
@@ -23,5 +21,5 @@ bool u2 = b && true;
 assertStaticEquals(u1, true);
 assertStaticEquals(u2, true);
 
-bool unk = !undef;
+bool unk = !undef(false);
 assertStaticUnknown(unk);

@@ -1,6 +1,4 @@
-// #allow_undef
-
-bool b = undef
+bool b = undef(false)
 if (!b) {
     // TODO: assertStaticEquals(b, false)
     assertStaticUnknown(b)

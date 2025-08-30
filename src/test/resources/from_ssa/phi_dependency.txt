@@ -1,0 +1,11 @@
+int x = undef(0)
+int y = undef(0)
+int z = undef(0)
+while (z < 10) {
+    x = y
+    y = y + 1
+    z = z + 1
+}
+
+assertEquals(x, 9)
+assertEquals(y, 10)

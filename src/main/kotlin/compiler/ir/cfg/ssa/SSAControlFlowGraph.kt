@@ -79,7 +79,15 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
         }
 
         private fun getGlobals(cfg: ControlFlowGraph): Pair<Set<IRVar>, Map<IRVar, Set<IRLabel>>> {
-            val globals = mutableSetOf<IRVar>()
+            // `hashSetOf` is used here instead of `mutableSetOf` for the only reason:
+            // to make the `phi_dependency.txt` test meaningful. `mutableSetOf` created
+            // a linked hash set, which retains the order of additions. `globals` map is created
+            // in order of rvalues in blocks, which always places modified variables' phi-nodes
+            // *after* they are used, making writing a phi-dependency test hard.
+            // That's why `hashSetOf` is used here because it is ordered based on some
+            // internal logic, such as hash code of `IRVar` instances.
+            val globals = hashSetOf<IRVar>()
+
             val blocksMap = mutableMapOf<IRVar, MutableSet<IRLabel>>()
             cfg.blocks.forEach { (label, block) ->
                 val varKill = mutableSetOf<IRVar>()

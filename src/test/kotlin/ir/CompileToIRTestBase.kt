@@ -3,6 +3,7 @@ package ir
 import compiler.ir.IRFunctionCall
 import compiler.ir.IRInt
 import compiler.ir.IRVar
+import compiler.ir.cfg.ssa.ConvertFromSSA
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.print
 import compiler.ir.printToString
@@ -21,7 +22,7 @@ import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
     protected enum class TestMode {
-        IR, CFG, SSA, OPTIMIZED_SSA
+        IR, CFG, SSA, OPTIMIZED_SSA, OPTIMIZED_NON_SSA
     }
 
     protected open val excludeModes: Set<TestMode> = emptySet()
@@ -57,6 +58,19 @@ abstract class CompileToIRTestBase {
                 }
 
                 return CFGInterpreter(optimizedSSA, TestFunctionHandler).eval()
+                    .withValues(cpValues, equalities)
+            }
+            TestMode.OPTIMIZED_NON_SSA -> {
+                val (_, ssa, cpValues, equalities) = compileToOptimizedSSA(input)
+                val nonSSA = ConvertFromSSA(ssa).run().also {
+                    if (PRINT_DEBUG_INFO) it.print()
+                }
+
+                if (ignoreInterpretedValues) {
+                    return cpValues
+                }
+
+                return CFGInterpreter(nonSSA, TestFunctionHandler).eval()
                     .withValues(cpValues, equalities)
             }
         }

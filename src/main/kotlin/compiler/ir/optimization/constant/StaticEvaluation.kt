@@ -24,11 +24,6 @@ fun IRNode.evaluateSafe(rValues: List<SSCPValue>): SSCPValue {
     }
 }
 
-fun IRNode.evaluateSafe(values: Map<IRVar, SSCPValue>): SSCPValue =
-    evaluateSafe(rValues = rvalues().map {
-        it.evaluateOneValue { irVar -> values[irVar] }
-    })
-
 fun IRValue.evaluateOneValue(varValue: (IRVar) -> SSCPValue?): SSCPValue = when (this) {
     is IRVar -> varValue(this) ?: SSCPValue.Top
     is IRInt -> SSCPValue.Value(value)

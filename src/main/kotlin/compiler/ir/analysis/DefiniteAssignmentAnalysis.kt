@@ -32,7 +32,7 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
                 }
                 outSet
             },
-            boundaryIn = { emptySet() },
+            boundaryIn = { if (it == cfg.root) emptySet() else null },
             initialOut = { label ->
                 if (label == cfg.root) emptySet() else allVars
             }

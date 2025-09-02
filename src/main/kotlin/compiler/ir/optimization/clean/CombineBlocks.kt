@@ -8,6 +8,7 @@ import compiler.ir.IRPhi
 import compiler.ir.IRSource
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.utils.phiNodes
 
 class CombineBlocks(private val cfg: ControlFlowGraph) {
@@ -77,6 +78,10 @@ class CombineBlocks(private val cfg: ControlFlowGraph) {
                 }
             })
         }
-        return cfg.new(cfg.root, newBlocks)
+
+        val sourceMap = SourceLocationMap.extractMap(cfg) ?: SourceLocationMap.empty()
+        return cfg.new(cfg.root, newBlocks).apply {
+            SourceLocationMap.storeMap(sourceMap, this)
+        }
     }
 }

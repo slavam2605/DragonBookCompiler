@@ -32,18 +32,18 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return ctx.defaultVisitChildren()
     }
 
-    private fun IRNode.withLocation(ctx: ParserRuleContext): IRNode {
-        sourceMap[this] = ctx.asLocation()
+    private fun IRNode.withLocation(ctx: ParserRuleContext?): IRNode {
+        sourceMap[this] = ctx?.asLocation() ?: return this
         return this
     }
 
-    private fun IRNode.withLocation(ctx: TerminalNode): IRNode {
-        sourceMap[this] = ctx.asLocation()
+    private fun IRNode.withLocation(ctx: TerminalNode?): IRNode {
+        sourceMap[this] = ctx?.asLocation() ?: return this
         return this
     }
 
-    private fun IRNode.withLocation(ctx: Token): IRNode {
-        sourceMap[this] = ctx.asLocation()
+    private fun IRNode.withLocation(ctx: Token?): IRNode {
+        sourceMap[this] = ctx?.asLocation() ?: return this
         return this
     }
 
@@ -76,7 +76,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
         val arguments = ctx.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
-        resultIR.add(IRFunctionCall(ctx.ID().text, null, arguments))
+        resultIR.add(IRFunctionCall(ctx.ID().text, null, arguments).withLocation(ctx))
         return null
     }
 
@@ -108,7 +108,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         val labelFalse = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
         val condVar = visit(ctx.expression())
-        resultIR.add(IRJumpIfTrue(condVar, labelTrue, labelFalse))
+        resultIR.add(IRJumpIfTrue(condVar, labelTrue, labelFalse).withLocation(ctx.expression()))
 
         resultIR.add(labelTrue)
         symbolTable.withScope {
@@ -134,7 +134,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         val labelAfter = IRLabel(labelAllocator.newName())
         resultIR.add(labelStart)
         val condVar = visit(ctx.expression())
-        resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
+        resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter).withLocation(ctx.expression()))
         
         // Loop body with its own scope
         resultIR.add(labelBody)
@@ -163,7 +163,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
         resultIR.add(labelCheck)
         val condVar = visit(ctx.expression())
-        resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
+        resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter).withLocation(ctx.expression()))
         resultIR.add(labelAfter)
         return null
     }
@@ -179,7 +179,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             val labelInc = IRLabel(labelAllocator.newName())
             resultIR.add(labelStart)
             val condVar = ctx.cond?.let { visit(it) } ?: IRInt(1)
-            resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter))
+            resultIR.add(IRJumpIfTrue(condVar, labelBody, labelAfter).withLocation(ctx.cond))
 
             // Push another scope for the loop body
             resultIR.add(labelBody)
@@ -217,7 +217,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     override fun visitCallExpr(ctx: MainGrammar.CallExprContext): IRValue {
         val call = ctx.functionCall()
         val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
-        return withNewVar { IRFunctionCall(call.ID().text, it, arguments) }
+        return withNewVar { IRFunctionCall(call.ID().text, it, arguments).withLocation(ctx) }
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): IRValue {

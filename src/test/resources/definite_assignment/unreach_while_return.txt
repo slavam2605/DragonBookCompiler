@@ -1,0 +1,6 @@
+int x
+int y
+while (undef(true)) {
+    return false
+    y = x
+}

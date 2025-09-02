@@ -1,0 +1,10 @@
+while (undef(false)) {
+    return
+    assertStaticUnreachable()
+}
+if (undef(false)) {
+    return
+    assertStaticUnreachable()
+}
+return
+assertStaticUnreachable()

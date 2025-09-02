@@ -1,0 +1,3 @@
+int x
+foo(x)
+// error: 2:0 "Variable 'x' is used before being initialized"

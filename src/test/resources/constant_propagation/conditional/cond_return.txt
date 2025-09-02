@@ -1,0 +1,5 @@
+bool b = undef(false)
+if (b) {
+    return
+}
+assertStaticEquals(b, false)

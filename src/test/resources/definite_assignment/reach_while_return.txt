@@ -1,0 +1,8 @@
+int x
+int y
+while (undef(true)) {
+    return
+    y = x
+}
+y = x
+// error: 7:0 "Variable 'x' is used before being initialized"

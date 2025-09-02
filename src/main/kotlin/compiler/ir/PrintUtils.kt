@@ -39,6 +39,7 @@ fun IRProtoNode.printToString(): String = when (this) {
     is IRFunctionCall -> (if (result != null) "${result.printToString()} = " else "") + "$name(${arguments.joinToString(", ") { it.printToString() }})"
     is IRJump -> "jump ${target.printToString()}"
     is IRJumpIfTrue -> "jump-if-true ${cond.printToString()} ${target.printToString()} else ${elseTarget.printToString()}"
+    is IRReturn -> "return${if (value != null) " ${value.printToString()}" else ""}"
 }
 
 fun List<IRProtoNode>.print() {

@@ -67,6 +67,13 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return null
     }
 
+    override fun visitReturnStatement(ctx: MainGrammar.ReturnStatementContext): Nothing? {
+        val value = ctx.expression()?.let { visit(it) }
+        resultIR.add(IRReturn(value).withLocation(ctx))
+        resultIR.add(IRLabel(labelAllocator.newName()))
+        return null
+    }
+
     override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
         val arguments = ctx.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
         resultIR.add(IRFunctionCall(ctx.ID().text, null, arguments))

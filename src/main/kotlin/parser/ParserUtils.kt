@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.TokenStream
 
 object ParserUtils {
-    private val endTokens = setOf(MainLexer.RBRACE, MainLexer.ELSE)
+    private val endTokens = setOf(MainLexer.RBRACE, MainLexer.RPAR, MainLexer.ELSE)
 
     @JvmStatic
     fun isEndOfStatement(input: TokenStream): Boolean {
@@ -15,5 +15,12 @@ object ParserUtils {
             return true
         }
         return input.LA(1) in endTokens
+    }
+
+    @JvmStatic
+    fun noLineBreaks(input: TokenStream): Boolean {
+        check(input is BufferedTokenStream)
+        val lineBreaks = input.getHiddenTokensToLeft(input.index(), MainLexer.LINE_BREAK)
+        return lineBreaks?.isEmpty() ?: true
     }
 }

@@ -60,6 +60,7 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph)
                     is IRJump -> {
                         cfgWorklist.add(CFGEdge(cfgEdge.to, irNode.target))
                     }
+                    is IRReturn -> { /* ignore */ }
                 }
                 else if irNode.lvalue != null -> evaluateAssign(cfgEdge.to, irNode)
                 else -> { /* do nothing */ }
@@ -86,7 +87,7 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph)
             ssaUse.node.lvalue != null -> {
                 evaluateAssign(ssaUse.blockLabel, ssaUse.node)
             }
-            ssaUse.node is IRFunctionCall -> { /* do nothing */ }
+            ssaUse.node is IRFunctionCall || ssaUse.node is IRReturn -> { /* do nothing */ }
             else -> error("Unexpected IR node: ${ssaUse.node.printToString()}")
         }
     }

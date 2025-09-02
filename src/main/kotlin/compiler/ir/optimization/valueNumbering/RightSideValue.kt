@@ -14,6 +14,7 @@ data class RightSideValue private constructor(private val tag: RSVTag, private v
 
                 is IRJump,          // ignore nodes without a result
                 is IRJumpIfTrue,
+                is IRReturn,
                 is IRPhi,           // ignore nodes with an undefined result
                 is IRFunctionCall
                     -> return null

@@ -12,6 +12,7 @@ import compiler.ir.IRNot
 import compiler.ir.IRPhi
 import compiler.ir.IRValue
 import compiler.ir.IRVar
+import compiler.ir.IRReturn
 
 private val equalComparisonOps = setOf(IRBinOpKind.EQ, IRBinOpKind.GE, IRBinOpKind.LE)
 private val notEqualComparisonOps = setOf(IRBinOpKind.NEQ, IRBinOpKind.GT, IRBinOpKind.LT)
@@ -66,7 +67,7 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
             rValues.reduce(SSCPValue::times)
         }
         is IRFunctionCall -> SSCPValue.Bottom
-        is IRJump, is IRJumpIfTrue -> {
+        is IRJump, is IRJumpIfTrue, is IRReturn -> {
             error("Cannot evaluate node without lvalues: $this")
         }
     }

@@ -112,3 +112,12 @@ data class IRJump(val target: IRLabel) : IRJumpNode {
         transformer.transformLabel(target)
     )
 }
+
+data class IRReturn(val value: IRValue?) : IRJumpNode {
+    override val lvalue get() = null
+    override fun rvalues() = listOfNotNull(value)
+    override fun labels() = emptyList<IRLabel>()
+    override fun transform(transformer: IRTransformer): IRNode = IRReturn(
+        value?.let { transformer.transformRValue(this, 0, it) }
+    )
+}

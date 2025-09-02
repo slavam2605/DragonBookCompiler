@@ -9,6 +9,7 @@ FOR : 'for' ;
 WHILE : 'while' ;
 BREAK : 'break' ;
 CONTINUE : 'continue' ;
+RETURN : 'return' ;
 TRUE : 'true' ;
 FALSE : 'false' ;
 DO : 'do' ;

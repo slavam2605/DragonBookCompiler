@@ -16,6 +16,7 @@ statement
     | functionCall end
     | breakStatement end
     | continueStatement end
+    | returnStatement end
     | ifStatement
     | whileStatement
     | doWhileStatement
@@ -72,6 +73,10 @@ continueStatement
     : CONTINUE
     ;
 
+returnStatement
+    : RETURN (noLineBreaks expression)?
+    ;
+
 expression
     : LPAR expression RPAR                                      # ParenExpr
     | NOT expression                                            # NotExpr
@@ -97,3 +102,6 @@ end : SEMICOLON | EOF | isEndOfStatement ;
 
 // Synthetic rule that checks if there is a line break on a separate lexer channel or another end token
 isEndOfStatement : { ParserUtils.isEndOfStatement(_input) }? ;
+
+// Synthetic rule that checks that no line breaks were skipped between previous and current tokens
+noLineBreaks : { ParserUtils.noLineBreaks(_input) }? ;

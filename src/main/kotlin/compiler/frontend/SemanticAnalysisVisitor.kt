@@ -59,6 +59,13 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return null
     }
 
+    override fun visitReturnStatement(ctx: MainGrammar.ReturnStatementContext): Nothing? {
+        // For now, 'return' can appear anywhere and simply terminates execution.
+        // When functions are added, this should enforce placement and type rules.
+        ctx.expression()?.let { visit(it) }
+        return null
+    }
+
     override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
         // TODO resolve function name
         ctx.callArguments()?.expression()?.map { visit(it) }

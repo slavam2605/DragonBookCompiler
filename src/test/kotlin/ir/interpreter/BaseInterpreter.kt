@@ -65,6 +65,12 @@ abstract class BaseInterpreter(
                 val target = if (condition == 0L) node.elseTarget else node.target
                 return Command.Jump(target)
             }
+            is IRReturn -> {
+                node.value?.let {
+                    vars[ReturnValue] = getValue(it)
+                }
+                return Command.Exit
+            }
         }
         return Command.Continue
     }
@@ -87,5 +93,10 @@ abstract class BaseInterpreter(
         protected val DEFAULT_FUNCTION_HANDLER: (String, List<Long>) -> Long = { name, _ ->
             error("Unknown function: $name")
         }
+
+        /**
+         * Synthetic variable used to store the return value of a function.
+         */
+        val ReturnValue = IRVar($$"$return_value$", null)
     }
 }

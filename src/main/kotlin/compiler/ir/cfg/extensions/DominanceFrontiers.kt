@@ -3,7 +3,7 @@ package compiler.ir.cfg.extensions
 import compiler.ir.IRLabel
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.ExtensionKey
-import kotlin.collections.get
+import compiler.ir.cfg.utils.reachableFrom
 
 object DominanceFrontiers {
     private val Key = ExtensionKey<Map<IRLabel, Set<IRLabel>>>("DominanceFrontiers")
@@ -24,12 +24,14 @@ object DominanceFrontiers {
             if (predecessors.size < 2) return@forEach
             predecessors.forEach { pred ->
                 var runner: IRLabel? = pred
-                while (runner != iDom.iDom(label)) {
+                while (runner != null && runner != iDom.iDom(label)) {
                     frontiers[runner]!!.add(label)
                     runner = iDom.iDom(runner)
                 }
             }
         }
-        return frontiers
+
+        val reachable = cfg.reachableFrom(cfg.root)
+        return frontiers.filterKeys { it in reachable }
     }
 }

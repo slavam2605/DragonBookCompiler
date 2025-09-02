@@ -17,7 +17,7 @@ object CFGDominance {
         dom[cfg.root] = mutableSetOf(cfg.root)
         cfg.blocks.keys.forEach { label ->
             if (label == cfg.root) return@forEach
-            dom[label] = cfg.blocks.keys.toSet()
+            dom[label] = cfg.blocks.keys
         }
 
         var changed = true
@@ -26,7 +26,7 @@ object CFGDominance {
             ReversedPostOrderTraversal.traverse(cfg) { label, _ ->
                 val backEdges = cfg.backEdges(label)
                 val intersection = if (backEdges.isEmpty()) {
-                    emptySet()
+                    if (label == cfg.root) emptySet() else cfg.blocks.keys
                 } else {
                     backEdges.map { dom[it]!! }
                         .reduce { acc, set -> acc.intersect(set) }

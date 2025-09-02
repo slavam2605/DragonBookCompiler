@@ -9,6 +9,7 @@ import compiler.ir.cfg.extensions.CFGDominance
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.DominanceFrontiers
 import compiler.ir.cfg.extensions.DominatorTree
+import compiler.ir.cfg.utils.reachableFrom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -67,7 +68,8 @@ class CFGDominanceTest {
     // Slow implementation of DF which uses the definition of Dominance Frontier
     private fun correctReferenceDF(cfg: ControlFlowGraph): Map<String, Set<String>> {
         val dom = CFGDominance.get(cfg)
-        return cfg.blocks.mapValues { (label, _) ->
+        val reachable = cfg.reachableFrom(cfg.root)
+        return cfg.blocks.filterKeys { it in reachable }.mapValues { (label, _) ->
             cfg.blocks.keys.filter { otherLabel ->
                 // 1. `label` dominates at least one predecessor of `otherLabel`
                 cfg.backEdges(otherLabel).any { pred -> label in dom[pred]!! } &&
@@ -206,13 +208,12 @@ class CFGDominanceTest {
             ENTRY to setOf(ENTRY),
             A to setOf(ENTRY, A),
             B to setOf(ENTRY, A, B),
-            C to setOf(C),
-            D to setOf(C, D)
+            C to setOf(ENTRY, A, B, C, D),
+            D to setOf(ENTRY, A, B, C, D)
         ),
         mapOf(
             A to ENTRY,
-            B to A,
-            D to C
+            B to A
         )
     )
 

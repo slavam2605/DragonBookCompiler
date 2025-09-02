@@ -14,7 +14,8 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
 
     fun run() {
         val allVars = cfg.blocks.flatMap { (_, block) ->
-            block.irNodes.mapNotNull { node -> node.lvalue }
+            block.irNodes.mapNotNull { node -> node.lvalue } +
+                    block.irNodes.flatMap { node -> node.rvalues().filterIsInstance<IRVar>() }
         }.toSet()
 
         val dfa = DataFlowFramework(

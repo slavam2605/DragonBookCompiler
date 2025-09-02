@@ -3,6 +3,7 @@ package compiler.ir.cfg.extensions
 import compiler.ir.IRLabel
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.ExtensionKey
+import compiler.ir.cfg.utils.reachableFrom
 import kotlin.collections.get
 
 class DominatorTree(
@@ -30,10 +31,11 @@ class DominatorTree(
         private fun compute(cfg: ControlFlowGraph): DominatorTree {
             val iDom = mutableMapOf<IRLabel, IRLabel>()
             val dom = CFGDominance.get(cfg)
+            val reachable = cfg.reachableFrom(cfg.root)
             dom.forEach { (label, dominators) ->
                 val strictDominators = dominators - label
-                if (strictDominators.isEmpty()) {
-                    // root or an unreachable subgraph's root
+                if (label !in reachable || strictDominators.isEmpty()) {
+                    // cfg's entry (root) or unreachable block
                     return@forEach
                 }
 

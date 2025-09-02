@@ -7,7 +7,6 @@ import compiler.ir.IRNode
 import compiler.ir.IRProtoNode
 import compiler.ir.IRTransformer
 import compiler.ir.cfg.extensions.SourceLocationMap
-import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.printToString
 
 open class ControlFlowGraph(
@@ -102,7 +101,7 @@ open class ControlFlowGraph(
             val cfg = ControlFlowGraph(Root, nodes).apply {
                 SourceLocationMap.storeMap(sourceMap, this)
             }
-            return CleanCFG.invoke(cfg)
+            return cfg
         }
     }
 }

@@ -9,6 +9,7 @@ import compiler.ir.analysis.LiveVarAnalysis
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.DominanceFrontiers
+import compiler.ir.cfg.utils.reachableFrom
 
 /**
  * Special marker implementation of [compiler.ir.cfg.ControlFlowGraph] that guarantees that it is in SSA form.
@@ -52,14 +53,16 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
         ) {
             val df = DominanceFrontiers.get(cfg)
             val liveIn = LiveVarAnalysis(cfg).run().inValues
+            val reachable = cfg.reachableFrom(cfg.root)
             globals.forEach { globalVar ->
                 // If `block in scheduled`, then `block` already has `x = phi(...)`
                 // and `block` is in the work list now, or was already processed
                 val scheduled = mutableSetOf<IRLabel>()
 
-                val workList = blocksMap[globalVar]!!.toMutableList()
+                val workList = blocksMap[globalVar]?.toMutableList() ?: return@forEach
                 while (workList.isNotEmpty()) {
                     val currentLabel = workList.removeLast()
+                    if (currentLabel !in reachable) continue
                     df[currentLabel]!!.forEach { frontierLabel ->
                         if (frontierLabel in scheduled) {
                             return@forEach // `phi` already inserted, skip block

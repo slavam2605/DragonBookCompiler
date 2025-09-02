@@ -67,7 +67,9 @@ object TestCompilationFlow {
 
         val cpList = mutableListOf<SparseConditionalConstantPropagation>()
         val equalityList = mutableListOf<EqualityPropagation>()
-        var currentStep = ssa
+
+        // Initial clean pass to remove unreachable blocks
+        var currentStep = CleanCFG.invoke(ssa) as SSAControlFlowGraph
         var changed = true
         var stepIndex = 0
         while (changed) {

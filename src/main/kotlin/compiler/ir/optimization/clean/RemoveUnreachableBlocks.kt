@@ -2,6 +2,7 @@ package compiler.ir.optimization.clean
 
 import compiler.ir.IRLabel
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.utils.reachableFrom
 import compiler.ir.cfg.utils.transformLabels
 
 class RemoveUnreachableBlocks(private val cfg: ControlFlowGraph) {
@@ -13,17 +14,9 @@ class RemoveUnreachableBlocks(private val cfg: ControlFlowGraph) {
     }
 
     private fun buildRemovedBlocksList() {
-        val visited = mutableSetOf<IRLabel>()
-        val stack = mutableListOf(cfg.root)
-        while (stack.isNotEmpty()) {
-            val label = stack.removeLast()
-            if (label in visited) continue
-            visited.add(label)
-            cfg.edges(label).forEach { stack.add(it) }
-        }
-
+        val reachable = cfg.reachableFrom(cfg.root)
         removedBlocks.addAll(cfg.blocks.keys.filter {
-            it !in visited
+            it !in reachable
         })
     }
 }

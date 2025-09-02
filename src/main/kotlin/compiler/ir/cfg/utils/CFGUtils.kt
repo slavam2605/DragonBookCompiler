@@ -11,3 +11,18 @@ fun IRLabel.hasPhiNodes(cfg: ControlFlowGraph): Boolean {
 fun IRLabel.phiNodes(cfg: ControlFlowGraph): List<IRPhi> {
     return cfg.blocks[this]!!.irNodes.filterIsInstance<IRPhi>()
 }
+
+fun ControlFlowGraph.reachableFrom(start: IRLabel): Set<IRLabel> {
+    val visited = mutableSetOf<IRLabel>()
+    val queue = mutableListOf(start)
+    while (queue.isNotEmpty()) {
+        val label = queue.removeLast()
+        if (label in visited) {
+            continue
+        }
+
+        visited.add(label)
+        queue.addAll(edges(label))
+    }
+    return visited
+}

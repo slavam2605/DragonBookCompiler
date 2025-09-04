@@ -5,6 +5,7 @@ import compiler.ir.IRJumpNode
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRProtoNode
+import compiler.ir.IRReturn
 import compiler.ir.IRTransformer
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.printToString
@@ -96,7 +97,8 @@ open class ControlFlowGraph(
                     }
                 }
             }
-            // TODO add explicit "ret" here?
+            // TODO insert ret only for functions without returning type
+            currentBlock.add(IRReturn(null))
             nodes[currentLabel] = CFGBlock(currentBlock)
             val cfg = ControlFlowGraph(Root, nodes).apply {
                 SourceLocationMap.storeMap(sourceMap, this)

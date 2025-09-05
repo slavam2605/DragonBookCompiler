@@ -5,4 +5,4 @@ while (i <= n) {
     r = r * i
     i = i + 1
 }
-int result = r
+return r

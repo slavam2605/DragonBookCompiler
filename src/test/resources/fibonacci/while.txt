@@ -18,4 +18,4 @@ if (n == 0) {
     }
     r = prev
 }
-int result = r
+return r

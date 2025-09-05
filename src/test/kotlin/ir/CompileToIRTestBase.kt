@@ -1,5 +1,7 @@
 package ir
 
+import TestResources
+import backend.NativeArm64TestCompilationFlow
 import compiler.ir.IRFunctionCall
 import compiler.ir.IRInt
 import compiler.ir.IRVar
@@ -11,6 +13,7 @@ import ir.TestCompilationFlow.compileToCFG
 import ir.TestCompilationFlow.compileToIR
 import ir.TestCompilationFlow.compileToOptimizedSSA
 import ir.TestCompilationFlow.compileToSSA
+import ir.interpreter.BaseInterpreter.Companion.ReturnValue
 import ir.interpreter.CFGInterpreter
 import ir.interpreter.ProtoIRInterpreter
 import org.junit.jupiter.api.DynamicContainer
@@ -22,7 +25,7 @@ import kotlin.test.assertTrue
 
 abstract class CompileToIRTestBase {
     protected enum class TestMode {
-        IR, CFG, SSA, OPTIMIZED_SSA, OPTIMIZED_NON_SSA
+        IR, CFG, SSA, OPTIMIZED_SSA, OPTIMIZED_NON_SSA, NATIVE_ARM64
     }
 
     protected open val excludeModes: Set<TestMode> = emptySet()
@@ -73,6 +76,11 @@ abstract class CompileToIRTestBase {
                 return CFGInterpreter(nonSSA, TestFunctionHandler).eval()
                     .withValues(cpValues, equalities)
             }
+            TestMode.NATIVE_ARM64 -> {
+                val optimizedCFG = ConvertFromSSA(compileToOptimizedSSA(input).optimizedSSA).run()
+                val output = NativeArm64TestCompilationFlow.compileAndRun(optimizedCFG)
+                return mapOf(ReturnValue to output.toLong())
+            }
         }
     }
 
@@ -92,8 +100,8 @@ abstract class CompileToIRTestBase {
     protected fun Map<IRVar, Long>.getVariable(varName: String) =
         entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
-    protected fun compileAndGet(mode: TestMode, input: String, varName: String): Long? =
-        compileAndRun(mode, input).getVariable(varName)
+    protected fun compileAndGetResult(mode: TestMode, input: String): Long? =
+        compileAndRun(mode, input)[ReturnValue]
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
         file.readText().let {
@@ -103,13 +111,7 @@ abstract class CompileToIRTestBase {
         }
 
     private fun listResourceFiles(path: String): List<File> {
-        val url = javaClass.getResource(path) ?: error("Resource not found: $path")
-        return when (url.protocol) {
-            "file" -> {
-                File(url.toURI()).walk().toList().filter { it.isFile }
-            }
-            else -> error("Unsupported protocol: ${url.protocol}")
-        }
+        return TestResources.getFile(path).walk().toList().filter { it.isFile }
     }
 
     protected fun generateRandomParameters(n: Int, range: LongRange, seed: Long = 271987239827L): List<Long> {

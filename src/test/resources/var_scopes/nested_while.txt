@@ -10,4 +10,4 @@ while (i < 3) {
   }
 }
 int result = acc
-// expected: result == 6
+assertEquals(result, 6)

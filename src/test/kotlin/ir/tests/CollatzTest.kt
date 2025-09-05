@@ -21,7 +21,7 @@ class CollatzTest : CompileToIRTestBase() {
         return withParametersAndFiles(parameters, "/collatz") { mode, n, file ->
             DynamicTest.dynamicTest("${file.name} [n = $n]") {
                 val program = readWithPattern(file, "n" to n)
-                val result = compileAndGet(mode, program, "result")
+                val result = compileAndGetResult(mode, program)
                 if (PRINT_DEBUG_INFO) {
                     println("collatz steps for $n = $result")
                 }

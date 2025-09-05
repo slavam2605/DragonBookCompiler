@@ -7,4 +7,4 @@ if (false) {
   v = 3
 }
 int result = v * 2
-// expected: result == 4
+assertEquals(result, 4)

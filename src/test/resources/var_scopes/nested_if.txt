@@ -12,4 +12,4 @@ if (x < y) {
   a = 40
 }
 int result = a * 2
-// expected: result == 40
+assertEquals(result, 40)

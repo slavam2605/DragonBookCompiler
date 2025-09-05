@@ -13,7 +13,7 @@ class FibonacciTest : CompileToIRTestBase() {
     fun testFibonacci() = withParametersAndFiles(0L .. 94L, "/fibonacci") { mode, n, file ->
         DynamicTest.dynamicTest("${file.name} [n = $n]") {
             val program = readWithPattern(file, "n" to n)
-            val result = compileAndGet(mode, program, "result")
+            val result = compileAndGetResult(mode, program)
             assertEquals(fibonacci(n), result)
         }
     }

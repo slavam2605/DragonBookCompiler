@@ -9,5 +9,5 @@ for (i = 0; i < 5; i = i + 1) {
 }
 int result_a = a
 int result_b = b
-// expected: result_a == 10
-// expected: result_b == 60
+assertEquals(result_a, 10)
+assertEquals(result_b, 60)

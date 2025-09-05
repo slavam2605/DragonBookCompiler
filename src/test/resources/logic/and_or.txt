@@ -12,5 +12,4 @@ if (t || f) { r = r + 100000 }
 if (f || t) { r = r + 1000000 }
 if (f || f) { r = r + 10000000 }
 
-int result = r
-// expected: result == 1110001
+assertEquals(r, 1110001)

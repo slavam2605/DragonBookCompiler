@@ -6,4 +6,4 @@ int r = 0
 }
 r = r + x
 int result = r
-// expected: result == 15
+assertEquals(result, 15)

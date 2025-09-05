@@ -6,4 +6,4 @@ for (int i = 0; i < n; i = i + 1) {
     curr = prev + curr
     prev = temp
 }
-int result = prev
+return prev

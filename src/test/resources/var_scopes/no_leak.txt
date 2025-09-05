@@ -3,4 +3,4 @@ int x = 1
     int x = 100
 }
 int result = x
-// expected: result == 1
+assertEquals(result, 1)

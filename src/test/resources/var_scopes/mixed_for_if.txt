@@ -12,5 +12,5 @@ for (int k = 0; k < 3; k = k + 1) {
 }
 int result_a = a
 int result_b = b
-// expected: result_a == 10
-// expected: result_b == 8
+assertEquals(result_a, 10)
+assertEquals(result_b, 8)

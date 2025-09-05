@@ -1,0 +1,29 @@
+int a = undef(42);
+int b = a + 10;
+int c = a + b;
+int d = a - b + c;
+int e = a * b - c;
+int f = b + a - e;
+int g = d * a + f;
+int h = e - b * g;
+int i = f - c + h * a;
+int j = g + i;
+int k = j * e;
+int l = k + b;
+int m = l * g;
+int n = m * f;
+int o = n + m * i;
+int p = b + o;
+int q = p * i;
+int r = a + q * g;
+int s = r - m;
+int t = o * s;
+int u = t / p;
+int v = u * r;
+int w = v - i;
+int x = w + v;
+int y = x - u * w;
+int z = j * y;
+assertEquals(a + b + c + d + e + f + g + h + i +
+             j + k + l + m + n + o + p + q + r +
+             s + t + u + v + w + x + y + z, 7210318585524127896)

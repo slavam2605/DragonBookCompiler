@@ -1,15 +1,36 @@
 package ir.interpreter
 
+import compiler.frontend.FrontendFunctions
 import compiler.ir.*
 
-abstract class BaseInterpreter(
-    private val functionHandler: (String, List<Long>) -> Long,
+abstract class BaseInterpreter<T>(
+    functionName: String,
+    private val arguments: List<Long>,
+    private val functions: FrontendFunctions<out T>,
+    private val fallbackFunctionHandler: (String, List<Long>) -> Long,
     private val exitAfterMaxSteps: Boolean
 ) {
     protected val vars = mutableMapOf<IRVar, Long>()
     private var stepCounter = 0
+    protected val currentFunction = functions[functionName]
+        ?: error("Main function not found")
+
+    init {
+        val parameters = currentFunction.parameters
+        check(parameters.size == arguments.size) {
+            "Wrong number of arguments for function $functionName: " +
+                    "expected ${parameters.size}, got ${arguments.size}"
+        }
+
+        // Initialize function parameters
+        parameters.forEachIndexed { index, parameter ->
+            vars[parameter] = arguments[index]
+        }
+    }
 
     abstract fun eval(): Map<IRVar, Long>
+
+    abstract fun callFunction(functionName: String, args: List<Long>): Long?
 
     protected sealed interface Command {
         class Jump(val label: IRLabel) : Command
@@ -56,8 +77,12 @@ abstract class BaseInterpreter(
             }
             is IRFunctionCall -> {
                 val arguments = node.arguments.map { getValue(it) }
-                val result = functionHandler(node.name, arguments)
-                if (node.result != null) vars[node.result] = result
+                val result = if (node.name in functions) {
+                    callFunction(node.name, arguments)
+                } else {
+                    fallbackFunctionHandler(node.name, arguments)
+                }
+                if (node.result != null) vars[node.result] = result!!
             }
             is IRJump -> return Command.Jump(node.target)
             is IRJumpIfTrue -> {

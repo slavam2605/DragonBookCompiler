@@ -1,6 +1,7 @@
 package backend
 
 import compiler.backend.arm64.NativeMacAarch64
+import compiler.frontend.FrontendFunctions
 import compiler.ir.cfg.ControlFlowGraph
 import ir.CompileToIRTestBase.Companion.PRINT_DEBUG_INFO
 import utils.runProcess
@@ -12,8 +13,8 @@ import kotlin.test.assertTrue
 object NativeArm64TestCompilationFlow {
     private var compiledHelper: File? = null
 
-    fun compileAndRun(cfg: ControlFlowGraph): String {
-        val asmFile = NativeMacAarch64.compile(cfg, NativeMacAarch64.Options(entrySymbol = "_foo"))
+    fun compileAndRun(ffs: FrontendFunctions<ControlFlowGraph>): String {
+        val asmFile = NativeMacAarch64.compile(ffs)
         if (PRINT_DEBUG_INFO) {
             println(asmFile.readText())
         }

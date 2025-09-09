@@ -3,6 +3,7 @@ package ir
 import MainGrammar
 import MainLexer
 import compiler.frontend.CompileToIRVisitor
+import compiler.frontend.FrontendFunctions
 import compiler.frontend.SemanticAnalysisVisitor
 import compiler.ir.IRPhi
 import compiler.ir.IRProtoNode
@@ -26,7 +27,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 object TestCompilationFlow {
-    fun compileToIR(input: String): Pair<List<IRProtoNode>, SourceLocationMap> {
+    fun compileToIR(input: String): Pair<FrontendFunctions<List<IRProtoNode>>, SourceLocationMap> {
         val lexer = MainLexer(CharStreams.fromString(input))
         val parser = MainGrammar(CommonTokenStream(lexer)).apply {
             removeErrorListeners()
@@ -40,19 +41,23 @@ object TestCompilationFlow {
         return CompileToIRVisitor().compileToIR(tree)
     }
 
-    fun compileToCFG(input: String): ControlFlowGraph {
-        val (ir, sourceMap) = compileToIR(input)
-        val cfg = ControlFlowGraph.build(ir, sourceMap)
-        DefiniteAssignmentAnalysis(cfg).run()
-        return cfg
+    fun compileToCFG(input: String): FrontendFunctions<ControlFlowGraph> {
+        val (irFfs, sourceMap) = compileToIR(input)
+        return irFfs.map { function ->
+            ControlFlowGraph.build(function.value, sourceMap).also {
+                DefiniteAssignmentAnalysis(it, function).run()
+            }
+        }
     }
 
-    fun compileToSSA(input: String): SSAControlFlowGraph {
-        val cfg = compileToCFG(input)
-        val ssa = SSAControlFlowGraph.transform(cfg)
-        testSingleAssignmentsInSSA(ssa)
-        testPhiNodeSourceSize(ssa)
-        return ssa
+    fun compileToSSA(input: String): FrontendFunctions<SSAControlFlowGraph> {
+        val cfgFfs = compileToCFG(input)
+        return cfgFfs.map { function ->
+            SSAControlFlowGraph.transform(function.value).also {
+                testSingleAssignmentsInSSA(it)
+                testPhiNodeSourceSize(it)
+            }
+        }
     }
 
     data class OptimizedResult(
@@ -62,38 +67,39 @@ object TestCompilationFlow {
         val equalities: Map<IRVar, IRVar>
     )
 
-    fun compileToOptimizedSSA(input: String): OptimizedResult {
+    fun compileToOptimizedSSA(input: String): FrontendFunctions<OptimizedResult> {
         val ssa = compileToSSA(input)
+        return ssa.map { function ->
+            val cpList = mutableListOf<SparseConditionalConstantPropagation>()
+            val equalityList = mutableListOf<EqualityPropagation>()
 
-        val cpList = mutableListOf<SparseConditionalConstantPropagation>()
-        val equalityList = mutableListOf<EqualityPropagation>()
+            // Initial clean pass to remove unreachable blocks
+            var currentStep = CleanCFG.invoke(function.value) as SSAControlFlowGraph
+            var changed = true
+            var stepIndex = 0
+            while (changed) {
+                if (PRINT_DEBUG_INFO) println("SCCP step $stepIndex")
+                stepIndex++
+                val initialStep = currentStep
 
-        // Initial clean pass to remove unreachable blocks
-        var currentStep = CleanCFG.invoke(ssa) as SSAControlFlowGraph
-        var changed = true
-        var stepIndex = 0
-        while (changed) {
-            if (PRINT_DEBUG_INFO) println("SCCP step $stepIndex")
-            stepIndex++
-            val initialStep = currentStep
+                currentStep = SparseConditionalConstantPropagation(currentStep, function.parameters).let {
+                    cpList.add(it)
+                    it.run()
+                }
+                currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
+                currentStep = GlobalValueNumbering(currentStep).run()
+                currentStep = EqualityPropagation(currentStep).let {
+                    equalityList.add(it)
+                    it.invoke()
+                }
+                currentStep = ConditionalJumpValues(currentStep).run()
 
-            currentStep = SparseConditionalConstantPropagation(currentStep).let {
-                cpList.add(it)
-                it.run()
+                changed = initialStep !== currentStep
             }
-            currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
-            currentStep = GlobalValueNumbering(currentStep).run()
-            currentStep = EqualityPropagation(currentStep).let {
-                equalityList.add(it)
-                it.invoke()
-            }
-            currentStep = ConditionalJumpValues(currentStep).run()
 
-            changed = initialStep !== currentStep
+            val (cpValues, equalities) = buildStaticValues(cpList, equalityList)
+            OptimizedResult(function.value, currentStep, cpValues, equalities)
         }
-
-        val (cpValues, equalities) = buildStaticValues(cpList, equalityList)
-        return OptimizedResult(ssa, currentStep, cpValues, equalities)
     }
 
     private fun buildStaticValues(

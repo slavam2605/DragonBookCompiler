@@ -1,15 +1,19 @@
 package ir.interpreter
 
+import compiler.frontend.FrontendFunctions
 import compiler.ir.IRLabel
 import compiler.ir.IRPhi
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
 class CFGInterpreter(
-    val cfg: ControlFlowGraph,
-    functionHandler: (String, List<Long>) -> Long = DEFAULT_FUNCTION_HANDLER,
-    exitAfterMaxSteps: Boolean = false
-) : BaseInterpreter(functionHandler, exitAfterMaxSteps) {
+    functionName: String,
+    private val arguments: List<Long>,
+    private val functions: FrontendFunctions<out ControlFlowGraph>,
+    private val fallbackFunctionHandler: (String, List<Long>) -> Long = DEFAULT_FUNCTION_HANDLER,
+    private val exitAfterMaxSteps: Boolean = false
+) : BaseInterpreter<ControlFlowGraph>(functionName, arguments, functions, fallbackFunctionHandler, exitAfterMaxSteps) {
+    private val cfg = functions[functionName]?.value ?: error("Function $functionName not found")
     private var jumpedFromLabel: IRLabel? = null
     private var currentLabel: IRLabel = cfg.root
     private var currentLine: Int = 0
@@ -53,5 +57,15 @@ class CFGInterpreter(
             }
         }
         return vars.toMap()
+    }
+
+    override fun callFunction(functionName: String, args: List<Long>): Long? {
+        return CFGInterpreter(
+            functionName,
+            args,
+            functions,
+            fallbackFunctionHandler,
+            exitAfterMaxSteps
+        ).eval()[ReturnValue]
     }
 }

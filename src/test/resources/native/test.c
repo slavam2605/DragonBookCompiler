@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern long long foo(long long);
+extern long long test_main(long long);
 
 void assertEquals(long long a, long long b) {
     if (a == b) return;
@@ -22,6 +22,6 @@ long long undef(long long x) {
 }
 
 int main() {
-    printf("%lld\n", foo(7));
+    printf("%lld\n", test_main(7));
     return 0;
 }

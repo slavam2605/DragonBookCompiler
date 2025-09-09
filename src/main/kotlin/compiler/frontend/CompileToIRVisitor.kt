@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.tree.TerminalNode
 
 class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
+    private val result = FrontendFunctions<List<IRProtoNode>>()
     private val resultIR = mutableListOf<IRProtoNode>()
     private val sourceMap = SourceLocationMap()
     private val symbolTable = SymbolTable<IRVar>()
@@ -18,9 +19,9 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     private data class LoopContext(val continueLabel: IRLabel, val breakLabel: IRLabel)
 
-    fun compileToIR(tree: MainGrammar.ProgramContext): Pair<List<IRProtoNode>, SourceLocationMap> {
+    fun compileToIR(tree: MainGrammar.ProgramContext): Pair<FrontendFunctions<List<IRProtoNode>>, SourceLocationMap> {
         visit(tree)
-        return resultIR.toList() to sourceMap
+        return result to sourceMap
     }
 
     private fun ParserRuleContext.defaultVisitChildren(): Nothing? {
@@ -30,6 +31,28 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitProgram(ctx: MainGrammar.ProgramContext): Nothing? {
         return ctx.defaultVisitChildren()
+    }
+
+    override fun visitFunction(ctx: MainGrammar.FunctionContext): Nothing? {
+        symbolTable.withScope {
+            val parameters = mutableListOf<IRVar>()
+            ctx.functionParameters()?.functionParameter()?.forEach { parameter ->
+                val name = parameter.ID().text
+                val irVar = IRVar(varAllocator.newName(name), name)
+                parameters.add(irVar)
+                symbolTable.define(name, irVar)
+            }
+
+            check(resultIR.isEmpty())
+            visit(ctx.block())
+            result.addFunction(FrontendFunction(
+                name = ctx.ID().text,
+                parameters = parameters,
+                value = resultIR.toList()
+            ))
+            resultIR.clear()
+        }
+        return null
     }
 
     private fun IRNode.withLocation(ctx: ParserRuleContext?): IRNode {

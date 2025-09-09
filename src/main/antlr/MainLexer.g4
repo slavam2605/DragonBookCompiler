@@ -13,8 +13,10 @@ RETURN : 'return' ;
 TRUE : 'true' ;
 FALSE : 'false' ;
 DO : 'do' ;
+FUN : 'fun' ;
 
 // Operators
+ARROW : '->' ;
 ASSIGN : '=' ;
 SEMICOLON : ';' ;
 COMMA : ',' ;

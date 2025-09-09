@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.ParserRuleContext
 class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     private var loopDepth: Int = 0
     private val symbolTable = SymbolTable<FrontendType>()
+    private val functionTable = mutableMapOf<String, FunctionDescriptor>()
     private val errors = mutableListOf<CompilationException>()
 
     fun analyze(tree: MainGrammar.ProgramContext) {
@@ -23,7 +24,38 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitProgram(ctx: MainGrammar.ProgramContext): Nothing? {
+        // Build function table before visiting functions
+        ctx.function().forEach { functionContext ->
+            val name = functionContext.ID().text
+            val returnType = functionContext.type()?.let { visit(it) }
+            val arguments = functionContext
+                .functionParameters()
+                ?.functionParameter()
+                ?.map { parameterContext ->
+                    ArgumentDescriptor(
+                        name = parameterContext.ID().text,
+                        type = visit(parameterContext.type())
+                    )
+                } ?: emptyList()
+            val descriptor = FunctionDescriptor(name, arguments, returnType)
+            functionTable.put(name, descriptor)?.let { oldValue ->
+                errors.add(FunctionRedeclarationException(functionContext.ID().asLocation(), name))
+            }
+        }
+
         return ctx.defaultVisitChildren()
+    }
+
+    override fun visitFunction(ctx: MainGrammar.FunctionContext): Nothing? {
+        symbolTable.withScope {
+            val descriptor = functionTable[ctx.ID().text]!!
+            descriptor.arguments.forEach { arg ->
+                symbolTable.define(arg.name, arg.type)
+            }
+
+            visit(ctx.block())
+        }
+        return null
     }
 
     // --------------- Types ---------------
@@ -163,10 +195,35 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         val call = ctx.functionCall()
         val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
         val functionName = call.ID().text
-        if (functionName== "undef" && arguments.size == 1) {
+        if (functionName == "undef" && arguments.size == 1) {
             return arguments.single()
         }
-        throw SyntaxErrorException(ctx.asLocation(), "Unknown function $functionName")
+
+        functionTable[functionName]?.let { descriptor ->
+            if (descriptor.returnType == null) {
+                errors.add(SyntaxErrorException(ctx.asLocation(),
+                    "Can't call '$functionName' in expression, it has no return type"))
+                return FrontendType.ERROR_TYPE
+            }
+
+            if (arguments.size != descriptor.arguments.size) {
+                errors.add(SyntaxErrorException(ctx.asLocation(),
+                    "Incorrect number of arguments for '$functionName', expected ${descriptor.arguments.size}, got ${arguments.size}"))
+            }
+
+            arguments.forEachIndexed { index, arg ->
+                if (index >= descriptor.arguments.size) return@forEachIndexed
+                arg.checkType(
+                    call.callArguments().expression(index),
+                    descriptor.arguments[index].type
+                )
+            }
+
+            return descriptor.returnType
+        }
+
+        errors.add(SyntaxErrorException(ctx.asLocation(), "Unknown function $functionName"))
+        return FrontendType.ERROR_TYPE
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {

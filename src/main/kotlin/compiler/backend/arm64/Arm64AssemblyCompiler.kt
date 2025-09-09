@@ -2,22 +2,24 @@ package compiler.backend.arm64
 
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
+import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.cfg.ControlFlowGraph
 import kotlin.collections.component1
 import kotlin.collections.component2
 
-class Arm64AssemblyCompiler(private val cfg: ControlFlowGraph) {
-    private val ops = mutableListOf<Instruction>()
-    private val allocator = MemoryAllocator(this, ops)
+class Arm64AssemblyCompiler(
+    private val function: FrontendFunction<ControlFlowGraph>,
+    private val ops: MutableList<Instruction>
+) {
+    private val allocator = MemoryAllocator(this, function, ops)
+    private val returnLabel = Label(".L_${function.name}_return")
     private val orderedBlocks = mutableListOf<IRLabel>()
     private var currentBlockIndex = 0
 
-    fun buildAssembly(entry: String): List<Instruction> {
-        ops.add(CustomText(".text"))
-        ops.add(CustomText(".p2align 2"))
-        ops.add(CustomText(".globl $entry"))
-        ops.add(Label(entry))
+    fun buildFunction() {
+        val cfg = function.value
+        ops.add(Label("_${function.name}"))
 
         // Prologue
         ops.add(Stp(x29, x30, SP, -16, StpMode.PRE_INDEXED))
@@ -51,7 +53,7 @@ class Arm64AssemblyCompiler(private val cfg: ControlFlowGraph) {
         }
 
         // Epilogue
-        ops.add(ReturnLabel)
+        ops.add(returnLabel)
         ops.add(Mov(SP, x29))
         ops.add(PopRegsStub)
         ops.add(Ldp(x29, x30, SP, 16, StpMode.POST_INDEXED))
@@ -59,8 +61,6 @@ class Arm64AssemblyCompiler(private val cfg: ControlFlowGraph) {
 
         setStackAllocSize()
         setPushPopRegs()
-
-        return ops
     }
 
     private fun setPushPopRegs() {
@@ -186,7 +186,7 @@ class Arm64AssemblyCompiler(private val cfg: ControlFlowGraph) {
         node.value?.let { value ->
             emitCopy(x0, value)
         }
-        ops.add(B(ReturnLabel.name))
+        ops.add(B(returnLabel.name))
     }
 
     private fun emitAssign(node: IRAssign) {
@@ -267,16 +267,15 @@ class Arm64AssemblyCompiler(private val cfg: ControlFlowGraph) {
         }
     }
 
-    private fun IRLabel.local() = ".$name"
-
     companion object {
         private val SPAllocStub = CustomText("<sp allocation of locals>")
         private val PushRegsStub = CustomText("<save callee-saved registers>")
         private val PopRegsStub = CustomText("<restore callee-saved registers>")
-        private val ReturnLabel = Label(".L_return")
 
         private val x0 = X(0)
         private val x29 = X(29)
         private val x30 = X(30)
+
+        private fun IRLabel.local() = ".$name"
     }
 }

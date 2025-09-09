@@ -7,7 +7,19 @@ options { tokenVocab = MainLexer; }
 }
 
 program
-    : statement+ EOF
+    : function+ EOF
+    ;
+
+function
+    : FUN ID LPAR functionParameters? RPAR (ARROW type)? block
+    ;
+
+functionParameters
+    : functionParameter (COMMA functionParameter)*
+    ;
+
+functionParameter
+    : type ID
     ;
 
 statement

@@ -2,6 +2,7 @@ package compiler.ir.analysis
 
 import compiler.frontend.CompilationException
 import compiler.frontend.CompilationFailed
+import compiler.frontend.FrontendFunction
 import compiler.frontend.UninitializedVariableException
 import compiler.ir.IRPhi
 import compiler.ir.IRVar
@@ -9,10 +10,14 @@ import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.printToString
 
-class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
+class DefiniteAssignmentAnalysis(
+    private val cfg: ControlFlowGraph,
+    private val function: FrontendFunction<*>
+) {
     private val errors = mutableListOf<CompilationException>()
 
     fun run() {
+        val parameters = function.parameters.toSet()
         val allVars = cfg.blocks.flatMap { (_, block) ->
             block.irNodes.mapNotNull { node -> node.lvalue } +
                     block.irNodes.flatMap { node -> node.rvalues().filterIsInstance<IRVar>() }
@@ -33,9 +38,9 @@ class DefiniteAssignmentAnalysis(private val cfg: ControlFlowGraph) {
                 }
                 outSet
             },
-            boundaryIn = { if (it == cfg.root) emptySet() else null },
+            boundaryIn = { if (it == cfg.root) parameters else null },
             initialOut = { label ->
-                if (label == cfg.root) emptySet() else allVars
+                if (label == cfg.root) parameters else allVars
             }
         )
         dfa.run()

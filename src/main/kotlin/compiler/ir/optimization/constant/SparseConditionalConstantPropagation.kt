@@ -5,7 +5,7 @@ import compiler.ir.cfg.extensions.IRUse
 import compiler.ir.cfg.extensions.SSAGraph
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 
-class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph) {
+class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph, private val functionParameters: List<IRVar>) {
     private val defValue = mutableMapOf<IRVar, SSCPValue>()
     private val useValue = mutableMapOf<IRUse, SSCPValue>()
     private val cfgWorklist = mutableListOf<CFGEdge>()
@@ -23,6 +23,9 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph)
         get() = defValue.toMap()
 
     fun run(): SSAControlFlowGraph {
+        functionParameters.forEach {
+            defValue[it] = SSCPValue.Bottom
+        }
         cfgWorklist.add(CFGEdge(IRLabel("<fake-entry>"), cfg.root))
 
         while (cfgWorklist.isNotEmpty() || ssaWorklist.isNotEmpty()) {

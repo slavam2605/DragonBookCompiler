@@ -49,6 +49,8 @@ class UndefinedVariableException(location: SourceLocation, name: String) : Compi
 // TODO store ctx in SymbolTable and show in exception when the `name` was originally declared
 class VariableRedeclarationException(location: SourceLocation, name: String) : CompilationException(location, "Variable '$name' was already declared")
 
+class FunctionRedeclarationException(location: SourceLocation, name: String) : CompilationException(location, "Function '$name' was already declared")
+
 class UninitializedVariableException(location: SourceLocation?, name: String) : CompilationException(location, "Variable '$name' is used before being initialized")
 
 class UnknownTypeException(location: SourceLocation, name: String) : CompilationException(location, "Unknown type '$name'")

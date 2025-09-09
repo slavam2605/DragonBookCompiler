@@ -2,16 +2,30 @@ package compiler.backend.arm64
 
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
+import compiler.frontend.FrontendFunction
 import compiler.ir.IRInt
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 
-class MemoryAllocator(val compiler: Arm64AssemblyCompiler, val ops: MutableList<Instruction>) {
+class MemoryAllocator(
+    val compiler: Arm64AssemblyCompiler,
+    val function: FrontendFunction<*>,
+    val ops: MutableList<Instruction>
+) {
     private val map = HashMap<IRVar, MemoryLocation>()
     private val freeRegs = NonTempRegs.toMutableSet()
     private val freeTempRegs = TempRegs.toMutableSet()
     private val usedRegsHistory = mutableSetOf<X>()
     private var nextStackOffset = 0
+
+    init {
+        check(function.parameters.size <= 8)
+        function.parameters.forEachIndexed { index, parameter ->
+            map[parameter] = X(index)
+            freeRegs.remove(X(index))
+            freeTempRegs.remove(X(index))
+        }
+    }
 
     /**
      * Returns the size of allocated stack memory, aligned to 16 bytes.

@@ -26,9 +26,11 @@ fun main(args: Array<String>) {
 
     try {
         SemanticAnalysisVisitor().analyze(tree)
-        val (ir, sourceMap) = CompileToIRVisitor().compileToIR(tree)
+        val (functions, sourceMap) = CompileToIRVisitor().compileToIR(tree)
+        val mainFunction = functions["main"]!!
+        val ir = mainFunction.value
         val cfg = ControlFlowGraph.build(ir, sourceMap)
-        DefiniteAssignmentAnalysis(cfg).run()
+        DefiniteAssignmentAnalysis(cfg, mainFunction).run()
         val ssa = SSAControlFlowGraph.transform(cfg)
         ssa.print()
     } catch (e: CompilationFailed) {

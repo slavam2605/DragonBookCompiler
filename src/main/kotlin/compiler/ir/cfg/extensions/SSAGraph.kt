@@ -81,8 +81,9 @@ class SSAGraph(
                     val useDefs = createDefs(node)
                     node.rvalues().forEachIndexed { index, irVar ->
                         if (irVar !is IRVar) return@forEachIndexed
-                        val def = checkNotNull(defMap[irVar]) { "Undefined variable $irVar" }
-                        useDefs[index] = def
+                        defMap[irVar]?.let { def ->
+                            useDefs[index] = def
+                        }
                     }
                 }
             }

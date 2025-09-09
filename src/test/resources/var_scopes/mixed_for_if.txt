@@ -1,16 +1,18 @@
-int a = 0
-int b = 1
-for (int k = 0; k < 3; k = k + 1) {
-  if (b > k) {
-    a = a + b;
-  }
-  {
-    int tmp = a % (k + 1);
-    a = a + tmp;
-  }
-  b = b * 2;
+fun test_main() {
+    int a = 0
+    int b = 1
+    for (int k = 0; k < 3; k = k + 1) {
+      if (b > k) {
+        a = a + b;
+      }
+      {
+        int tmp = a % (k + 1);
+        a = a + tmp;
+      }
+      b = b * 2;
+    }
+    int result_a = a
+    int result_b = b
+    assertEquals(result_a, 10)
+    assertEquals(result_b, 8)
 }
-int result_a = a
-int result_b = b
-assertEquals(result_a, 10)
-assertEquals(result_b, 8)

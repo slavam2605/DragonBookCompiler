@@ -1,8 +1,10 @@
-int a
-for (; a < 10; a = a + 1) {
+fun test_main() {
+    int a
+    for (; a < 10; a = a + 1) {
 
+    }
+    int result = a
+    // error: 3:11 "Variable 'a' is used before being initialized"
+    // error: 3:23 "Variable 'a' is used before being initialized"
+    // error: 6:4 "Variable 'a' is used before being initialized"
 }
-int result = a
-// error: 2:7 "Variable 'a' is used before being initialized"
-// error: 2:19 "Variable 'a' is used before being initialized"
-// error: 5:0 "Variable 'a' is used before being initialized"

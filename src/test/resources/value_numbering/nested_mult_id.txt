@@ -1,7 +1,9 @@
-int a = undef(0)
-int b = undef(0)
-int t1 = (a * 0) + b
-assertStaticEquals(t1 == b, true)
+fun test_main() {
+    int a = undef(0)
+    int b = undef(0)
+    int t1 = (a * 0) + b
+    assertStaticEquals(t1 == b, true)
 
-int t2 = (1 * a) + (b * 0)
-assertStaticEquals(t2 == a, true)
+    int t2 = (1 * a) + (b * 0)
+    assertStaticEquals(t2 == a, true)
+}

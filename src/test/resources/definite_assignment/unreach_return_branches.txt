@@ -1,7 +1,9 @@
-int x
-if (undef(true)) {
-    return 1
-} else {
-    return 2
+fun test_main() {
+    int x
+    if (undef(true)) {
+        return 1
+    } else {
+        return 2
+    }
+    int y = x
 }
-int y = x

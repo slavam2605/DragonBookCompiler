@@ -1,16 +1,18 @@
-int a = 4
-int b = 6
-int c = a * b
-int x = 0
-if (1 == 1) {
-    x = c + 1
-} else {
-    x = 999
+fun test_main() {
+    int a = 4
+    int b = 6
+    int c = a * b
+    int x = 0
+    if (1 == 1) {
+        x = c + 1
+    } else {
+        x = 999
+    }
+    int y = 2 * 2
+    int z = y + x
+    if (0 == 1) {
+        z = z + 1000
+    }
+    int result = z + 1
+    assertStaticEquals(result, 30)
 }
-int y = 2 * 2
-int z = y + x
-if (0 == 1) {
-    z = z + 1000
-}
-int result = z + 1
-assertStaticEquals(result, 30)

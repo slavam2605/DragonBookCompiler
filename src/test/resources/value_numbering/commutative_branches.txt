@@ -1,11 +1,13 @@
-int y = undef(0)
-int z = undef(0)
-int x = y + z
+fun test_main() {
+    int y = undef(0)
+    int z = undef(0)
+    int x = y + z
 
-if (undef(false)) {
-    int t = y + z
-    assertStaticEquals(t == x, true)
-} else {
-    int u = z + y
-    assertStaticEquals(u == x, true)
+    if (undef(false)) {
+        int t = y + z
+        assertStaticEquals(t == x, true)
+    } else {
+        int u = z + y
+        assertStaticEquals(u == x, true)
+    }
 }

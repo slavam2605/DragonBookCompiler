@@ -1,4 +1,6 @@
-for (int x = 0; x < 10; x = x + 1) {
-    assertStaticEquals(x, 0)
-    return
+fun test_main() {
+    for (int x = 0; x < 10; x = x + 1) {
+        assertStaticEquals(x, 0)
+        return
+    }
 }

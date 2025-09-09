@@ -1,2 +1,4 @@
-string x
-// error: 1:0 "Unknown type 'string'"
+fun test_main() {
+    string x
+    // error: 2:4 "Unknown type 'string'"
+}

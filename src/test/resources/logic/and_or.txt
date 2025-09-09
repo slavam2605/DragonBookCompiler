@@ -1,15 +1,17 @@
-bool t = true
-bool f = false
-int r = 0
+fun test_main() {
+    bool t = true
+    bool f = false
+    int r = 0
 
-if (t && t) { r = r + 1 }
-if (t && f) { r = r + 10 }
-if (f && t) { r = r + 100 }
-if (f && f) { r = r + 1000 }
+    if (t && t) { r = r + 1 }
+    if (t && f) { r = r + 10 }
+    if (f && t) { r = r + 100 }
+    if (f && f) { r = r + 1000 }
 
-if (t || t) { r = r + 10000 }
-if (t || f) { r = r + 100000 }
-if (f || t) { r = r + 1000000 }
-if (f || f) { r = r + 10000000 }
+    if (t || t) { r = r + 10000 }
+    if (t || f) { r = r + 100000 }
+    if (f || t) { r = r + 1000000 }
+    if (f || f) { r = r + 10000000 }
 
-assertEquals(r, 1110001)
+    assertEquals(r, 1110001)
+}

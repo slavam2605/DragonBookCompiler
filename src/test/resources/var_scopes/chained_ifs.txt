@@ -1,10 +1,12 @@
-int v
-if (false) {
-  v = 1
-} else if (true) {
-  v = 2
-} else {
-  v = 3
+fun test_main() {
+    int v
+    if (false) {
+      v = 1
+    } else if (true) {
+      v = 2
+    } else {
+      v = 3
+    }
+    int result = v * 2
+    assertEquals(result, 4)
 }
-int result = v * 2
-assertEquals(result, 4)

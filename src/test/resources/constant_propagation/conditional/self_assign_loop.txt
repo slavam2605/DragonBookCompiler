@@ -1,8 +1,10 @@
-int x = undef(0)
-int t = x
+fun test_main() {
+    int x = undef(0)
+    int t = x
 
-while (x < 10) {
-    x = x
+    while (x < 10) {
+        x = x
+    }
+
+    assertStaticEquals(x, t)
 }
-
-assertStaticEquals(x, t)

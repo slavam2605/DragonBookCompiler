@@ -1,3 +1,5 @@
-int x = !1
-// error: 1:9 "Expected type 'BOOL', got 'INT'"
-// error: 1:8 "Expected type 'INT', got 'BOOL'"
+fun test_main() {
+    int x = !1
+    // error: 2:13 "Expected type 'BOOL', got 'INT'"
+    // error: 2:12 "Expected type 'INT', got 'BOOL'"
+}

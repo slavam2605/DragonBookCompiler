@@ -1,8 +1,10 @@
-int a = 10
-int b = 20
-int x = 100
-if (a > b) {
-    x = 999
+fun test_main() {
+    int a = 10
+    int b = 20
+    int x = 100
+    if (a > b) {
+        x = 999
+    }
+    int result = x
+    assertStaticEquals(result, 100)
 }
-int result = x
-assertStaticEquals(result, 100)

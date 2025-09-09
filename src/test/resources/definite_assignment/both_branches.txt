@@ -1,8 +1,10 @@
-int a
-if (true) {
-    a = 1
-} else {
-    a = 2
+fun test_main() {
+    int a
+    if (true) {
+        a = 1
+    } else {
+        a = 2
+    }
+    int b = a + 1
+    // expected: b == 2
 }
-int b = a + 1
-// expected: b == 2

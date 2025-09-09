@@ -1,6 +1,8 @@
-int x = 1
-if (0 == 1) {
-    x = 99
+fun test_main() {
+    int x = 1
+    if (0 == 1) {
+        x = 99
+    }
+    int result = x
+    assertStaticEquals(result, 1)
 }
-int result = x
-assertStaticEquals(result, 1)

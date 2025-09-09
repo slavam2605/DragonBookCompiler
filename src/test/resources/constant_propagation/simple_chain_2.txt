@@ -1,6 +1,8 @@
-int a = 1
-int b = 2
-int c = a + b
-int d = c * 2
-int result = d + 1
-assertStaticEquals(result, 7)
+fun test_main() {
+    int a = 1
+    int b = 2
+    int c = a + b
+    int d = c * 2
+    int result = d + 1
+    assertStaticEquals(result, 7)
+}

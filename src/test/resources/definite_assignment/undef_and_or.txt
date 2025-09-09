@@ -1,10 +1,12 @@
-bool x
-bool a = x || undef(false)
-bool b = undef(false) || x
-bool c = x && undef(false)
-bool d = undef(false) && x
+fun test_main() {
+    bool x
+    bool a = x || undef(false)
+    bool b = undef(false) || x
+    bool c = x && undef(false)
+    bool d = undef(false) && x
 
-// error: 2:9 "Variable 'x' is used before being initialized"
-// error: 3:25 "Variable 'x' is used before being initialized"
-// error: 4:9 "Variable 'x' is used before being initialized"
-// error: 5:25 "Variable 'x' is used before being initialized"
+    // error: 3:13 "Variable 'x' is used before being initialized"
+    // error: 4:29 "Variable 'x' is used before being initialized"
+    // error: 5:13 "Variable 'x' is used before being initialized"
+    // error: 6:29 "Variable 'x' is used before being initialized"
+}

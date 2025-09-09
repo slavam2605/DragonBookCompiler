@@ -1,10 +1,12 @@
-int a = undef(0)
-int b = undef(0)
+fun test_main() {
+    int a = undef(0)
+    int b = undef(0)
 
-// TODO: assertStaticEquals((0 - (0 - a)) == a, true)
-// TODO: assertStaticEquals((a - (0 - b)) == (a + b), true)
-// TODO: assertStaticEquals((0 - 1) * a == (0 - a), true)
+    // TODO: assertStaticEquals((0 - (0 - a)) == a, true)
+    // TODO: assertStaticEquals((a - (0 - b)) == (a + b), true)
+    // TODO: assertStaticEquals((0 - 1) * a == (0 - a), true)
 
-assertStaticUnknown((0 - (0 - a)) == a)
-assertStaticUnknown((a - (0 - b)) == (a + b))
-assertStaticUnknown((0 - 1) * a == (0 - a))
+    assertStaticUnknown((0 - (0 - a)) == a)
+    assertStaticUnknown((a - (0 - b)) == (a + b))
+    assertStaticUnknown((0 - 1) * a == (0 - a))
+}

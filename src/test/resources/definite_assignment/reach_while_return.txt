@@ -1,8 +1,10 @@
-int x
-int y
-while (undef(true)) {
-    return
+fun test_main() {
+    int x
+    int y
+    while (undef(true)) {
+        return
+        y = x
+    }
     y = x
+    // error: 8:4 "Variable 'x' is used before being initialized"
 }
-y = x
-// error: 7:0 "Variable 'x' is used before being initialized"

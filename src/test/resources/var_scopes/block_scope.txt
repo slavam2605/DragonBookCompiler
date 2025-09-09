@@ -1,6 +1,8 @@
-int result
-{
-    int x = 10
+fun test_main() {
+    int result
+    {
+        int x = 10
+    }
+    result = x
+    // error: 6:13 "Undefined variable 'x'"
 }
-result = x
-// error: 5:9 "Undefined variable 'x'"

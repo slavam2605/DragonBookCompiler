@@ -1,6 +1,8 @@
-int a = 1
-int i
-while (a < 5) {
-    a = a + i;
+fun test_main() {
+    int a = 1
+    int i
+    while (a < 5) {
+        a = a + i;
+    }
+    // error: 5:12 "Variable 'i' is used before being initialized"
 }
-// error: 4:8 "Variable 'i' is used before being initialized"

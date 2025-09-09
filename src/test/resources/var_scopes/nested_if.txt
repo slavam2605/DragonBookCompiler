@@ -1,15 +1,17 @@
-int x = 10
-int y = 20
-int a
-if (x < y) {
-  a = 10
-  if (a < x + y) {
-    a = 20
-  } else {
-    a = 30
-  }
-} else {
-  a = 40
+fun test_main() {
+    int x = 10
+    int y = 20
+    int a
+    if (x < y) {
+      a = 10
+      if (a < x + y) {
+        a = 20
+      } else {
+        a = 30
+      }
+    } else {
+      a = 40
+    }
+    int result = a * 2
+    assertEquals(result, 40)
 }
-int result = a * 2
-assertEquals(result, 40)

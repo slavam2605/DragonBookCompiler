@@ -1,5 +1,7 @@
-int result = 0
-if (1) {
-    result = result + 1
+fun test_main() {
+    int result = 0
+    if (1) {
+        result = result + 1
+    }
+    // error: 3:8 "Expected type 'BOOL', got 'INT'"
 }
-// error: 2:4 "Expected type 'BOOL', got 'INT'"

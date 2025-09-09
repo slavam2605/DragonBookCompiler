@@ -1,3 +1,5 @@
-int x = 10
-int x = 20
-// error: 2:4 "Variable 'x' was already declared"
+fun test_main() {
+    int x = 10
+    int x = 20
+    // error: 3:8 "Variable 'x' was already declared"
+}

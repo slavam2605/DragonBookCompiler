@@ -1,10 +1,12 @@
-while (undef(false)) {
+fun test_main() {
+    while (undef(false)) {
+        return
+        assertStaticUnreachable()
+    }
+    if (undef(false)) {
+        return
+        assertStaticUnreachable()
+    }
     return
     assertStaticUnreachable()
 }
-if (undef(false)) {
-    return
-    assertStaticUnreachable()
-}
-return
-assertStaticUnreachable()

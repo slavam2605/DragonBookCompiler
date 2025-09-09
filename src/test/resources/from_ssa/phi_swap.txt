@@ -1,10 +1,12 @@
-int x = 0
-int y = 1
-while (x < y) {
-    int t = x
-    x = y
-    y = t
-}
+fun test_main() {
+    int x = 0
+    int y = 1
+    while (x < y) {
+        int t = x
+        x = y
+        y = t
+    }
 
-assertEquals(x, 1)
-assertEquals(y, 0)
+    assertEquals(x, 1)
+    assertEquals(y, 0)
+}

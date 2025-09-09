@@ -1,36 +1,38 @@
-int a = 5;
-int b = 10;
-int max;
-if (a > b) {
-    max = a;
-} else {
-    if (a == b) {
+fun test_main() {
+    int a = 5;
+    int b = 10;
+    int max;
+    if (a > b) {
         max = a;
     } else {
-        max = b;
+        if (a == b) {
+            max = a;
+        } else {
+            max = b;
+        }
     }
-}
-assertEquals(max, 10);
+    assertEquals(max, 10);
 
-bool flag;
-if (max > 7) {
-    if (true) {
-        flag = true;
+    bool flag;
+    if (max > 7) {
+        if (true) {
+            flag = true;
+        } else {
+            flag = false;
+        }
     } else {
         flag = false;
     }
-} else {
-    flag = false;
-}
-assertStaticEquals(flag, true);
+    assertStaticEquals(flag, true);
 
-int sum = 0;
-int i = 0;
-while (i < 5) {
-    sum = sum + i;
-    i = i + 1;
-}
-assertEquals(sum, 10);
+    int sum = 0;
+    int i = 0;
+    while (i < 5) {
+        sum = sum + i;
+        i = i + 1;
+    }
+    assertEquals(sum, 10);
 
-bool t = !false;
-assertStaticEquals(t, true);
+    bool t = !false;
+    assertStaticEquals(t, true);
+}

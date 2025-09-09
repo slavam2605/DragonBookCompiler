@@ -1,5 +1,7 @@
-bool b = undef(false)
-if (b) {
-    return
+fun test_main() {
+    bool b = undef(false)
+    if (b) {
+        return
+    }
+    assertStaticEquals(b, false)
 }
-assertStaticEquals(b, false)

@@ -1,6 +1,8 @@
-int result = 0
-for (int i = 0; i < 3; i = i + 1) {
-    result = result + 1
+fun test_main() {
+    int result = 0
+    for (int i = 0; i < 3; i = i + 1) {
+        result = result + 1
+    }
+    result = result + i
+    // error: 6:22 "Undefined variable 'i'"
 }
-result = result + i
-// error: 5:18 "Undefined variable 'i'"

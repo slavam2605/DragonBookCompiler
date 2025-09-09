@@ -1,8 +1,10 @@
-int a = undef(0)
-int b = undef(0)
-int x = a + b
+fun test_main() {
+    int a = undef(0)
+    int b = undef(0)
+    int x = a + b
 
-bool c = undef(false)
-int v
-if (c) { v = x; } else { v = x; }
-assertStaticEquals(v == x, true)
+    bool c = undef(false)
+    int v
+    if (c) { v = x; } else { v = x; }
+    assertStaticEquals(v == x, true)
+}

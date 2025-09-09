@@ -1,9 +1,11 @@
-bool b = undef(false)
+fun test_main() {
+    bool b = undef(false)
 
-if (b) {
     if (b) {
-        bool x = true
+        if (b) {
+            bool x = true
+        }
+        bool result = b
+        assertStaticEquals(result, 1)
     }
-    bool result = b
-    assertStaticEquals(result, 1)
 }

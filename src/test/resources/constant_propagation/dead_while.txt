@@ -1,6 +1,8 @@
-int x = 0
-while (0 == 1) {
-    x = x + 1
+fun test_main() {
+    int x = 0
+    while (0 == 1) {
+        x = x + 1
+    }
+    int result = x
+    assertStaticEquals(result, 0)
 }
-int result = x
-assertStaticEquals(result, 0)

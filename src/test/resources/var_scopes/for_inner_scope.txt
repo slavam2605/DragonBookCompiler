@@ -1,6 +1,8 @@
-int result = 0
-for (int i = 0; i < temp; i = i + 1) {
-    int temp = i
-    result = result + temp
+fun test_main() {
+    int result = 0
+    for (int i = 0; i < temp; i = i + 1) {
+        int temp = i
+        result = result + temp
+    }
+    // error: 3:24 "Undefined variable 'temp'"
 }
-// error: 2:20 "Undefined variable 'temp'"

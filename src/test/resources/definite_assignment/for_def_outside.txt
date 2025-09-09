@@ -1,6 +1,8 @@
-int a
-for (a = 0; a < 10; a = a + 1) {
+fun test_main() {
+    int a
+    for (a = 0; a < 10; a = a + 1) {
 
+    }
+    int result = a
+    // expected: result == 10
 }
-int result = a
-// expected: result == 10

@@ -1,10 +1,12 @@
-bool a = true
-bool b = false
-bool result_and = a && b
-bool result_or = a || b
-bool result_not_a = !a
-bool result_not_b = !b
-assertStaticEquals(result_and, 0)
-assertStaticEquals(result_or, 1)
-assertStaticEquals(result_not_a, 0)
-assertStaticEquals(result_not_b, 1)
+fun test_main() {
+    bool a = true
+    bool b = false
+    bool result_and = a && b
+    bool result_or = a || b
+    bool result_not_a = !a
+    bool result_not_b = !b
+    assertStaticEquals(result_and, 0)
+    assertStaticEquals(result_or, 1)
+    assertStaticEquals(result_not_a, 0)
+    assertStaticEquals(result_not_b, 1)
+}

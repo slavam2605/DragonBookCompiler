@@ -1,3 +1,5 @@
-int x
-return
-int y = x
+fun test_main() {
+    int x
+    return
+    int y = x
+}

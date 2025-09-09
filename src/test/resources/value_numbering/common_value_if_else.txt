@@ -1,10 +1,12 @@
-int y = undef(0)
-int z = undef(0)
-bool c = undef(false)
+fun test_main() {
+    int y = undef(0)
+    int z = undef(0)
+    bool c = undef(false)
 
-if (c) {
-    int x = y + z
-} else {
-    int t = y + z
+    if (c) {
+        int x = y + z
+    } else {
+        int t = y + z
+    }
+    int u = y + z
 }
-int u = y + z

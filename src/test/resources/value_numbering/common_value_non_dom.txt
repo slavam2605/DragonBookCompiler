@@ -1,9 +1,11 @@
-int i = 0;
-while (i < 4) {
-    if (i == 0) {
+fun test_main() {
+    int i = 0;
+    while (i < 4) {
+        if (i == 0) {
+            i = i + 1;
+            continue;
+        }
         i = i + 1;
-        continue;
     }
-    i = i + 1;
+    assertEquals(i, 4)
 }
-assertEquals(i, 4)

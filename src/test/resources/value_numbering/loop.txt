@@ -1,10 +1,12 @@
-int i = 0
-int acc = 0
-while (i < 3) {
-    int t1 = i + 1
-    int t2 = 1 + i
-    assertStaticEquals(t1 == t2, true)
-    acc = acc + (t1 - t2)
-    i = i + 1
+fun test_main() {
+    int i = 0
+    int acc = 0
+    while (i < 3) {
+        int t1 = i + 1
+        int t2 = 1 + i
+        assertStaticEquals(t1 == t2, true)
+        acc = acc + (t1 - t2)
+        i = i + 1
+    }
+    assertEquals(acc, 0)
 }
-assertEquals(acc, 0)

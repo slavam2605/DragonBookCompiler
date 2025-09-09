@@ -1,7 +1,9 @@
-int a = 1
-int result
-{
-    int a = a + 1
-    result = a
+fun test_main() {
+    int a = 1
+    int result
+    {
+        int a = a + 1
+        result = a
+    }
+    // expected: result == 2
 }
-// expected: result == 2

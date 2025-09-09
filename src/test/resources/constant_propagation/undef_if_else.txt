@@ -1,11 +1,13 @@
-int x = undef(0)
-bool y = undef(false)
+fun test_main() {
+    int x = undef(0)
+    bool y = undef(false)
 
-if (y) {
+    if (y) {
 
-} else {
+    } else {
 
+    }
+
+    int result_x = x; assertStaticUnknown(result_x)
+    bool result_y = y; assertStaticUnknown(result_y)
 }
-
-int result_x = x; assertStaticUnknown(result_x)
-bool result_y = y; assertStaticUnknown(result_y)

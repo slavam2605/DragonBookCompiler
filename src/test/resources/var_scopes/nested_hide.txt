@@ -1,9 +1,11 @@
-int x = 5
-int r = 0
-{
-    int x = 10
+fun test_main() {
+    int x = 5
+    int r = 0
+    {
+        int x = 10
+        r = r + x
+    }
     r = r + x
+    int result = r
+    assertEquals(result, 15)
 }
-r = r + x
-int result = r
-assertEquals(result, 15)

@@ -1,5 +1,7 @@
-bool b = undef(false)
-if (!b) {
-    // TODO: assertStaticEquals(b, false)
-    assertStaticUnknown(b)
+fun test_main() {
+    bool b = undef(false)
+    if (!b) {
+        // TODO: assertStaticEquals(b, false)
+        assertStaticUnknown(b)
+    }
 }

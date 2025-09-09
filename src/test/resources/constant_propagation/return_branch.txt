@@ -1,8 +1,10 @@
-int x
-if (undef(true)) {
-    x = 10
-} else {
-    x = 20
-    return x
+fun test_main() {
+    int x
+    if (undef(true)) {
+        x = 10
+    } else {
+        x = 20
+        return x
+    }
+    assertStaticEquals(x, 10)
 }
-assertStaticEquals(x, 10)

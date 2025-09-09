@@ -1,3 +1,5 @@
-int a
-int b = a + 1
-// error: 2:8 "Variable 'a' is used before being initialized"
+fun test_main() {
+    int a
+    int b = a + 1
+    // error: 3:12 "Variable 'a' is used before being initialized"
+}

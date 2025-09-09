@@ -1,8 +1,10 @@
-int x
-if (undef(true)) {
-    return 1
-} else {
+fun test_main() {
+    int x
+    if (undef(true)) {
+        return 1
+    } else {
 
+    }
+    int y = x
+    // error: 8:4 "Variable 'x' is used before being initialized"
 }
-int y = x
-// error: 7:0 "Variable 'x' is used before being initialized"

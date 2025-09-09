@@ -1,6 +1,8 @@
-int x
-int y
-while (undef(true)) {
-    return false
-    y = x
+fun test_main() {
+    int x
+    int y
+    while (undef(true)) {
+        return false
+        y = x
+    }
 }

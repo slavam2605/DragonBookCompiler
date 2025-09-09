@@ -1,9 +1,11 @@
-int prev = 0
-int curr = 1
-int n = <$n>
-for (int i = 0; i < n; i = i + 1) {
-    int temp = curr
-    curr = prev + curr
-    prev = temp
+fun test_main() -> int {
+    int prev = 0
+    int curr = 1
+    int n = <$n>
+    for (int i = 0; i < n; i = i + 1) {
+        int temp = curr
+        curr = prev + curr
+        prev = temp
+    }
+    return prev
 }
-return prev

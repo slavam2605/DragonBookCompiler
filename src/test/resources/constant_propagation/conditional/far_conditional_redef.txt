@@ -1,9 +1,11 @@
-bool b = true
-while (b) {
-    b = undef(false)
-    if (b) {
-        bool result = b; assertStaticEquals(result, 1)
+fun test_main() {
+    bool b = true
+    while (b) {
+        b = undef(false)
+        if (b) {
+            bool result = b; assertStaticEquals(result, 1)
+        }
+        b = true
     }
-    b = true
+    bool result2 = b; assertStaticUnreachable()
 }
-bool result2 = b; assertStaticUnreachable()

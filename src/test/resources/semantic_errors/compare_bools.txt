@@ -1,4 +1,6 @@
-bool a = true
-int x = 42
-a = a == x
-// error: 3:9 "Expected type 'BOOL', got 'INT'"
+fun test_main() {
+    bool a = true
+    int x = 42
+    a = a == x
+    // error: 4:13 "Expected type 'BOOL', got 'INT'"
+}

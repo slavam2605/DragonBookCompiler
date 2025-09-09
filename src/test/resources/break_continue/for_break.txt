@@ -1,7 +1,13 @@
-int sum; sum = 0;
-for (int k = 0; ; k = k + 1) {
-    if (k == 5) break;
-    sum = sum + k;
+fun foo(int breakIdx) -> int {
+    int sum; sum = 0;
+    for (int k = 0; ; k = k + 1) {
+        if (k == breakIdx) break;
+        sum = sum + k;
+    }
+    return sum
 }
-int result = sum
-assertEquals(result, 10)
+
+fun test_main() {
+    int result = foo(5)
+    assertEquals(result, 10)
+}

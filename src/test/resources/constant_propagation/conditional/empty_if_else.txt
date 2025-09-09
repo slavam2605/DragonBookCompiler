@@ -1,5 +1,7 @@
-bool b = undef(false)
+fun test_main() {
+    bool b = undef(false)
 
-bool result1 = b; assertStaticUnknown(result1)
-if (b) {} else {}
-bool result2 = b; assertStaticUnknown(result2)
+    bool result1 = b; assertStaticUnknown(result1)
+    if (b) {} else {}
+    bool result2 = b; assertStaticUnknown(result2)
+}

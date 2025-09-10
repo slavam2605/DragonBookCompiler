@@ -1,3 +1,5 @@
+// memory_allocation test_main: used 3, spilled 0
+
 fun test_main() {
     int prod = 1;
     for (int i = 1; i <= 5; i = i + 1) {

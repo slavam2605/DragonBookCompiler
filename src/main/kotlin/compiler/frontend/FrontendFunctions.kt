@@ -24,6 +24,10 @@ class FrontendFunctions<T> {
         }
     }
 
+    fun forEach(action: (FrontendFunction<T>) -> Unit) {
+        functions.forEach { (_, function) -> action(function) }
+    }
+
     fun print(printBlock: (T) -> Unit) {
         functions.forEach { (name, function) ->
             println("Function $name:")

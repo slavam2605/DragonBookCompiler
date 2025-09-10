@@ -1,3 +1,5 @@
+// memory_allocation test_main: used 3, spilled 0
+
 fun test_main() {
     bool t = true;
     bool f = false;

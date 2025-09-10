@@ -4,5 +4,5 @@ fun test_main() {
 
     }
     int result = a
-    // expected: result == 10
+    assertEquals(result, 10)
 }

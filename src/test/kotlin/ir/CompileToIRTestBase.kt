@@ -2,6 +2,7 @@ package ir
 
 import TestResources
 import backend.NativeArm64TestCompilationFlow
+import compiler.backend.arm64.registerAllocation.MemoryAllocator
 import compiler.ir.IRFunctionCall
 import compiler.ir.IRInt
 import compiler.ir.IRVar
@@ -18,6 +19,7 @@ import ir.interpreter.CFGInterpreter
 import ir.interpreter.ProtoIRInterpreter
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
+import statistics.StatsHolder
 import java.io.File
 import kotlin.random.Random
 import kotlin.test.assertEquals
@@ -32,6 +34,7 @@ abstract class CompileToIRTestBase {
     protected open val ignoreInterpretedValues: Boolean = false
 
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
+        StatsHolder.clear()
         when (mode) {
             TestMode.IR -> {
                 val (ffs, _) = compileToIR(input).also { (ffs, _) ->
@@ -86,6 +89,21 @@ abstract class CompileToIRTestBase {
             TestMode.NATIVE_ARM64 -> {
                 val ffs = compileToOptimizedSSA(input).map { ConvertFromSSA(it.value.optimizedSSA).run() }
                 val output = NativeArm64TestCompilationFlow.compileAndRun(ffs)
+
+                ffs.forEach { function ->
+                    val name = function.name
+                    val availableRegisters = StatsHolder.get<MemoryAllocator.StatAvailableRegisters>(name).value
+                    val usedRegisters = StatsHolder.get<MemoryAllocator.StatUsedRegisters>(name).value
+                    val spilledRegisters = StatsHolder.get<MemoryAllocator.StatSpilledRegisters>(name).value
+
+                    if (PRINT_DEBUG_INFO) {
+                        println("Memory allocator stats for $name:")
+                        println("\tUsed registers: $usedRegisters of $availableRegisters")
+                        println("\tSpilled registers: $spilledRegisters")
+                        println()
+                    }
+                }
+
                 return mapOf(ReturnValue to output.toLong())
             }
         }

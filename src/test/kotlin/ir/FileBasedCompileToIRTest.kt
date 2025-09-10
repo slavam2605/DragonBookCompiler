@@ -1,6 +1,7 @@
 package ir
 
 import MainLexer
+import compiler.backend.arm64.registerAllocation.MemoryAllocator
 import compiler.frontend.CompilationFailed
 import compiler.ir.printToString
 import org.antlr.v4.runtime.CharStreams
@@ -8,12 +9,13 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
+import statistics.StatsHolder
 import java.io.File
 import kotlin.test.assertTrue
 
 abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
-    private data class ExpectedValue(val varName: String, val expectedValue: Long?)
     private data class ExpectedError(val line: Int, val col: Int, val message: String)
+    private data class ExpectedMemoryAllocation(val functionName: String, val used: Int, val spilled: Int)
 
     /**
      * Reads the file and runs an automated test.
@@ -22,40 +24,21 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
     protected fun runTestFromFile(mode: TestMode, file: File): DynamicTest {
         return DynamicTest.dynamicTest(file.name) {
             val testProgram = file.readText()
-            val expectedRegex = "// *expected: *([a-zA-Z0-9_]+) *== *([a-zA-Z0-9_]+)".toRegex()
-            val expectedValues = testProgram.lines().mapNotNull { line ->
-                expectedRegex.find(line)?.let {
-                    val (varName, expectedValue) = it.destructured
-                    val value = if (expectedValue == "unknown") null else expectedValue.toLong()
-                    ExpectedValue(varName, value)
-                }
-            }
-            val errorRegex = "// *error: *([0-9]+):([0-9]+)* *\"(.*)\"".toRegex()
-            val expectedErrors = testProgram.lines().mapNotNull { line ->
-                errorRegex.find(line)?.let {
-                    val (line, col, message) = it.destructured
-                    ExpectedError(line.toInt(), col.toInt(), message)
-                }
-            }
+            val expectedErrors = parseExpectedErrors(testProgram)
+            val expectedMemoryAllocations = parseExpectedMemoryAllocation(testProgram)
 
             val visitedErrors = mutableSetOf<ExpectedError>()
             try {
                 val result = compileAndRun(mode, testProgram)
+                assertMemoryAllocation(mode, expectedMemoryAllocations)
                 if (PRINT_DEBUG_INFO) {
                     println("\nResults:")
                     result.forEach { (varName, value) ->
                         println("\t${varName.printToString()} == $value")
                     }
                 }
-
-                expectedValues.forEach { (varName, expectedValue) ->
-                    val actualValue = result.getVariable(varName)
-                    assertEquals(expectedValue, actualValue) {
-                        "Expected $varName == $expectedValue, but got $actualValue"
-                    }
-                }
             } catch (e: CompilationFailed) {
-                // Print
+                // Print compilation errors as in normal compilation
                 val lexer = MainLexer(CharStreams.fromString(testProgram))
                 val tokens = CommonTokenStream(lexer)
                 e.printErrors(tokens)
@@ -74,6 +57,39 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
             }
             expectedErrors.forEach { error ->
                 assertTrue(error in visitedErrors, "Expected error was not thrown: ${error.line}:${error.col} \"${error.message}\"")
+            }
+        }
+    }
+
+    private fun assertMemoryAllocation(mode: TestMode, expected: List<ExpectedMemoryAllocation>) {
+        if (mode != TestMode.NATIVE_ARM64) {
+            return
+        }
+
+        expected.forEach { (functionName, used, spilled) ->
+            val actualUsed = StatsHolder.get<MemoryAllocator.StatUsedRegisters>(functionName).value
+            val actualSpilled = StatsHolder.get<MemoryAllocator.StatSpilledRegisters>(functionName).value
+            assertEquals(used, actualUsed)
+            assertEquals(spilled, actualSpilled)
+        }
+    }
+
+    private fun parseExpectedErrors(testProgram: String): List<ExpectedError> {
+        val errorRegex = "// *error: *([0-9]+):([0-9]+)* *\"(.*)\"".toRegex()
+        return testProgram.lines().mapNotNull { line ->
+            errorRegex.find(line)?.let {
+                val (line, col, message) = it.destructured
+                ExpectedError(line.toInt(), col.toInt(), message)
+            }
+        }
+    }
+
+    private fun parseExpectedMemoryAllocation(testProgram: String): List<ExpectedMemoryAllocation> {
+        val errorRegex = "// *memory_allocation +([a-zA-Z0-9_]+) *: *used *([0-9]+) *, *spilled *([0-9]+)".toRegex()
+        return testProgram.lines().mapNotNull { line ->
+            errorRegex.find(line)?.let {
+                val (functionName, used, spilled) = it.destructured
+                ExpectedMemoryAllocation(functionName, used.toInt(), spilled.toInt())
             }
         }
     }

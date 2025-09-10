@@ -2,11 +2,10 @@ package compiler.backend.arm64
 
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
+import compiler.backend.arm64.registerAllocation.MemoryAllocator
 import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.cfg.ControlFlowGraph
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 class Arm64AssemblyCompiler(
     private val function: FrontendFunction<ControlFlowGraph>,

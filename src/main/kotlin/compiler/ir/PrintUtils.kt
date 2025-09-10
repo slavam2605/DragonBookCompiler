@@ -1,5 +1,6 @@
 package compiler.ir
 
+import compiler.backend.arm64.registerAllocation.InterferenceGraph
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.utils.toGraphviz
 import kotlin.collections.component1
@@ -48,7 +49,9 @@ fun List<IRProtoNode>.print() {
 
 fun ControlFlowGraph.print() {
     if (USE_GRAPHVIZ) {
-        return println(toGraphviz())
+        println(toGraphviz())
+        println()
+        return
     }
 
     println("${root.printToString()}:")
@@ -62,4 +65,29 @@ fun ControlFlowGraph.print() {
             println("\t${it.printToString()}")
         }
     }
+    println()
+}
+
+fun InterferenceGraph.print() {
+    println("Interference graph:")
+
+    if (USE_GRAPHVIZ) {
+        println("graph G {")
+        println("\tlayout=fdp")
+        edges.forEach { (from, tos) ->
+            tos.forEach {
+                if (it.printToString() < from.printToString()) return@forEach
+                println("\t\"${from.printToString()}\" -- \"${it.printToString()}\"")
+            }
+        }
+        println("}")
+        println()
+        return
+    }
+
+    edges.forEach { (from, tos) ->
+        println("\t${from.printToString()} -> ${tos.joinToString(", ") { it.printToString() }}")
+    }
+    if (edges.isEmpty()) println("\tEmpty")
+    println()
 }

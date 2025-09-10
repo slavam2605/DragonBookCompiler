@@ -1,29 +1,55 @@
-package compiler.backend.arm64
+package compiler.backend.arm64.registerAllocation
 
+import compiler.backend.arm64.Arm64AssemblyCompiler
+import compiler.backend.arm64.Instruction
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
+import compiler.backend.arm64.Ldr
+import compiler.backend.arm64.MemoryLocation
+import compiler.backend.arm64.StackLocation
+import compiler.backend.arm64.StpMode
+import compiler.backend.arm64.Str
 import compiler.frontend.FrontendFunction
 import compiler.ir.IRInt
 import compiler.ir.IRValue
 import compiler.ir.IRVar
+import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.printToString
 
 class MemoryAllocator(
     val compiler: Arm64AssemblyCompiler,
-    val function: FrontendFunction<*>,
+    val function: FrontendFunction<ControlFlowGraph>,
     val ops: MutableList<Instruction>
 ) {
     private val map = HashMap<IRVar, MemoryLocation>()
-    private val freeRegs = NonTempRegs.toMutableSet()
     private val freeTempRegs = TempRegs.toMutableSet()
     private val usedRegsHistory = mutableSetOf<X>()
-    private var nextStackOffset = 0
+    internal var nextStackOffset = 0
 
     init {
+        val freeRegs = NonTempRegs.toMutableSet()
+
         check(function.parameters.size <= 8)
         function.parameters.forEachIndexed { index, parameter ->
             map[parameter] = X(index)
             freeRegs.remove(X(index))
             freeTempRegs.remove(X(index))
+        }
+
+        val cfg = function.value
+        val interferenceGraph = InterferenceGraph.create(cfg)
+        val coloring = GraphColoring(freeRegs, map) { index ->
+            val stackOffset = index * 8
+            nextStackOffset = stackOffset + 8
+            StackLocation(stackOffset)
+        }.findColoring(interferenceGraph)
+
+        coloring.forEach { (irVar, reg) ->
+            map[irVar] = reg
+            freeTempRegs.remove(reg)
+            if (reg is X) {
+                usedRegsHistory.add(reg)
+            }
         }
     }
 
@@ -38,15 +64,7 @@ class MemoryAllocator(
     val usedRegisters: Set<X> get() = usedRegsHistory.toSet()
 
     fun loc(v: IRVar): MemoryLocation {
-        val loc = map.getOrPut(v) {
-            if (freeRegs.isNotEmpty()) {
-                freeRegs.first().also {
-                    usedRegsHistory.add(it)
-                    freeRegs.remove(it)
-                }
-            } else StackLocation(nextStackOffset).also { nextStackOffset += 8 }
-        }
-        return loc
+        return map[v] ?: error("Unallocated variable ${v.printToString()}")
     }
 
     fun <T> readReg(v: IRValue, block: (X) -> T): T {

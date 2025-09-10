@@ -15,6 +15,7 @@ import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.printToString
+import statistics.PerFunctionStatsData
 
 class MemoryAllocator(
     val compiler: Arm64AssemblyCompiler,
@@ -46,11 +47,16 @@ class MemoryAllocator(
 
         coloring.forEach { (irVar, reg) ->
             map[irVar] = reg
+            freeRegs.remove(reg)
             freeTempRegs.remove(reg)
             if (reg is X) {
                 usedRegsHistory.add(reg)
             }
         }
+
+        StatAvailableRegisters(NonTempRegs.size).record(functionName = function.name)
+        StatUsedRegisters(usedRegsHistory.size).record(functionName = function.name)
+        StatSpilledRegisters(nextStackOffset / 8).record(functionName = function.name)
     }
 
     /**
@@ -120,4 +126,8 @@ class MemoryAllocator(
         val TempRegs = X.CallerSaved.take(5).toSet()
         val NonTempRegs = X.CalleeSaved - TempRegs
     }
+
+    data class StatAvailableRegisters(val value: Int) : PerFunctionStatsData()
+    data class StatUsedRegisters(val value: Int) : PerFunctionStatsData()
+    data class StatSpilledRegisters(val value: Int) : PerFunctionStatsData()
 }

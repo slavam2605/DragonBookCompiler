@@ -23,10 +23,10 @@ class GraphColoring<Color>(
                 // Reversed order for max-priority queue
                 return other.uncoloredNeighbors.compareTo(uncoloredNeighbors)
             }
-            if (irVar.name != other.irVar.name) {
-                return irVar.name.compareTo(other.irVar.name)
+            if (irVar.ssaVer != other.irVar.ssaVer) {
+                return irVar.ssaVer.compareTo(other.irVar.ssaVer)
             }
-            return irVar.ssaVer.compareTo(other.irVar.ssaVer)
+            return irVar.name.compareTo(other.irVar.name)
         }
     }
 
@@ -53,17 +53,26 @@ class GraphColoring<Color>(
         }
 
         while (unallocatedVars.isNotEmpty()) {
-            val irVar = unallocatedVars.poll().irVar
-            queueEntries.remove(irVar)
+            val queueEntry = unallocatedVars.poll()
+            val irVar = queueEntry.irVar
 
-            coloring[irVar] = chooseColor(irVar)
-            updateForbiddenColors(irVar)
+            // Skip if this entry was updated
+            val latestEntry = queueEntries.remove(irVar)
+            if (latestEntry !== queueEntry) {
+                queueEntries[irVar] = latestEntry!!
+                continue
+            }
+
+            val newColor = chooseColor(irVar)
+            coloring[irVar] = newColor
+            val adjacent = graph.edges[irVar]!!
+            updateForbiddenColors(adjacent, newColor)
 
             // Update priority queue
-            graph.edges[irVar]!!.forEach { otherVar ->
+            adjacent.forEach { otherVar ->
+                // Do not remove the old entry, it will be skipped above
                 val oldNode = queueEntries[otherVar] ?: return@forEach
                 val newNode = WeightedNode(otherVar, oldNode.uncoloredNeighbors - 1)
-                unallocatedVars.remove( oldNode)
                 unallocatedVars.add(newNode)
                 queueEntries[otherVar] = newNode
             }
@@ -71,11 +80,9 @@ class GraphColoring<Color>(
         return coloring
     }
 
-    private fun updateForbiddenColors(irVar: IRVar, removedColor: Color? = null) {
-        val color = removedColor ?: coloring[irVar]!!
-        val delta = if (removedColor == null) 1 else -1
-        graph.edges[irVar]!!.forEach { otherVar ->
-            forbiddenColors[otherVar]!!.compute(color) { _, count ->
+    private fun updateForbiddenColors(adjacent: Set<IRVar>, newColor: Color, delta: Int = 1) {
+        adjacent.forEach { otherVar ->
+            forbiddenColors[otherVar]!!.compute(newColor) { _, count ->
                 val newValue = (count ?: 0) + delta
                 if (newValue == 0) null else newValue
             }
@@ -139,8 +146,9 @@ class GraphColoring<Color>(
                 val newColor = allowedRecolors.minBy(colorScore)
                 unusedColors.remove(newColor)
                 coloring[neighbor] = newColor
-                updateForbiddenColors(neighbor, oldColor)
-                updateForbiddenColors(neighbor)
+                val adjacent = graph.edges[neighbor]!!
+                updateForbiddenColors(adjacent, oldColor, delta = -1)
+                updateForbiddenColors(adjacent, newColor)
                 return oldColor
             }
         }

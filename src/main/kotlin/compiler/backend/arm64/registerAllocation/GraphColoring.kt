@@ -12,6 +12,7 @@ class GraphColoring<Color>(
     private val extraColorProvider: (Int) -> Color
 ) {
     private val coloring = initialColoring.toMutableMap()
+    private val forbiddenColors = mutableMapOf<IRVar, MutableMap<Color, Int>>()
     private val colors = colors.toMutableSet()
     private val unusedColors = colors.toMutableSet()
     private var extraColorCounter = 0
@@ -24,6 +25,17 @@ class GraphColoring<Color>(
     }
 
     fun findColoring(): Map<IRVar, Color> {
+        // Initialize forbidden colors
+        graph.edges.forEach { (irVar, adj) ->
+            val forbidden = mutableMapOf<Color, Int>()
+            adj.forEach { otherVar ->
+                coloring[otherVar]?.let {
+                    forbidden.compute(it) { _, count -> (count ?: 0) + 1 }
+                }
+            }
+            forbiddenColors[irVar] = forbidden
+        }
+
         val unallocatedVars = PriorityQueue<WeightedNode>()
         val queueEntries = mutableMapOf<IRVar, WeightedNode>()
         graph.edges.forEach { (irVar, adj) ->
@@ -38,8 +50,7 @@ class GraphColoring<Color>(
                 continue
             }
 
-            val adjacent = graph.edges[irVar]!!
-            val forbiddenColors = adjacent.mapNotNull { coloring[it] }.toSet()
+            val forbiddenColors = forbiddenColors[irVar]!!.keys
             val allNonExtraColors = colors.filterNot(isExtraColor).toSet()
             val allowedAllColors = colors - forbiddenColors
             val allowedNonExtraColors = allNonExtraColors - forbiddenColors
@@ -47,6 +58,7 @@ class GraphColoring<Color>(
 
             val newColor = chooseColor(irVar, allowedUsedColors, allowedNonExtraColors, allowedAllColors)
             coloring[irVar] = newColor
+            updateForbiddenColors(irVar)
 
             // Update priority queue
             graph.edges[irVar]!!.forEach { otherVar ->
@@ -58,6 +70,17 @@ class GraphColoring<Color>(
             }
         }
         return coloring
+    }
+
+    private fun updateForbiddenColors(irVar: IRVar, removedColor: Color? = null) {
+        val color = removedColor ?: coloring[irVar]!!
+        val delta = if (removedColor == null) 1 else -1
+        graph.edges[irVar]!!.forEach { otherVar ->
+            forbiddenColors[otherVar]!!.compute(color) { _, count ->
+                val newValue = (count ?: 0) + delta
+                if (newValue == 0) null else newValue
+            }
+        }
     }
 
     private fun chooseColor(
@@ -96,20 +119,16 @@ class GraphColoring<Color>(
     }
 
     private fun tryRecolorNeighbors(irVar: IRVar, allColorsSet: Set<Color>): Color? {
-        val adjacent = graph.edges[irVar]!!
-        val adjacentColors = adjacent
-            .mapNotNull { coloring[it] }
-            .filter { !isExtraColor(it) }
-        val forbiddenOnce = adjacentColors
-            .filter { color -> adjacentColors.count { it == color } == 1 }
-            .toSet()
+        val forbiddenOnce = forbiddenColors[irVar]!!
+            .filter { (color, count) -> count == 1 && !isExtraColor(color) }.keys
+        if (forbiddenOnce.isEmpty()) return null
 
-        for (neighbor in adjacent) {
+        for (neighbor in graph.edges[irVar]!!) {
             if (neighbor in initialColoring) continue // Do not change initial coloring
             val oldColor = coloring[neighbor] ?: continue
             if (oldColor !in forbiddenOnce) continue
 
-            val forbiddenRecolors = graph.edges[neighbor]!!.mapNotNull { coloring[it] }.toSet()
+            val forbiddenRecolors = forbiddenColors[neighbor]!!.keys
             val allowedRecolors = allColorsSet.toMutableSet()
             allowedRecolors.removeAll(forbiddenRecolors)
             allowedRecolors.remove(oldColor)
@@ -119,6 +138,8 @@ class GraphColoring<Color>(
                 val newColor = allowedRecolors.minBy(colorScore)
                 unusedColors.remove(newColor)
                 coloring[neighbor] = newColor
+                updateForbiddenColors(neighbor, oldColor)
+                updateForbiddenColors(neighbor)
                 return oldColor
             }
         }

@@ -19,8 +19,14 @@ class GraphColoring<Color>(
 
     private data class WeightedNode(val irVar: IRVar, val uncoloredNeighbors: Int) : Comparable<WeightedNode> {
         override fun compareTo(other: WeightedNode): Int {
-            // Reversed order for max-priority queue
-            return other.uncoloredNeighbors.compareTo(uncoloredNeighbors)
+            if (uncoloredNeighbors != other.uncoloredNeighbors) {
+                // Reversed order for max-priority queue
+                return other.uncoloredNeighbors.compareTo(uncoloredNeighbors)
+            }
+            if (irVar.name != other.irVar.name) {
+                return irVar.name.compareTo(other.irVar.name)
+            }
+            return irVar.ssaVer.compareTo(other.irVar.ssaVer)
         }
     }
 
@@ -36,9 +42,11 @@ class GraphColoring<Color>(
             forbiddenColors[irVar] = forbidden
         }
 
+        // Initialize priority queue
         val unallocatedVars = PriorityQueue<WeightedNode>()
         val queueEntries = mutableMapOf<IRVar, WeightedNode>()
         graph.edges.forEach { (irVar, adj) ->
+            if (irVar in coloring) return@forEach
             val node = WeightedNode(irVar, adj.count { it !in coloring })
             unallocatedVars.add(node)
             queueEntries[irVar] = node
@@ -46,25 +54,16 @@ class GraphColoring<Color>(
 
         while (unallocatedVars.isNotEmpty()) {
             val irVar = unallocatedVars.poll().irVar
-            if (irVar in coloring) {
-                continue
-            }
+            queueEntries.remove(irVar)
 
-            val forbiddenColors = forbiddenColors[irVar]!!.keys
-            val allNonExtraColors = colors.filterNot(isExtraColor).toSet()
-            val allowedAllColors = colors - forbiddenColors
-            val allowedNonExtraColors = allNonExtraColors - forbiddenColors
-            val allowedUsedColors = allowedNonExtraColors - unusedColors
-
-            val newColor = chooseColor(irVar, allowedUsedColors, allowedNonExtraColors, allowedAllColors)
-            coloring[irVar] = newColor
+            coloring[irVar] = chooseColor(irVar)
             updateForbiddenColors(irVar)
 
             // Update priority queue
             graph.edges[irVar]!!.forEach { otherVar ->
-                val oldNode = queueEntries[otherVar]!!
-                val newNode = WeightedNode(otherVar, oldNode.uncoloredNeighbors + 1)
-                unallocatedVars.remove(oldNode)
+                val oldNode = queueEntries[otherVar] ?: return@forEach
+                val newNode = WeightedNode(otherVar, oldNode.uncoloredNeighbors - 1)
+                unallocatedVars.remove( oldNode)
                 unallocatedVars.add(newNode)
                 queueEntries[otherVar] = newNode
             }
@@ -83,12 +82,13 @@ class GraphColoring<Color>(
         }
     }
 
-    private fun chooseColor(
-        irVar: IRVar,
-        allowedUsedColors: Set<Color>,
-        allowedNonExtraColors: Set<Color>,
-        allowedAllColors: Set<Color>
-    ): Color {
+    private fun chooseColor(irVar: IRVar): Color {
+        val forbiddenColors = forbiddenColors[irVar]!!
+        val allowedNonExtraColors = colors.filterTo(mutableSetOf()) {
+            !isExtraColor(it) && it !in forbiddenColors
+        }
+        val allowedUsedColors = allowedNonExtraColors - unusedColors
+
         // 1. Try to pick an already used non-extra color
         if (allowedUsedColors.isNotEmpty()) {
             return allowedUsedColors.minBy(colorScore)
@@ -110,6 +110,7 @@ class GraphColoring<Color>(
         }
 
         // 5. Try to pick a used extra color
+        val allowedAllColors = colors.filterTo(mutableSetOf()) { it !in forbiddenColors }
         if (allowedAllColors.isNotEmpty()) {
             return allowedAllColors.minBy(colorScore)
         }

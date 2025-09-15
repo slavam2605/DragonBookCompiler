@@ -6,8 +6,7 @@ import compiler.ir.cfg.ControlFlowGraph
 class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
     private val mutableEdges = mutableMapOf<IRVar, MutableSet<IRVar>>()
 
-    val edges: Map<IRVar, Set<IRVar>>
-        get() = mutableEdges.toMap()
+    val edges: Map<IRVar, Set<IRVar>> = mutableEdges
 
     init {
         cfg.blocks.forEach { (_, block) ->

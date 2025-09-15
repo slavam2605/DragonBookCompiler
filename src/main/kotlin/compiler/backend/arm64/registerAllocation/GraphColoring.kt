@@ -1,6 +1,7 @@
 package compiler.backend.arm64.registerAllocation
 
 import compiler.ir.IRVar
+import java.util.PriorityQueue
 
 class GraphColoring<Color>(
     colors: Set<Color>,
@@ -15,10 +16,24 @@ class GraphColoring<Color>(
     private val unusedColors = colors.toMutableSet()
     private var extraColorCounter = 0
 
+    private data class WeightedNode(val irVar: IRVar, val uncoloredNeighbors: Int) : Comparable<WeightedNode> {
+        override fun compareTo(other: WeightedNode): Int {
+            // Reversed order for max-priority queue
+            return other.uncoloredNeighbors.compareTo(uncoloredNeighbors)
+        }
+    }
+
     fun findColoring(): Map<IRVar, Color> {
-        val unallocatedVars = graph.edges.keys.sortedBy { graph.edges[it]!!.size }.toMutableSet()
+        val unallocatedVars = PriorityQueue<WeightedNode>()
+        val queueEntries = mutableMapOf<IRVar, WeightedNode>()
+        graph.edges.forEach { (irVar, adj) ->
+            val node = WeightedNode(irVar, adj.count { it !in coloring })
+            unallocatedVars.add(node)
+            queueEntries[irVar] = node
+        }
+
         while (unallocatedVars.isNotEmpty()) {
-            val irVar = unallocatedVars.pickVar()
+            val irVar = unallocatedVars.poll().irVar
             if (irVar in coloring) {
                 continue
             }
@@ -30,49 +45,54 @@ class GraphColoring<Color>(
             val allowedNonExtraColors = allNonExtraColors - forbiddenColors
             val allowedUsedColors = allowedNonExtraColors - unusedColors
 
-            // 1. Try to pick an already used non-extra color
-            if (allowedUsedColors.isNotEmpty()) {
-                coloring[irVar] = allowedUsedColors.minBy(colorScore)
-                continue
-            }
-
-            // 2. Try to recolor neighbors with used colors to free up a color
-            tryRecolorNeighbors(irVar, colors - unusedColors)?.let { color ->
-                coloring[irVar] = color
-                continue
-            }
-
-            // 3. Try to pick an unused non-extra color
-            if (allowedNonExtraColors.isNotEmpty()) {
-                coloring[irVar] = allowedNonExtraColors.minBy(colorScore)
-                continue
-            }
-
-            // 4. Try to recolor neighbors to free up a color
-            tryRecolorNeighbors(irVar, allowedNonExtraColors)?.let { color ->
-                coloring[irVar] = color
-                continue
-            }
-
-            // 5. Try to pick a used extra color
-            if (allowedAllColors.isNotEmpty()) {
-                coloring[irVar] = allowedAllColors.minBy(colorScore)
-                continue
-            }
-
-            // 6. Create a new extra color and use it
-            val newColor = extraColorProvider(extraColorCounter++).also { colors.add(it) }
+            val newColor = chooseColor(irVar, allowedUsedColors, allowedNonExtraColors, allowedAllColors)
             coloring[irVar] = newColor
+
+            // Update priority queue
+            graph.edges[irVar]!!.forEach { otherVar ->
+                val oldNode = queueEntries[otherVar]!!
+                val newNode = WeightedNode(otherVar, oldNode.uncoloredNeighbors + 1)
+                unallocatedVars.remove(oldNode)
+                unallocatedVars.add(newNode)
+                queueEntries[otherVar] = newNode
+            }
         }
         return coloring
     }
 
-    private fun MutableSet<IRVar>.pickVar(): IRVar {
-        return maxBy { candidate ->
-            graph.edges[candidate]!!.count { it !in coloring }
-        }.also {
-            remove(it)
+    private fun chooseColor(
+        irVar: IRVar,
+        allowedUsedColors: Set<Color>,
+        allowedNonExtraColors: Set<Color>,
+        allowedAllColors: Set<Color>
+    ): Color {
+        // 1. Try to pick an already used non-extra color
+        if (allowedUsedColors.isNotEmpty()) {
+            return allowedUsedColors.minBy(colorScore)
         }
+
+        // 2. Try to recolor neighbors with used colors to free up a color
+        tryRecolorNeighbors(irVar, colors - unusedColors)?.let { color ->
+            return color
+        }
+
+        // 3. Try to pick an unused non-extra color
+        if (allowedNonExtraColors.isNotEmpty()) {
+            return allowedNonExtraColors.minBy(colorScore)
+        }
+
+        // 4. Try to recolor neighbors to free up a color
+        tryRecolorNeighbors(irVar, allowedNonExtraColors)?.let { color ->
+            return color
+        }
+
+        // 5. Try to pick a used extra color
+        if (allowedAllColors.isNotEmpty()) {
+            return allowedAllColors.minBy(colorScore)
+        }
+
+        // 6. Create a new extra color
+        return extraColorProvider(extraColorCounter++).also { colors.add(it) }
     }
 
     private fun tryRecolorNeighbors(irVar: IRVar, allColorsSet: Set<Color>): Color? {

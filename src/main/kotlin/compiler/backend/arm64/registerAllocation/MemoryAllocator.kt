@@ -39,13 +39,20 @@ class MemoryAllocator(
 
         val cfg = function.value
         val interferenceGraph = InterferenceGraph.create(cfg)
-        val coloring = GraphColoring(freeRegs, map) { index ->
+        val coloring = GraphColoring(
+            colors = freeRegs,
+            initialColoring = map,
+            graph = interferenceGraph,
+            colorScore = RegScore,
+            isExtraColor = { it is StackLocation }
+        ) { index ->
             val stackOffset = index * 8
             nextStackOffset = stackOffset + 8
             StackLocation(stackOffset)
-        }.findColoring(interferenceGraph)
+        }
 
-        coloring.forEach { (irVar, reg) ->
+        val colorMapping = coloring.findColoring()
+        colorMapping.forEach { (irVar, reg) ->
             map[irVar] = reg
             freeRegs.remove(reg)
             freeTempRegs.remove(reg)
@@ -125,6 +132,14 @@ class MemoryAllocator(
     companion object {
         val TempRegs = X.CallerSaved.take(5).toSet()
         val NonTempRegs = X.CalleeSaved - TempRegs
+
+        val RegScore = { loc: MemoryLocation ->
+            when (loc) {
+                is X -> 0
+                is StackLocation -> 1
+                else -> error("Unsupported memory location: $loc")
+            }
+        }
     }
 
     data class StatAvailableRegisters(val value: Int) : PerFunctionStatsData()

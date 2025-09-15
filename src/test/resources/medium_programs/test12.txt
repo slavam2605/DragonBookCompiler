@@ -1,0 +1,46 @@
+// memory_allocation test_main: used 2, spilled 0
+
+fun test_main() {
+    int a = undef(1);
+    int b = undef(2);
+    foo(a, b);
+    if (undef(true)) {
+        int c1 = undef(3);
+        foo(b, c1)
+        if (undef(true)) {
+            int d11 = undef(4);
+            foo(c1, d11);
+            int e11 = undef(5);
+            foo(d11, e11);
+            int f11 = undef(6);
+            foo(d11, f11);
+        } else {
+            int d12 = undef(5);
+            foo(c1, d12);
+            int e12 = undef(6);
+            foo(d12, e12);
+            int f12 = undef(7);
+            foo(d12, f12);
+        }
+    } else {
+        int c2 = undef(4);
+        foo(b, c2);
+        if (undef(true)) {
+            int d21 = undef(4);
+            foo(c2, d21);
+            int e21 = undef(5);
+            foo(d21, e21);
+            int f21 = undef(6);
+            foo(d21, f21);
+        } else {
+            int d22 = undef(5);
+            foo(c2, d22);
+            int e22 = undef(6);
+            foo(d22, e22);
+            int f22 = undef(7);
+            foo(d22, f22);
+        }
+    }
+}
+
+fun foo(int a, int b) {}

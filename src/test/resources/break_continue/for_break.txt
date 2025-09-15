@@ -1,3 +1,5 @@
+// memory_allocation foo: used 4, spilled 0
+
 fun foo(int breakIdx) -> int {
     int sum; sum = 0;
     for (int k = 0; ; k = k + 1) {

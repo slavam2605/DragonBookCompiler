@@ -4,9 +4,10 @@ import compiler.frontend.SourceLocation
 import compiler.ir.IRNode
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.ExtensionKey
+import java.util.IdentityHashMap
 
 class SourceLocationMap {
-    private val map = mutableMapOf<IRNode, SourceLocation>()
+    private val map = IdentityHashMap<IRNode, SourceLocation>()
 
     operator fun get(irNode: IRNode): SourceLocation? = map[irNode]
 

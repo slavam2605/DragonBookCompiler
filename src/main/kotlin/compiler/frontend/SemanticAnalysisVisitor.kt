@@ -99,8 +99,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitFunctionCall(ctx: MainGrammar.FunctionCallContext): Nothing? {
-        // TODO resolve function name
-        ctx.callArguments()?.expression()?.map { visit(it) }
+        visitCall(ctx, isStatement = true)
         return null
     }
 
@@ -191,39 +190,8 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitCallExpr(ctx: MainGrammar.CallExprContext): FrontendType {
-        // TODO resolve function name, check argument types
         val call = ctx.functionCall()
-        val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
-        val functionName = call.ID().text
-        if (functionName == "undef" && arguments.size == 1) {
-            return arguments.single()
-        }
-
-        functionTable[functionName]?.let { descriptor ->
-            if (descriptor.returnType == null) {
-                errors.add(SyntaxErrorException(ctx.asLocation(),
-                    "Can't call '$functionName' in expression, it has no return type"))
-                return FrontendType.ERROR_TYPE
-            }
-
-            if (arguments.size != descriptor.arguments.size) {
-                errors.add(SyntaxErrorException(ctx.asLocation(),
-                    "Incorrect number of arguments for '$functionName', expected ${descriptor.arguments.size}, got ${arguments.size}"))
-            }
-
-            arguments.forEachIndexed { index, arg ->
-                if (index >= descriptor.arguments.size) return@forEachIndexed
-                arg.checkType(
-                    call.callArguments().expression(index),
-                    descriptor.arguments[index].type
-                )
-            }
-
-            return descriptor.returnType
-        }
-
-        errors.add(SyntaxErrorException(ctx.asLocation(), "Unknown function $functionName"))
-        return FrontendType.ERROR_TYPE
+        return visitCall(call, isStatement = false)!!
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {
@@ -295,6 +263,41 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         visit(ctx.left).checkType(ctx.left, FrontendType.BOOL)
         visit(ctx.right).checkType(ctx.right, FrontendType.BOOL)
         return FrontendType.BOOL
+    }
+
+    private fun visitCall(ctx: MainGrammar.FunctionCallContext, isStatement: Boolean): FrontendType? {
+        val arguments = ctx.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
+        val functionName = ctx.ID().text
+        if (functionName == "undef" && arguments.size == 1) {
+            return arguments.single()
+        }
+
+        functionTable[functionName]?.let { descriptor ->
+            if (descriptor.returnType == null && !isStatement) {
+                errors.add(SyntaxErrorException(ctx.asLocation(),
+                    "Can't call '$functionName' in expression, it has no return type"))
+                return FrontendType.ERROR_TYPE
+            }
+
+            if (arguments.size != descriptor.arguments.size) {
+                errors.add(SyntaxErrorException(ctx.asLocation(),
+                    "Incorrect number of arguments for '$functionName', expected ${descriptor.arguments.size}, got ${arguments.size}"))
+            }
+
+            arguments.forEachIndexed { index, arg ->
+                if (index >= descriptor.arguments.size) return@forEachIndexed
+                arg.checkType(
+                    ctx.callArguments().expression(index),
+                    descriptor.arguments[index].type
+                )
+            }
+
+            return descriptor.returnType
+        }
+
+        if (isStatement) return null
+        errors.add(SyntaxErrorException(ctx.asLocation(), "Unknown function $functionName"))
+        return FrontendType.ERROR_TYPE
     }
 
     private fun <T> withLoopLevel(block: () -> T): T {

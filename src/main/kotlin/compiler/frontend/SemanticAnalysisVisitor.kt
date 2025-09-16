@@ -249,6 +249,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
             FrontendType.INT -> right.checkType(ctx.right, FrontendType.INT)
             FrontendType.BOOL if (ctx.op.text == "==" || ctx.op.text == "!=") ->
                 right.checkType(ctx.right, FrontendType.BOOL)
+            FrontendType.ERROR_TYPE -> { /* ignore */ }
             else -> throw MismatchedTypeException(
                 location = ctx.left.asLocation(),
                 expectedTypes = listOf(FrontendType.INT, FrontendType.BOOL),

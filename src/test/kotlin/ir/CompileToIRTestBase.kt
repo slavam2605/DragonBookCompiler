@@ -171,7 +171,7 @@ abstract class CompileToIRTestBase {
     }
 
     companion object {
-        const val PRINT_DEBUG_INFO = true
+        const val PRINT_DEBUG_INFO = false
         private const val MAIN = "test_main"
 
         @JvmStatic

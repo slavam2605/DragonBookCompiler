@@ -1,7 +1,6 @@
 package compiler.backend.arm64.registerAllocation
 
 import compiler.ir.IRVar
-import java.util.PriorityQueue
 
 class GraphColoring<Color>(
     colors: Set<Color>,
@@ -42,26 +41,17 @@ class GraphColoring<Color>(
             forbiddenColors[irVar] = forbidden
         }
 
-        // Initialize priority queue
-        val unallocatedVars = PriorityQueue<WeightedNode>()
-        val queueEntries = mutableMapOf<IRVar, WeightedNode>()
+        // Initialize bucket queue
+        val bucketQueue = GraphColoringBucketQueue(graph.edges.size)
         graph.edges.forEach { (irVar, adj) ->
             if (irVar in coloring) return@forEach
-            val node = WeightedNode(irVar, adj.count { it !in coloring })
-            unallocatedVars.add(node)
-            queueEntries[irVar] = node
+            val weight = adj.count { it !in coloring }
+            bucketQueue.preInitAdd(irVar, weight)
         }
+        bucketQueue.init()
 
-        while (unallocatedVars.isNotEmpty()) {
-            val queueEntry = unallocatedVars.poll()
-            val irVar = queueEntry.irVar
-
-            // Skip if this entry was updated
-            val latestEntry = queueEntries.remove(irVar)
-            if (latestEntry !== queueEntry) {
-                queueEntries[irVar] = latestEntry!!
-                continue
-            }
+        while (bucketQueue.isNotEmpty()) {
+            val irVar = bucketQueue.maxPoll()
 
             val newColor = chooseColor(irVar)
             coloring[irVar] = newColor
@@ -70,11 +60,7 @@ class GraphColoring<Color>(
 
             // Update priority queue
             adjacent.forEach { otherVar ->
-                // Do not remove the old entry, it will be skipped above
-                val oldNode = queueEntries[otherVar] ?: return@forEach
-                val newNode = WeightedNode(otherVar, oldNode.uncoloredNeighbors - 1)
-                unallocatedVars.add(newNode)
-                queueEntries[otherVar] = newNode
+                bucketQueue.decrementWeight(otherVar)
             }
         }
         return coloring

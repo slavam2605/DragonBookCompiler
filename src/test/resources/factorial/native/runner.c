@@ -18,10 +18,11 @@ int main() {
     for (long long i = 0; i <= 20; i = i + 1) {
         long long test_value = factorial(i);
         long long gold_value = gold_factorial(i);
-        printf("Correct: factorial(%lld) = %lld\n", i, test_value);
         if (test_value != gold_value) {
             printf("Error: factorial(%lld) = %lld, expected %lld\n", i, test_value, gold_value);
             return 1;
+        } else {
+            printf("Correct: factorial(%lld) = %lld\n", i, test_value);
         }
     }
     return 0;

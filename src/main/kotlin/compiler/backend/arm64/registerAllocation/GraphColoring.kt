@@ -16,19 +16,6 @@ class GraphColoring<Color>(
     private val unusedColors = colors.toMutableSet()
     private var extraColorCounter = 0
 
-    private data class WeightedNode(val irVar: IRVar, val uncoloredNeighbors: Int) : Comparable<WeightedNode> {
-        override fun compareTo(other: WeightedNode): Int {
-            if (uncoloredNeighbors != other.uncoloredNeighbors) {
-                // Reversed order for max-priority queue
-                return other.uncoloredNeighbors.compareTo(uncoloredNeighbors)
-            }
-            if (irVar.ssaVer != other.irVar.ssaVer) {
-                return irVar.ssaVer.compareTo(other.irVar.ssaVer)
-            }
-            return irVar.name.compareTo(other.irVar.name)
-        }
-    }
-
     fun findColoring(): Map<IRVar, Color> {
         // Initialize forbidden colors
         graph.edges.forEach { (irVar, adj) ->

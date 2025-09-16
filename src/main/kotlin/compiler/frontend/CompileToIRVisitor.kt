@@ -48,6 +48,8 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             result.addFunction(FrontendFunction(
                 name = ctx.ID().text,
                 parameters = parameters,
+                hasReturnType = ctx.type() != null,
+                endLocation = ctx.block().RBRACE().asLocation(),
                 value = resultIR.toList()
             ))
             resultIR.clear()

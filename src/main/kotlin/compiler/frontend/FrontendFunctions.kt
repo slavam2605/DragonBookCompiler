@@ -19,7 +19,15 @@ class FrontendFunctions<T> {
     fun <R> map(transform: (FrontendFunction<T>) -> R): FrontendFunctions<R> {
         return FrontendFunctions<R>().also { newFunctions ->
             functions.forEach { (name, function) ->
-                newFunctions.addFunction(FrontendFunction(name, function.parameters, transform(function)))
+                newFunctions.addFunction(
+                    FrontendFunction(
+                        name = name,
+                        parameters = function.parameters,
+                        hasReturnType = function.hasReturnType,
+                        endLocation = function.endLocation,
+                        value = transform(function)
+                    )
+                )
             }
         }
     }
@@ -40,5 +48,7 @@ class FrontendFunctions<T> {
 class FrontendFunction<T>(
     val name: String,
     val parameters: List<IRVar>,
+    val hasReturnType: Boolean,
+    val endLocation: SourceLocation,
     val value: T
 )

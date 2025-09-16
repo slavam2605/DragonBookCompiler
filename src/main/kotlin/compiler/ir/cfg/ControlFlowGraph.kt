@@ -97,7 +97,6 @@ open class ControlFlowGraph(
                     }
                 }
             }
-            // TODO insert ret only for functions without returning type
             currentBlock.add(IRReturn(null))
             nodes[currentLabel] = CFGBlock(currentBlock)
             val cfg = ControlFlowGraph(Root, nodes).apply {

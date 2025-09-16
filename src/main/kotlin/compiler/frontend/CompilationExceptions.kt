@@ -55,6 +55,9 @@ class UninitializedVariableException(location: SourceLocation?, name: String) : 
 
 class UnknownTypeException(location: SourceLocation, name: String) : CompilationException(location, "Unknown type '$name'")
 
+class MissingReturnException(location: SourceLocation, functionName: String)
+    : CompilationException(location, "Missing return statement in function '$functionName'")
+
 // ------------ exception context ------------
 
 class SourceLocation(val line: Int, val start: Int, val end: Int) {

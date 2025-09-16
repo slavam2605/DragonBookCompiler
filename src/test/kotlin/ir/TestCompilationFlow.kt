@@ -9,6 +9,7 @@ import compiler.ir.IRPhi
 import compiler.ir.IRProtoNode
 import compiler.ir.IRVar
 import compiler.ir.analysis.DefiniteAssignmentAnalysis
+import compiler.ir.analysis.DefiniteReturnAnalysis
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
@@ -46,6 +47,7 @@ object TestCompilationFlow {
         return irFfs.map { function ->
             ControlFlowGraph.build(function.value, sourceMap).also {
                 DefiniteAssignmentAnalysis(it, function).run()
+                DefiniteReturnAnalysis(it, function).run()
             }
         }
     }

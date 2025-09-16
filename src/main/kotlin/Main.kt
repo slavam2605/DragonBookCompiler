@@ -4,6 +4,7 @@ import compiler.frontend.SemanticAnalysisVisitor
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.analysis.DefiniteAssignmentAnalysis
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
+import compiler.ir.analysis.DefiniteReturnAnalysis
 import compiler.ir.print
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -31,6 +32,7 @@ fun main(args: Array<String>) {
         val ir = mainFunction.value
         val cfg = ControlFlowGraph.build(ir, sourceMap)
         DefiniteAssignmentAnalysis(cfg, mainFunction).run()
+        DefiniteReturnAnalysis(cfg, mainFunction).run()
         val ssa = SSAControlFlowGraph.transform(cfg)
         ssa.print()
     } catch (e: CompilationFailed) {

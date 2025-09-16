@@ -1,0 +1,15 @@
+fun abs(int x) -> int {
+    if (x < 0) {
+        return -x;
+    }
+    return x;
+}
+
+fun test_main() {
+    int x = 15;
+    if (abs(x) == x) {
+        assertEquals(x >= 0, true);
+    } else {
+        assertEquals(x < 0, true);
+    }
+}

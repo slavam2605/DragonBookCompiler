@@ -1,0 +1,27 @@
+fun foo(int x) -> int {
+    if (x > 0) {
+        return x
+    }
+}
+
+fun bar(int x) {
+    if (x > 0) {
+        return
+    }
+}
+
+fun baz(int x) -> int {
+    if (x > 0) {
+        return x
+    } else {
+        return -x
+    }
+}
+
+fun test_main() {
+    foo(1)
+    bar(1)
+    baz(1)
+}
+
+// error: 5:0 "Missing return statement in function 'foo'"

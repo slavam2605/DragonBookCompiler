@@ -6,8 +6,6 @@ import compiler.ir.cfg.utils.toGraphviz
 import kotlin.collections.component1
 import kotlin.collections.component2
 
-private const val USE_GRAPHVIZ = false
-
 fun IRLabel.printToString(): String = name
 
 fun IRValue.printToString(): String = when (this) {
@@ -47,8 +45,8 @@ fun List<IRProtoNode>.print() {
     forEach { println(it.printToString()) }
 }
 
-fun ControlFlowGraph.print() {
-    if (USE_GRAPHVIZ) {
+fun ControlFlowGraph.print(useGraphviz: Boolean = false) {
+    if (useGraphviz) {
         println(toGraphviz())
         println()
         return
@@ -68,12 +66,14 @@ fun ControlFlowGraph.print() {
     println()
 }
 
-fun InterferenceGraph.print() {
+fun InterferenceGraph.print(useGraphviz: Boolean = true) {
     println("Interference graph:")
 
-    if (USE_GRAPHVIZ) {
+    if (useGraphviz) {
         println("graph G {")
-        println("\tlayout=fdp")
+        println("\tlayout=neato;")
+        println("\toverlap=false;")
+        println("\tedge [len=3];")
         edges.forEach { (from, tos) ->
             tos.forEach {
                 if (it.printToString() < from.printToString()) return@forEach

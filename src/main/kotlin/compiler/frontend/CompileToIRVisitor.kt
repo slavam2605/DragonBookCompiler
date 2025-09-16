@@ -279,6 +279,14 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return withNewVar { IRNot(it, visit(ctx.expression())).withLocation(ctx) }
     }
 
+    override fun visitNegExpr(ctx: MainGrammar.NegExprContext): IRValue {
+        // Implement unary minus as 0 - expr
+        val value = visit(ctx.expression())
+        return withNewVar {
+            IRBinOp(IRBinOpKind.SUB, it, IRInt(0), value).withLocation(ctx)
+        }
+    }
+
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): IRValue {
         return IRInt(ctx.INT_LITERAL().text.toLong())
     }

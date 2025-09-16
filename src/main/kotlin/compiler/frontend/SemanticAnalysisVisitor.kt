@@ -265,6 +265,11 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return FrontendType.BOOL
     }
 
+    override fun visitNegExpr(ctx: MainGrammar.NegExprContext): FrontendType {
+        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.INT)
+        return FrontendType.INT
+    }
+
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): FrontendType {
         return FrontendType.INT
     }

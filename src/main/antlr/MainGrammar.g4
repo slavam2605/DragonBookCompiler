@@ -92,6 +92,7 @@ returnStatement
 expression
     : LPAR expression RPAR                                      # ParenExpr
     | NOT expression                                            # NotExpr
+    | MINUS expression                                          # NegExpr
     | left=expression op=(STAR | DIV | MOD) right=expression    # MulDivExpr
     | left=expression op=(PLUS | MINUS) right=expression        # AddSubExpr
     | left=expression op=comparisonOp right=expression          # ComparisonExpr

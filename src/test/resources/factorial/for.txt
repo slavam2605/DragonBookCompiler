@@ -1,8 +1,11 @@
-fun test_main() -> int {
-    int n = <$n>
+fun factorial(int n) -> int {
     int r = 1
     for (int i = 2; i <= n; i = i + 1) {
         r = r * i
     }
     return r
+}
+
+fun test_main() -> int {
+    return factorial(<$n>)
 }

@@ -11,15 +11,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 object NativeArm64TestCompilationFlow {
-    private var compiledHelper: File? = null
+    private val compiledHelpers = mutableMapOf<String, File>()
 
-    fun compileAndRun(ffs: FrontendFunctions<ControlFlowGraph>): String {
+    fun compileAndRun(ffs: FrontendFunctions<ControlFlowGraph>, customNativeRunner: String?): String {
         val asmFile = NativeMacAarch64.compile(ffs)
         if (PRINT_DEBUG_INFO) {
             println(asmFile.readText())
         }
 
-        val helperFile = compileHelper()
+        val helperFile = compileHelper(customNativeRunner)
         val outputFile = createTempFile("test").toFile()
 
         // Compile test program and Link with helper
@@ -42,15 +42,16 @@ object NativeArm64TestCompilationFlow {
         return output.trim()
     }
 
-    private fun compileHelper(): File {
-        val inputPath = TestResources.getFile("native/test.c").absolutePath
-        if (compiledHelper == null) {
+    private fun compileHelper(customNativeRunner: String?): File {
+        val helperFileName = customNativeRunner ?: "native/test.c"
+        if (helperFileName !in compiledHelpers) {
+            val inputPath = TestResources.getFile(helperFileName).absolutePath
             val outputFile = createTempFile("test", ".o").toFile()
             runProcess("clang", "-c", "-arch", "arm64", inputPath, "-o", outputFile.absolutePath) { code, output ->
                 assertEquals(code, 0, "Failed to compile test.c:\n$output")
             }
-            compiledHelper = outputFile
+            compiledHelpers[helperFileName] = outputFile
         }
-        return compiledHelper!!
+        return compiledHelpers[helperFileName]!!
     }
 }

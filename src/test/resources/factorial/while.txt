@@ -1,5 +1,4 @@
-fun test_main() -> int {
-    int n = <$n>
+fun factorial(int n) -> int {
     int r = 1
     int i = 2
     while (i <= n) {
@@ -7,4 +6,8 @@ fun test_main() -> int {
         i = i + 1
     }
     return r
+}
+
+fun test_main() -> int {
+    return factorial(<$n>)
 }

@@ -32,6 +32,7 @@ abstract class CompileToIRTestBase {
 
     protected open val excludeModes: Set<TestMode> = emptySet()
     protected open val ignoreInterpretedValues: Boolean = false
+    protected open val customNativeRunner: String? = null
 
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
         StatsHolder.clear()
@@ -88,7 +89,7 @@ abstract class CompileToIRTestBase {
             }
             TestMode.NATIVE_ARM64 -> {
                 val ffs = compileToOptimizedSSA(input).map { ConvertFromSSA(it.value.optimizedSSA).run() }
-                val output = NativeArm64TestCompilationFlow.compileAndRun(ffs)
+                val output = NativeArm64TestCompilationFlow.compileAndRun(ffs, customNativeRunner)
 
                 ffs.forEach { function ->
                     val name = function.name
@@ -104,7 +105,7 @@ abstract class CompileToIRTestBase {
                     }
                 }
 
-                return mapOf(ReturnValue to output.toLong())
+                return output.toLongOrNull()?.let { mapOf(ReturnValue to it) } ?: emptyMap()
             }
         }
     }
@@ -151,17 +152,17 @@ abstract class CompileToIRTestBase {
     protected fun withParametersAndFiles(
         intRange: Iterable<Long>,
         resourceFolder: String,
-        block: (TestMode, Long, File) -> DynamicNode
+        block: (TestMode, Long, File) -> DynamicNode?
     ): List<DynamicContainer> = withFiles(resourceFolder) { mode, file ->
-        val tests = intRange.map { n -> block(mode, n, file) }
+        val tests = intRange.mapNotNull { n -> block(mode, n, file) }
         DynamicContainer.dynamicContainer(file.name, tests)
     }
 
     protected fun withFiles(resourceFolder: String, block: (TestMode, File) -> DynamicNode): List<DynamicContainer> {
         val testNames = System.getProperty("testNames")?.split(",")?.toSet()
-        val resourceFiles = listResourceFiles(resourceFolder).let { files ->
-            if (testNames == null) files
-            else files.filter { it.name in testNames }
+        val resourceFiles = listResourceFiles(resourceFolder).filter {
+            if (testNames != null && it.name !in testNames) return@filter false
+            it.extension !in ignoredExtensions
         }
 
         return TestMode.entries.filter { it !in excludeModes }.map { mode ->
@@ -173,6 +174,7 @@ abstract class CompileToIRTestBase {
     companion object {
         const val PRINT_DEBUG_INFO = false
         private const val MAIN = "test_main"
+        private val ignoredExtensions = setOf("c")
 
         @JvmStatic
         protected val TestFunctionHandler = handler@ { name: String, args: List<Long> ->

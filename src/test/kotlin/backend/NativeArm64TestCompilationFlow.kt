@@ -1,6 +1,6 @@
 package backend
 
-import compiler.backend.arm64.NativeMacAarch64
+import compiler.backend.arm64.Arm64CompilationFlow
 import compiler.frontend.FrontendFunctions
 import compiler.ir.cfg.ControlFlowGraph
 import ir.CompileToIRTestBase.Companion.PRINT_DEBUG_INFO
@@ -14,7 +14,7 @@ object NativeArm64TestCompilationFlow {
     private val compiledHelpers = mutableMapOf<String, File>()
 
     fun compileAndRun(ffs: FrontendFunctions<ControlFlowGraph>, customNativeRunner: String?): String {
-        val asmFile = NativeMacAarch64.compile(ffs)
+        val asmFile = Arm64CompilationFlow.compileToAsm(ffs)
         if (PRINT_DEBUG_INFO) {
             println(asmFile.readText())
         }

@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.2.0"
     id("antlr")
+    application
 }
 
 group = "org.example"
@@ -14,6 +15,7 @@ dependencies {
     testImplementation(kotlin("test"))
     antlr("org.antlr:antlr4:4.13.2")
     implementation("org.antlr:antlr4-runtime:4.13.2")
+    implementation("com.github.ajalt.clikt:clikt:5.0.3")
 }
 
 tasks.generateGrammarSource {
@@ -54,4 +56,8 @@ tasks.test {
 
 kotlin {
     jvmToolchain(24)
+}
+
+application {
+    mainClass.set("MainKt")
 }

@@ -3,15 +3,11 @@ package ir
 import TestResources
 import backend.NativeArm64TestCompilationFlow
 import compiler.backend.arm64.registerAllocation.MemoryAllocator
-import compiler.ir.IRFunctionCall
-import compiler.ir.IRInt
-import compiler.ir.IRVar
-import compiler.ir.cfg.ssa.ConvertFromSSA
+import compiler.ir.*
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
-import compiler.ir.print
-import compiler.ir.printToString
 import ir.TestCompilationFlow.compileToCFG
 import ir.TestCompilationFlow.compileToIR
+import ir.TestCompilationFlow.compileToOptimizedCFG
 import ir.TestCompilationFlow.compileToOptimizedSSA
 import ir.TestCompilationFlow.compileToSSA
 import ir.interpreter.BaseInterpreter.Companion.ReturnValue
@@ -79,16 +75,16 @@ abstract class CompileToIRTestBase {
                             "because it returns the same values as for optimized SSA mode"
                 }
 
-                val ffs = compileToOptimizedSSA(input)
-                val nonSsaFfs = ffs.map { ConvertFromSSA(it.value.optimizedSSA).run() }
+                val nonSsaFfsWithValues = compileToOptimizedCFG(input)
+                val nonSsaFfs = nonSsaFfsWithValues.map { it.value.cfg }
                 if (PRINT_DEBUG_INFO) nonSsaFfs.print { it.print() }
 
-                val mainFunction = ffs["test_main"]!!.value
+                val (_, mainCpValues, mainEqualities) = nonSsaFfsWithValues["test_main"]!!.value
                 return CFGInterpreter(MAIN, emptyList(), nonSsaFfs, TestFunctionHandler).eval()
-                    .withValues(mainFunction.cpValues, mainFunction.equalities)
+                    .withValues(mainCpValues, mainEqualities)
             }
             TestMode.NATIVE_ARM64 -> {
-                val ffs = compileToOptimizedSSA(input).map { ConvertFromSSA(it.value.optimizedSSA).run() }
+                val ffs = compileToOptimizedCFG(input).map { it.value.cfg }
                 val output = NativeArm64TestCompilationFlow.compileAndRun(ffs, customNativeRunner)
 
                 ffs.forEach { function ->

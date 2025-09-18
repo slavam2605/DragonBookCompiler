@@ -96,9 +96,10 @@ class ConvertFromSSA(private val ssa: SSAControlFlowGraph) {
         // Process all loops
         loops.forEach { loop ->
             check(loop.size >= 2)
+            check(loop.all { it.type == loop[0].type })
 
             // t = loop[0]; { loop[0] = loop[1]; ...; loop[n-2] = loop[n-1]; } loop[n-1] = t;
-            val tempVar = IRVar(tempVarAllocator.newName(), null)
+            val tempVar = IRVar(tempVarAllocator.newName(), loop[0].type, null)
             resultIR.add(IRAssign(tempVar, loop[0]))
             loop.zipWithNext().forEach { (to, from) ->
                 resultIR.add(IRAssign(to, from))

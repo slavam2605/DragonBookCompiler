@@ -38,7 +38,7 @@ internal class RenameVariablesForSSA(
         } else {
             xStack.last().index = index
         }
-        return IRVar(x.name, index, x.sourceName)
+        return IRVar(x.name, index, x.type, x.sourceName)
     }
 
     private fun renameBlock(label: IRLabel) {
@@ -56,7 +56,7 @@ internal class RenameVariablesForSSA(
                     .filterIsInstance<IRVar>()
                     .associateWith {
                         val ssaIndex = peekName(it.name)
-                        IRVar(it.name, ssaIndex, it.sourceName)
+                        IRVar(it.name, ssaIndex, it.type, it.sourceName)
                     }
                 val newLVar = node.lvalue?.let { newName(label, it) }
                 block[index] = node.transform(object : BaseIRTransformer() {
@@ -74,7 +74,7 @@ internal class RenameVariablesForSSA(
                 val sourceVar = node.getSourceValue(label)
                 check(sourceVar is IRVar) { "Source of phi-node must be a variable during conversion to SSA" }
                 val lastSSAVer = peekName(sourceVar.name)
-                nextBlock[index] = node.replaceSourceValue(label, IRVar(sourceVar.name, lastSSAVer, sourceVar.sourceName))
+                nextBlock[index] = node.replaceSourceValue(label, IRVar(sourceVar.name, lastSSAVer, sourceVar.type, sourceVar.sourceName))
             }
         }
 

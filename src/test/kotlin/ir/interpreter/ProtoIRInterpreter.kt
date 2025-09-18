@@ -44,6 +44,6 @@ open class ProtoIRInterpreter(
             functions,
             fallbackFunctionHandler,
             exitAfterMaxSteps
-        ).eval()[ReturnValue]
+        ).eval()[IntReturnValue]
     }
 }

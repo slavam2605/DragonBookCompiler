@@ -10,7 +10,7 @@ import ir.TestCompilationFlow.compileToIR
 import ir.TestCompilationFlow.compileToOptimizedCFG
 import ir.TestCompilationFlow.compileToOptimizedSSA
 import ir.TestCompilationFlow.compileToSSA
-import ir.interpreter.BaseInterpreter.Companion.ReturnValue
+import ir.interpreter.BaseInterpreter.Companion.IntReturnValue
 import ir.interpreter.CFGInterpreter
 import compiler.frontend.FrontendConstantValue
 import ir.interpreter.ProtoIRInterpreter
@@ -102,7 +102,7 @@ abstract class CompileToIRTestBase {
                     }
                 }
 
-                return output.toLongOrNull()?.let { mapOf(ReturnValue to FrontendConstantValue.IntValue(it)) } ?: emptyMap()
+                return output.toLongOrNull()?.let { mapOf(IntReturnValue to FrontendConstantValue.IntValue(it)) } ?: emptyMap()
             }
         }
     }
@@ -124,7 +124,7 @@ abstract class CompileToIRTestBase {
         entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
     protected fun compileAndGetResult(mode: TestMode, input: String): FrontendConstantValue? =
-        compileAndRun(mode, input)[ReturnValue]
+        compileAndRun(mode, input)[IntReturnValue]
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
         file.readText().let {

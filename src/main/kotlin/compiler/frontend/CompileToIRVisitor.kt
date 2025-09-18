@@ -1,5 +1,6 @@
 package compiler.frontend
 
+import MainGrammar
 import MainGrammarBaseVisitor
 import compiler.ir.*
 import compiler.ir.cfg.extensions.SourceLocationMap
@@ -13,6 +14,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     private val resultIR = mutableListOf<IRProtoNode>()
     private val sourceMap = SourceLocationMap()
     private val symbolTable = SymbolTable<IRVar>()
+    private val functionReturnType = mutableMapOf<String, IRType>()
     private val loopStack = mutableListOf<LoopContext>()
     private val varAllocator = NameAllocator("x")
     private val labelAllocator = NameAllocator("L")
@@ -30,6 +32,12 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitProgram(ctx: MainGrammar.ProgramContext): Nothing? {
+        ctx.function().forEach { functionContext ->
+            val name = functionContext.ID().text
+            val returnType = functionContext.type()?.irType()
+            returnType?.let { functionReturnType[name] = it }
+        }
+
         return ctx.defaultVisitChildren()
     }
 
@@ -38,7 +46,8 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             val parameters = mutableListOf<IRVar>()
             ctx.functionParameters()?.functionParameter()?.forEach { parameter ->
                 val name = parameter.ID().text
-                val irVar = IRVar(varAllocator.newName(name), name)
+                val type = parameter.type().irType()
+                val irVar = IRVar(varAllocator.newName(name), type, name)
                 parameters.add(irVar)
                 symbolTable.define(name, irVar)
             }
@@ -112,7 +121,9 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitDeclaration(ctx: MainGrammar.DeclarationContext): Nothing? {
-        val declName = IRVar(varAllocator.newName(ctx.ID().text), ctx.ID().text)
+        val name = ctx.ID().text
+        val type = ctx.type().irType()
+        val declName = IRVar(varAllocator.newName(name), type, name)
         if (ctx.ASSIGN() != null) {
             resultIR.add(IRAssign(declName, visit(ctx.expression())).withLocation(ctx))
         }
@@ -225,24 +236,26 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     // --------------- Expressions ---------------
 
-    private fun withNewVar(block: (IRVar) -> IRNode): IRValue {
-        return IRVar(varAllocator.newName(), null).also {
+    private fun withNewVar(type: IRType, block: (IRVar) -> IRNode): IRValue {
+        return IRVar(varAllocator.newName(), type, null).also {
             resultIR.add(block(it))
         }
     }
 
     override fun visitTrueExpr(ctx: MainGrammar.TrueExprContext): IRValue {
-        return withNewVar { IRAssign(it, IRInt(1)).withLocation(ctx) }
+        return withNewVar(IRType.INT64) { IRAssign(it, IRInt(1)).withLocation(ctx) }
     }
 
     override fun visitFalseExpr(ctx: MainGrammar.FalseExprContext): IRValue {
-        return withNewVar { IRAssign(it, IRInt(0)).withLocation(ctx) }
+        return withNewVar(IRType.INT64) { IRAssign(it, IRInt(0)).withLocation(ctx) }
     }
 
     override fun visitCallExpr(ctx: MainGrammar.CallExprContext): IRValue {
         val call = ctx.functionCall()
         val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
-        return withNewVar { IRFunctionCall(call.ID().text, it, arguments).withLocation(ctx) }
+        val name = call.ID().text
+        val returnType = functionReturnType[name] ?: error("Unknown function $name (or it doesn't have a return type)")
+        return withNewVar(returnType) { IRFunctionCall(name, it, arguments).withLocation(ctx) }
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): IRValue {
@@ -252,8 +265,11 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             "%" -> IRBinOpKind.MOD
             else -> throw IllegalStateException("Unknown operator ${ctx.op.text}")
         }
-        return withNewVar {
-            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right)).withLocation(ctx)
+        val left = visit(ctx.left)
+        val right = visit(ctx.right)
+        check(left.type == right.type)
+        return withNewVar(left.type) {
+            IRBinOp(opKind, it, left, right).withLocation(ctx)
         }
     }
 
@@ -272,19 +288,19 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             "!=" -> IRBinOpKind.NEQ
             else -> throw IllegalStateException("Unknown operator ${ctx.op.text}")
         }
-        return withNewVar {
+        return withNewVar(IRType.INT64) {
             IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right)).withLocation(ctx)
         }
     }
 
     override fun visitNotExpr(ctx: MainGrammar.NotExprContext): IRValue {
-        return withNewVar { IRNot(it, visit(ctx.expression())).withLocation(ctx) }
+        return withNewVar(IRType.INT64) { IRNot(it, visit(ctx.expression())).withLocation(ctx) }
     }
 
     override fun visitNegExpr(ctx: MainGrammar.NegExprContext): IRValue {
         // Implement unary minus as 0 - expr
         val value = visit(ctx.expression())
-        return withNewVar {
+        return withNewVar(value.type) {
             IRBinOp(IRBinOpKind.SUB, it, IRInt(0), value).withLocation(ctx)
         }
     }
@@ -307,13 +323,16 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             "-" -> IRBinOpKind.SUB
             else -> throw IllegalStateException("Unknown operator ${ctx.op.text}")
         }
-        return withNewVar {
-            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right)).withLocation(ctx)
+        val left = visit(ctx.left)
+        val right = visit(ctx.right)
+        check(left.type == right.type)
+        return withNewVar(left.type) {
+            IRBinOp(opKind, it, left, right).withLocation(ctx)
         }
     }
 
     private fun processShortCircuitLogic(left: ParserRuleContext, right: ParserRuleContext, isAnd: Boolean): IRValue {
-        val newVar = IRVar(varAllocator.newName(), null)
+        val newVar = IRVar(varAllocator.newName(), IRType.INT64, null)
         val labelRight = IRLabel(labelAllocator.newName())
         val labelAfter = IRLabel(labelAllocator.newName())
         val leftVal = visit(left)
@@ -336,6 +355,15 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitOrExpr(ctx: MainGrammar.OrExprContext): IRValue {
         return processShortCircuitLogic(ctx.left, ctx.right, false)
+    }
+
+    private fun MainGrammar.TypeContext.irType(): IRType {
+        return when (text) {
+            "int" -> IRType.INT64
+            "bool" -> IRType.INT64
+            "float" -> IRType.FLOAT64
+            else -> error("Unknown type '$text'")
+        }
     }
 
     private fun <T> withLoop(continueLabel: IRLabel, breakLabel: IRLabel, block: () -> T): T {

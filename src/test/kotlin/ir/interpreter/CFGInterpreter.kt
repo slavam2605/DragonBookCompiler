@@ -67,6 +67,6 @@ class CFGInterpreter(
             functions,
             fallbackFunctionHandler,
             exitAfterMaxSteps
-        ).eval()[ReturnValue]
+        ).eval()[IntReturnValue]
     }
 }

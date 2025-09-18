@@ -94,7 +94,7 @@ abstract class BaseInterpreter<T>(
             }
             is IRReturn -> {
                 node.value?.let {
-                    vars[ReturnValue] = getValue(it)
+                    vars[IntReturnValue] = getValue(it)
                 }
                 return Command.Exit
             }
@@ -124,6 +124,6 @@ abstract class BaseInterpreter<T>(
         /**
          * Synthetic variable used to store the return value of a function.
          */
-        val ReturnValue = IRVar($$"$return_value$", null)
+        val IntReturnValue = IRVar($$"$return_value$", IRType.INT64, null)
     }
 }

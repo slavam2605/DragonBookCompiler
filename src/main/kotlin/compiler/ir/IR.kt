@@ -2,15 +2,35 @@ package compiler.ir
 
 // values
 
-sealed interface IRValue
-
-data class IRVar(val name: String, val ssaVer: Int, val sourceName: String?) : IRValue {
-    constructor(name: String, sourceName: String?) : this(name, 0, sourceName)
+enum class IRType {
+    INT64, FLOAT64
 }
 
-data class IRInt(val value: Long) : IRValue
+sealed interface IRValue {
+    val type: IRType
+}
 
-data class IRFloat(val value: Double) : IRValue
+class IRVar(val name: String, val ssaVer: Int, override val type: IRType, val sourceName: String?) : IRValue {
+    constructor(name: String, type: IRType, sourceName: String?) : this(name, 0, type, sourceName)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return ssaVer == (other as IRVar).ssaVer && name == other.name
+    }
+
+    override fun hashCode(): Int {
+        return 31 * ssaVer + name.hashCode()
+    }
+}
+
+data class IRInt(val value: Long) : IRValue {
+    override val type: IRType = IRType.INT64
+}
+
+data class IRFloat(val value: Double) : IRValue {
+    override val type: IRType = IRType.FLOAT64
+}
 
 // interfaces
 

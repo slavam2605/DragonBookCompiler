@@ -196,10 +196,11 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {
-        visit(ctx.left).checkType(ctx.left, FrontendType.INT)
-        visit(ctx.right).checkType(ctx.right, FrontendType.INT)
+        val left = visit(ctx.left).checkType(ctx.left, FrontendType.INT, FrontendType.FLOAT)
+        val right = visit(ctx.right).checkType(ctx.right, FrontendType.INT, FrontendType.FLOAT)
+        left.checkSameType(ctx.right, right)
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "*", "/", "%")
-        return FrontendType.INT
+        return left
     }
 
     override fun visitIdExpr(ctx: MainGrammar.IdExprContext): FrontendType {
@@ -216,14 +217,17 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         val right = visit(ctx.right)
         when (left) {
             FrontendType.INT -> right.checkType(ctx.right, FrontendType.INT)
+            FrontendType.FLOAT -> right.checkType(ctx.right, FrontendType.FLOAT)
             FrontendType.BOOL if (ctx.op.text == "==" || ctx.op.text == "!=") ->
                 right.checkType(ctx.right, FrontendType.BOOL)
             FrontendType.ERROR_TYPE -> { /* ignore */ }
-            else -> throw MismatchedTypeException(
-                location = ctx.left.asLocation(),
-                expectedTypes = listOf(FrontendType.INT, FrontendType.BOOL),
-                actualType = left
-            )
+            else -> {
+                errors.add(MismatchedTypeException(
+                    location = ctx.left.asLocation(),
+                    expectedTypes = listOf(FrontendType.INT, FrontendType.BOOL),
+                    actualType = left
+                ))
+            }
         }
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "<", ">", "<=", ">=", "==", "!=")
         return FrontendType.BOOL
@@ -258,10 +262,11 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitAddSubExpr(ctx: MainGrammar.AddSubExprContext): FrontendType {
-        visit(ctx.left).checkType(ctx.left, FrontendType.INT)
-        visit(ctx.right).checkType(ctx.right, FrontendType.INT)
+        val left = visit(ctx.left).checkType(ctx.left, FrontendType.INT, FrontendType.FLOAT)
+        val right = visit(ctx.right).checkType(ctx.right,FrontendType.INT, FrontendType.FLOAT)
+        left.checkSameType(ctx.right, right)
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "+", "-")
-        return FrontendType.INT
+        return left
     }
 
     override fun visitAndExpr(ctx: MainGrammar.AndExprContext): FrontendType {
@@ -320,13 +325,19 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         }
     }
 
-    private fun FrontendType.checkType(ctx: ParserRuleContext, expected: FrontendType) {
-        if (this == FrontendType.ERROR_TYPE || expected == FrontendType.ERROR_TYPE) return
-        if (this == FrontendType.NOTHING) return // Nothing is a subtype of every type
-        if (this != expected) {
-            errors.add(MismatchedTypeException(ctx.asLocation(), expected, this))
+    private fun FrontendType.checkSameType(ctx: ParserRuleContext, other: FrontendType): FrontendType {
+        if (this != FrontendType.ERROR_TYPE && this != other) {
+            errors.add(MismatchedTypeException(ctx.asLocation(), this, this))
         }
-        return
+        return this
+    }
+
+    private fun FrontendType.checkType(ctx: ParserRuleContext, vararg expected: FrontendType): FrontendType {
+        if (this == FrontendType.ERROR_TYPE || expected.singleOrNull() == FrontendType.ERROR_TYPE) return this
+        if (this !in expected) {
+            errors.add(MismatchedTypeException(ctx.asLocation(), expected.toList(), this))
+        }
+        return this
     }
 
     private fun checkOperatorSyntax(ctx: SourceLocation, op: String, vararg expectedOps: String) {

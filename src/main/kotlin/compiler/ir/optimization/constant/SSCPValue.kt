@@ -1,7 +1,12 @@
 package compiler.ir.optimization.constant
 
 sealed interface SSCPValue {
-    data class Value(val value: Long) : SSCPValue
+    sealed interface Value : SSCPValue {
+        val value: Number
+    }
+
+    data class IntValue(override val value: Long) : Value
+    data class FloatValue(override val value: Double) : Value
     object Top : SSCPValue
     object Bottom : SSCPValue
 
@@ -16,7 +21,7 @@ sealed interface SSCPValue {
         this is Bottom || other is Bottom -> Bottom
         this is Top -> other
         other is Top -> this
-        this is Value && other is Value -> {
+        this is IntValue && other is IntValue -> {
             if (this.value == other.value) this else Bottom
         }
         else -> error("Unhandled case: $this, $other")
@@ -24,7 +29,8 @@ sealed interface SSCPValue {
 
     operator fun compareTo(other: SSCPValue): Int {
         if (this is Value && other is Value && value != other.value) {
-            error("Value($value) is not comparable with Value(${other.value})")
+            error("${this.javaClass.simpleName}($value) is not comparable " +
+                    "with ${other.javaClass.simpleName}(${other.value})")
         }
 
         return classOrd().compareTo(other.classOrd())
@@ -32,7 +38,8 @@ sealed interface SSCPValue {
 
     private fun classOrd() = when (this) {
         is Top -> 2
-        is Value -> 1
+        is IntValue,
+        is FloatValue -> 1
         is Bottom -> 0
     }
 }

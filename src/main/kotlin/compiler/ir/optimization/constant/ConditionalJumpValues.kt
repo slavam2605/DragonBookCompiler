@@ -49,7 +49,7 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
                 transformedBlock.add(newNode.transform(object : BaseIRTransformer() {
                     override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue {
                         if (value !is IRVar) return value
-                        (condVars[value] as? SSCPValue.Value)?.let { sscpValue ->
+                        (condVars[value] as? SSCPValue.IntValue)?.let { sscpValue ->
                             cfgChanged = true
                             return IRInt(sscpValue.value)
                         }
@@ -58,7 +58,7 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
                         if (node !is IRPhi) return value
                         val from = node.sources[index].from
                         val edgeOut = modifyOutEdge(from, label, dfa.outValues[from]!!)
-                        (edgeOut[value] as? SSCPValue.Value)?.let { sscpValue ->
+                        (edgeOut[value] as? SSCPValue.IntValue)?.let { sscpValue ->
                             cfgChanged = true
                             return IRInt(sscpValue.value)
                         }
@@ -101,9 +101,10 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
 
             val thisValue = (source.value as? IRInt)?.value
                 ?: return node // failure, source value must be IRInt or `irVar`
+                               // floats are not supported, for now edge values are only integers (booleans)
 
             val edgeValues = modifyOutEdge(source.from, label, dfa.outValues[source.from]!!)
-            val fromValue = (edgeValues[irVar] as? SSCPValue.Value)?.value
+            val fromValue = (edgeValues[irVar] as? SSCPValue.IntValue)?.value
             if (thisValue != fromValue) {
                 return node // failure, constant value doesn't match
             }
@@ -119,8 +120,8 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
 
         return outMap.toMutableMap().also { newMap ->
             check(jump.target != jump.elseTarget)
-            if (to == jump.target) newMap[jump.cond] = SSCPValue.Value(1L)
-            if (to == jump.elseTarget) newMap[jump.cond] = SSCPValue.Value(0L)
+            if (to == jump.target) newMap[jump.cond] = SSCPValue.IntValue(1L)
+            if (to == jump.elseTarget) newMap[jump.cond] = SSCPValue.IntValue(0L)
         }
     }
 }

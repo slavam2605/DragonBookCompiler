@@ -1,6 +1,7 @@
 package ir
 
 import compiler.frontend.FrontendCompilationFlow
+import compiler.frontend.FrontendConstantValue
 import compiler.frontend.FrontendFunctions
 import compiler.ir.IRPhi
 import compiler.ir.IRProtoNode
@@ -53,7 +54,7 @@ object TestCompilationFlow {
 
     data class CFGWithStaticValues(
         val cfg: ControlFlowGraph,
-        val cpValues: Map<IRVar, Long>,
+        val cpValues: Map<IRVar, FrontendConstantValue>,
         val equalities: Map<IRVar, IRVar>
     )
 

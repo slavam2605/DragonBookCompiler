@@ -2,6 +2,7 @@ package compiler.ir.optimization.constant
 
 import compiler.ir.BaseIRTransformer
 import compiler.ir.IRAssign
+import compiler.ir.IRFloat
 import compiler.ir.IRInt
 import compiler.ir.IRJump
 import compiler.ir.IRJumpIfTrue
@@ -28,7 +29,7 @@ object FoldConstantExpressions {
             fromBlock.irNodes.filterIsInstance<IRJumpIfTrue>().forEach { jumpNode ->
                 val constantCond = when (jumpNode.cond) {
                     is IRInt -> jumpNode.cond.value
-                    is IRVar -> (cpValues[jumpNode.cond] as? SSCPValue.Value)?.value
+                    is IRVar -> (cpValues[jumpNode.cond] as? SSCPValue.IntValue)?.value
                     else -> error("Floats are not supported")
                 }
                 if (constantCond == null) {
@@ -91,9 +92,12 @@ object FoldConstantExpressions {
 
                 override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue {
                     if (value is IRVar) {
-                        (cpValues[value] as? SSCPValue.Value)?.let {
+                        (cpValues[value] as? SSCPValue.Value)?.let { cpValue ->
                             changed = true
-                            return IRInt(it.value)
+                            return when (cpValue) {
+                                is SSCPValue.IntValue -> IRInt(cpValue.value)
+                                is SSCPValue.FloatValue -> IRFloat(cpValue.value)
+                            }
                         }
                     }
                     return value

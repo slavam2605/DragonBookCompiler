@@ -1,5 +1,6 @@
 package ir.tests
 
+import compiler.frontend.FrontendConstantValue
 import ir.CompileToIRTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicNode
@@ -30,7 +31,7 @@ class CollatzTest : CompileToIRTestBase() {
                     println("collatz steps for $n = $result")
                 }
                 if (mode != TestMode.NATIVE_ARM64) {
-                    assertEquals(collatz(n).toLong(), result)
+                    assertEquals(collatz(n).toLong(), (result as? FrontendConstantValue.IntValue)?.value)
                 }
             }
         }

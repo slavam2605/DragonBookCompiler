@@ -12,8 +12,7 @@ import ir.TestCompilationFlow.compileToOptimizedSSA
 import ir.TestCompilationFlow.compileToSSA
 import ir.interpreter.BaseInterpreter.Companion.ReturnValue
 import ir.interpreter.CFGInterpreter
-import ir.interpreter.IntValue
-import ir.interpreter.InterpretedValue
+import compiler.frontend.FrontendConstantValue
 import ir.interpreter.ProtoIRInterpreter
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
@@ -32,7 +31,7 @@ abstract class CompileToIRTestBase {
     protected open val ignoreInterpretedValues: Boolean = false
     protected open val customNativeRunner: String? = null
 
-    protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, InterpretedValue> {
+    protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, FrontendConstantValue> {
         StatsHolder.clear()
         when (mode) {
             TestMode.IR -> {
@@ -64,7 +63,7 @@ abstract class CompileToIRTestBase {
 
                 val mainFunction = ffs["test_main"]!!.value
                 if (ignoreInterpretedValues) {
-                    return mainFunction.cpValues.mapValues { (_, value) -> IntValue(value) }
+                    return mainFunction.cpValues
                 }
 
                 val optimizedFfs = ffs.map { it.value.optimizedSSA }
@@ -103,16 +102,16 @@ abstract class CompileToIRTestBase {
                     }
                 }
 
-                return output.toLongOrNull()?.let { mapOf(ReturnValue to IntValue(it)) } ?: emptyMap()
+                return output.toLongOrNull()?.let { mapOf(ReturnValue to FrontendConstantValue.IntValue(it)) } ?: emptyMap()
             }
         }
     }
 
-    private fun Map<IRVar, InterpretedValue>.withValues(extraValues: Map<IRVar, Long>, equalities: Map<IRVar, IRVar>): Map<IRVar, InterpretedValue> {
+    private fun Map<IRVar, FrontendConstantValue>.withValues(extraValues: Map<IRVar, FrontendConstantValue>, equalities: Map<IRVar, IRVar>): Map<IRVar, FrontendConstantValue> {
         val result = toMutableMap()
         extraValues.forEach { (irVar, value) ->
             assertTrue(irVar !in this, "Constant propagation didn't remove variable $irVar with value $value")
-            result[irVar] = IntValue(value)
+            result[irVar] = value
         }
         equalities.forEach { (irVar, otherVar) ->
             check(irVar !in result || result[irVar] == result[otherVar])
@@ -124,7 +123,7 @@ abstract class CompileToIRTestBase {
     protected fun Map<IRVar, Long>.getVariable(varName: String) =
         entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
-    protected fun compileAndGetResult(mode: TestMode, input: String): InterpretedValue? =
+    protected fun compileAndGetResult(mode: TestMode, input: String): FrontendConstantValue? =
         compileAndRun(mode, input)[ReturnValue]
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
@@ -175,7 +174,7 @@ abstract class CompileToIRTestBase {
         private val ignoredExtensions = setOf("c")
 
         @JvmStatic
-        protected val TestFunctionHandler = handler@ { name: String, args: List<InterpretedValue> ->
+        protected val TestFunctionHandler = handler@ { name: String, args: List<FrontendConstantValue> ->
             when (name) {
                 "assertEquals", "assertStaticEquals" -> {
                     assertEquals(args[1], args[0], "Wrong values in assertEquals")
@@ -184,13 +183,13 @@ abstract class CompileToIRTestBase {
                 "undef" -> return@handler args[0]
                 else -> error("Unknown function: $name")
             }
-            IntValue(0) // default return value
+            FrontendConstantValue.IntValue(0) // default return value
         }
 
         private fun checkStaticallyEvaluatedValues(
             unoptimized: SSAControlFlowGraph,
             optimized: SSAControlFlowGraph,
-            cpValues: Map<IRVar, Long>
+            cpValues: Map<IRVar, FrontendConstantValue>
         ) {
             // Statically check equality after optimization
             optimized.blocks.forEach { (_, block) ->

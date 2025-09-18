@@ -3,6 +3,7 @@ package compiler.ir.optimization.constant
 import compiler.ir.IRAssign
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
+import compiler.ir.IRFloat
 import compiler.ir.IRInt
 import compiler.ir.IRNode
 import compiler.ir.IRPhi
@@ -11,32 +12,38 @@ import compiler.ir.IRValue
 object ArithmeticRules {
     private fun IRValue.asInt() = (this as? IRInt)?.value
 
+    private fun IRValue.asFloat() = (this as? IRFloat)?.value
+
+    private fun IRValue.isZero() = asInt() == 0L || asFloat() == 0.0
+
+    private fun IRValue.isOne() = asInt() == 1L || asFloat() == 1.0
+
     private fun IRNode.toAssign(value: IRValue) = IRAssign(lvalue!!, value)
 
     fun simplifyNode(node: IRNode): IRNode? {
         return when (node) {
             is IRBinOp -> when (node.op) {
                 IRBinOpKind.ADD -> when {
-                    node.left.asInt() == 0L -> node.toAssign(node.right)
-                    node.right.asInt() == 0L -> node.toAssign(node.left)
+                    node.left.isZero() -> node.toAssign(node.right)
+                    node.right.isZero() -> node.toAssign(node.left)
                     else -> null
                 }
                 IRBinOpKind.SUB -> when {
-                    node.right.asInt() == 0L -> node.toAssign(node.left)
+                    node.right.isZero() -> node.toAssign(node.left)
                     node.left == node.right -> node.toAssign(IRInt(0))
                     else -> null
                 }
                 IRBinOpKind.MUL -> when {
-                    node.left.asInt() == 0L || node.right.asInt() == 0L -> node.toAssign(IRInt(0))
-                    node.left.asInt() == 1L -> node.toAssign(node.right)
-                    node.right.asInt() == 1L -> node.toAssign(node.left)
+                    node.left.isZero() || node.right.isZero() -> node.toAssign(IRInt(0))
+                    node.left.isOne() -> node.toAssign(node.right)
+                    node.right.isOne() -> node.toAssign(node.left)
                     // TODO maybe should be replaced by strength reduction
                     node.left.asInt() == 2L -> IRBinOp(IRBinOpKind.ADD, node.result, node.right, node.right)
                     node.right.asInt() == 2L -> IRBinOp(IRBinOpKind.ADD, node.result, node.left, node.left)
                     else -> null
                 }
                 IRBinOpKind.DIV -> when {
-                    node.right.asInt() == 1L -> node.toAssign(node.left)
+                    node.right.isOne() -> node.toAssign(node.left)
                     else -> null
                 }
                 else -> null

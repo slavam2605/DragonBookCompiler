@@ -77,12 +77,18 @@ object FrontendCompilationFlow {
     private fun buildStaticValues(
         cpList: List<SparseConditionalConstantPropagation>,
         eqList: List<EqualityPropagation>
-    ): Pair<Map<IRVar, Long>, Map<IRVar, IRVar>> {
+    ): Pair<Map<IRVar, FrontendConstantValue>, Map<IRVar, IRVar>> {
         val cpValues = cpList
             .map { it.staticValues.toMap() }
             .reduce { a, b -> a + b }
             .filterValues { it is SSCPValue.Value }
-            .mapValues { (_, value) -> (value as SSCPValue.Value).value }
+            .mapValues { (_, value) ->
+                when (value) {
+                    is SSCPValue.IntValue -> FrontendConstantValue.IntValue(value.value)
+                    is SSCPValue.FloatValue -> FrontendConstantValue.FloatValue(value.value)
+                    else -> error("Unexpected value type: $value")
+                }
+            }
             .toMutableMap()
 
         val equalities = eqList
@@ -100,7 +106,7 @@ object FrontendCompilationFlow {
     data class OptimizedResult(
         val originalSSA: SSAControlFlowGraph,
         val optimizedSSA: SSAControlFlowGraph,
-        val cpValues: Map<IRVar, Long>,
+        val cpValues: Map<IRVar, FrontendConstantValue>,
         val equalities: Map<IRVar, IRVar>
     )
 }

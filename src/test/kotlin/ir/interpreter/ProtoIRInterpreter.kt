@@ -1,13 +1,14 @@
 package ir.interpreter
 
 import compiler.frontend.FrontendFunctions
+import compiler.frontend.FrontendConstantValue
 import compiler.ir.*
 
 open class ProtoIRInterpreter(
     functionName: String,
-    arguments: List<InterpretedValue>,
+    arguments: List<FrontendConstantValue>,
     private val functions: FrontendFunctions<List<IRProtoNode>>,
-    private val fallbackFunctionHandler: (String, List<InterpretedValue>) -> InterpretedValue = DEFAULT_FUNCTION_HANDLER,
+    private val fallbackFunctionHandler: (String, List<FrontendConstantValue>) -> FrontendConstantValue = DEFAULT_FUNCTION_HANDLER,
     private val exitAfterMaxSteps: Boolean = false
 ) : BaseInterpreter<List<IRProtoNode>>(functionName, arguments, functions, fallbackFunctionHandler, exitAfterMaxSteps) {
     private val labelMap = mutableMapOf<IRLabel, Int>()
@@ -24,7 +25,7 @@ open class ProtoIRInterpreter(
     private fun findLabel(labelNode: IRLabel): Int =
         labelMap[labelNode] ?: error("Label not found: ${labelNode.name}")
 
-    override fun eval(): Map<IRVar, InterpretedValue> {
+    override fun eval(): Map<IRVar, FrontendConstantValue> {
         val ir = currentFunction.value
         while (currentLine < ir.size) {
             when (val command = baseEval(ir[currentLine])) {
@@ -36,7 +37,7 @@ open class ProtoIRInterpreter(
         return vars.toMap()
     }
 
-    override fun callFunction(functionName: String, args: List<InterpretedValue>): InterpretedValue? {
+    override fun callFunction(functionName: String, args: List<FrontendConstantValue>): FrontendConstantValue? {
         return ProtoIRInterpreter(
             functionName,
             args,

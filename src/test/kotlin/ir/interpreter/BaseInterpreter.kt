@@ -1,16 +1,17 @@
 package ir.interpreter
 
 import compiler.frontend.FrontendFunctions
+import compiler.frontend.FrontendConstantValue
 import compiler.ir.*
 
 abstract class BaseInterpreter<T>(
     functionName: String,
-    private val arguments: List<InterpretedValue>,
+    private val arguments: List<FrontendConstantValue>,
     private val functions: FrontendFunctions<out T>,
-    private val fallbackFunctionHandler: (String, List<InterpretedValue>) -> InterpretedValue,
+    private val fallbackFunctionHandler: (String, List<FrontendConstantValue>) -> FrontendConstantValue,
     private val exitAfterMaxSteps: Boolean
 ) {
-    protected val vars = mutableMapOf<IRVar, InterpretedValue>()
+    protected val vars = mutableMapOf<IRVar, FrontendConstantValue>()
     private var stepCounter = 0
     protected val currentFunction = functions[functionName]
         ?: error("Main function not found")
@@ -28,9 +29,9 @@ abstract class BaseInterpreter<T>(
         }
     }
 
-    abstract fun eval(): Map<IRVar, InterpretedValue>
+    abstract fun eval(): Map<IRVar, FrontendConstantValue>
 
-    abstract fun callFunction(functionName: String, args: List<InterpretedValue>): InterpretedValue?
+    abstract fun callFunction(functionName: String, args: List<FrontendConstantValue>): FrontendConstantValue?
 
     protected sealed interface Command {
         class Jump(val label: IRLabel) : Command
@@ -38,9 +39,9 @@ abstract class BaseInterpreter<T>(
         object Exit : Command
     }
 
-    protected fun getValue(value: IRValue): InterpretedValue = when (value) {
-        is IRInt -> IntValue(value.value)
-        is IRFloat -> FloatValue(value.value)
+    protected fun getValue(value: IRValue): FrontendConstantValue = when (value) {
+        is IRInt -> FrontendConstantValue.IntValue(value.value)
+        is IRFloat -> FrontendConstantValue.FloatValue(value.value)
         is IRVar -> vars[value] ?: error("Variable ${value.printToString()} is not initialized")
     }
 
@@ -63,18 +64,18 @@ abstract class BaseInterpreter<T>(
                     IRBinOpKind.MUL -> left * right
                     IRBinOpKind.DIV -> left / right
                     IRBinOpKind.MOD -> left % right
-                    IRBinOpKind.EQ -> IntValue(if (left == right) 1 else 0)
-                    IRBinOpKind.NEQ -> IntValue(if (left != right) 1 else 0)
-                    IRBinOpKind.GT -> IntValue(if (left > right) 1 else 0)
-                    IRBinOpKind.GE -> IntValue(if (left >= right) 1 else 0)
-                    IRBinOpKind.LT -> IntValue(if (left < right) 1 else 0)
-                    IRBinOpKind.LE -> IntValue(if (left <= right) 1 else 0)
+                    IRBinOpKind.EQ -> FrontendConstantValue.IntValue(if (left == right) 1 else 0)
+                    IRBinOpKind.NEQ -> FrontendConstantValue.IntValue(if (left != right) 1 else 0)
+                    IRBinOpKind.GT -> FrontendConstantValue.IntValue(if (left > right) 1 else 0)
+                    IRBinOpKind.GE -> FrontendConstantValue.IntValue(if (left >= right) 1 else 0)
+                    IRBinOpKind.LT -> FrontendConstantValue.IntValue(if (left < right) 1 else 0)
+                    IRBinOpKind.LE -> FrontendConstantValue.IntValue(if (left <= right) 1 else 0)
                 }
                 vars[node.result] = result
             }
             is IRNot -> {
                 val value = getValue(node.value)
-                vars[node.result] = IntValue(if ((value as IntValue).value == 0L) 1 else 0)
+                vars[node.result] = FrontendConstantValue.IntValue(if ((value as FrontendConstantValue.IntValue).value == 0L) 1 else 0)
             }
             is IRFunctionCall -> {
                 val arguments = node.arguments.map { getValue(it) }
@@ -88,7 +89,7 @@ abstract class BaseInterpreter<T>(
             is IRJump -> return Command.Jump(node.target)
             is IRJumpIfTrue -> {
                 val condition = getValue(node.cond)
-                val target = if ((condition as IntValue).value == 0L) node.elseTarget else node.target
+                val target = if ((condition as FrontendConstantValue.IntValue).value == 0L) node.elseTarget else node.target
                 return Command.Jump(target)
             }
             is IRReturn -> {
@@ -116,7 +117,7 @@ abstract class BaseInterpreter<T>(
         private const val MAX_STEPS = 1_000_000
 
         @JvmStatic
-        protected val DEFAULT_FUNCTION_HANDLER: (String, List<InterpretedValue>) -> InterpretedValue = { name, _ ->
+        protected val DEFAULT_FUNCTION_HANDLER: (String, List<FrontendConstantValue>) -> FrontendConstantValue = { name, _ ->
             error("Unknown function: $name")
         }
 

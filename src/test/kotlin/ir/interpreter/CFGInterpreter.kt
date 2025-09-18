@@ -1,6 +1,7 @@
 package ir.interpreter
 
 import compiler.frontend.FrontendFunctions
+import compiler.frontend.FrontendConstantValue
 import compiler.ir.IRLabel
 import compiler.ir.IRPhi
 import compiler.ir.IRVar
@@ -8,21 +9,21 @@ import compiler.ir.cfg.ControlFlowGraph
 
 class CFGInterpreter(
     functionName: String,
-    private val arguments: List<InterpretedValue>,
+    private val arguments: List<FrontendConstantValue>,
     private val functions: FrontendFunctions<out ControlFlowGraph>,
-    private val fallbackFunctionHandler: (String, List<InterpretedValue>) -> InterpretedValue = DEFAULT_FUNCTION_HANDLER,
+    private val fallbackFunctionHandler: (String, List<FrontendConstantValue>) -> FrontendConstantValue = DEFAULT_FUNCTION_HANDLER,
     private val exitAfterMaxSteps: Boolean = false
 ) : BaseInterpreter<ControlFlowGraph>(functionName, arguments, functions, fallbackFunctionHandler, exitAfterMaxSteps) {
     private val cfg = functions[functionName]?.value ?: error("Function $functionName not found")
     private var jumpedFromLabel: IRLabel? = null
     private var currentLabel: IRLabel = cfg.root
     private var currentLine: Int = 0
-    private val tempPhiBuffer = mutableMapOf<IRVar, InterpretedValue>()
+    private val tempPhiBuffer = mutableMapOf<IRVar, FrontendConstantValue>()
 
     private val currentBlock
         get() = cfg.blocks[currentLabel] ?: error("No block for label $currentLabel")
 
-    override fun eval(): Map<IRVar, InterpretedValue> {
+    override fun eval(): Map<IRVar, FrontendConstantValue> {
         var isInPhiPrefix = true
         while (currentLine < currentBlock.irNodes.size) {
             val currentNode = currentBlock.irNodes[currentLine]
@@ -59,7 +60,7 @@ class CFGInterpreter(
         return vars.toMap()
     }
 
-    override fun callFunction(functionName: String, args: List<InterpretedValue>): InterpretedValue? {
+    override fun callFunction(functionName: String, args: List<FrontendConstantValue>): FrontendConstantValue? {
         return CFGInterpreter(
             functionName,
             args,

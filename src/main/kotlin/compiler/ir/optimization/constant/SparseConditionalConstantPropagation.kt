@@ -214,12 +214,13 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph,
                 cfgWorklist.add(CFGEdge(blockLabel, jump.target))
                 cfgWorklist.add(CFGEdge(blockLabel, jump.elseTarget))
             }
-            is SSCPValue.Value -> {
+            is SSCPValue.IntValue -> {
                 val value = condDefValue.value
                 check(value == 0L || value == 1L) { "Boolean values must be either 0 or 1, got $value" }
                 val target = if (value == 1L) jump.target else jump.elseTarget
                 cfgWorklist.add(CFGEdge(blockLabel, target))
             }
+            is SSCPValue.FloatValue -> error("Conditional value must be integer")
             is SSCPValue.Top -> { /* do nothing */ }
         }.let { /* exhaustive check */ }
     }

@@ -1,5 +1,6 @@
 package ir.tests
 
+import compiler.frontend.FrontendConstantValue
 import ir.CompileToIRTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicTest
@@ -21,7 +22,7 @@ class FactorialTest : CompileToIRTestBase() {
                 println("factorial($n) = $result")
             }
             if (mode != TestMode.NATIVE_ARM64) {
-                assertEquals(factorial(n), result)
+                assertEquals(factorial(n), (result as? FrontendConstantValue.IntValue)?.value)
             }
         }
     }

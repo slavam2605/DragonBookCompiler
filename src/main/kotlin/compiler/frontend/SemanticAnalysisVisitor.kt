@@ -64,6 +64,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return when (ctx.text) {
             "int" -> FrontendType.INT
             "bool" -> FrontendType.BOOL
+            "float" -> FrontendType.FLOAT
             else -> {
                 errors.add(UnknownTypeException(ctx.asLocation(), ctx.text))
                 FrontendType.ERROR_TYPE
@@ -239,7 +240,17 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): FrontendType {
+        if (ctx.text.toLongOrNull() == null) {
+            errors.add(MalformedNumberException(ctx.asLocation(), "integer", ctx.text))
+        }
         return FrontendType.INT
+    }
+
+    override fun visitFloatExpr(ctx: MainGrammar.FloatExprContext): FrontendType {
+        if (ctx.text.toDoubleOrNull() == null) {
+            errors.add(MalformedNumberException(ctx.asLocation(), "float", ctx.text))
+        }
+        return FrontendType.FLOAT
     }
 
     override fun visitParenExpr(ctx: MainGrammar.ParenExprContext): FrontendType {

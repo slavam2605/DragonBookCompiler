@@ -53,6 +53,8 @@ class FunctionRedeclarationException(location: SourceLocation, name: String) : C
 
 class UninitializedVariableException(location: SourceLocation?, name: String) : CompilationException(location, "Variable '$name' is used before being initialized")
 
+class MalformedNumberException(location: SourceLocation, numberType: String, value: String) : CompilationException(location, "Malformed $numberType '$value'")
+
 class UnknownTypeException(location: SourceLocation, name: String) : CompilationException(location, "Unknown type '$name'")
 
 class MissingReturnException(location: SourceLocation, functionName: String)

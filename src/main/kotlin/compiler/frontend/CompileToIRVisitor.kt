@@ -290,7 +290,11 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): IRValue {
-        return IRInt(ctx.INT_LITERAL().text.toLong())
+        return IRInt(ctx.text.toLong())
+    }
+
+    override fun visitFloatExpr(ctx: MainGrammar.FloatExprContext): IRValue {
+        return IRFloat(ctx.text.toDouble())
     }
 
     override fun visitParenExpr(ctx: MainGrammar.ParenExprContext): IRValue {

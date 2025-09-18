@@ -45,6 +45,12 @@ NOT : '!' ;
 
 // Literals and identifiers
 ID  : [a-zA-Z_][a-zA-Z0-9_]* ;
+FLOAT_LITERAL
+    : [0-9]+ '.' [0-9]* EXP?
+    | '.' [0-9]+ EXP?
+    | [0-9]+ EXP
+    ;
+fragment EXP : [eE] [+-]? [0-9]+ ;
 INT_LITERAL : [0-9]+ ;
 
 // Whitespace and comments

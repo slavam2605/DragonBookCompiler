@@ -91,18 +91,19 @@ returnStatement
 
 expression
     : LPAR expression RPAR                                      # ParenExpr
-    | NOT expression                                            # NotExpr
+    | ID                                                        # IdExpr
+    | TRUE                                                      # TrueExpr
+    | FALSE                                                     # FalseExpr
+    | MINUS? INT_LITERAL                                        # IntExpr
+    | MINUS? FLOAT_LITERAL                                      # FloatExpr
     | MINUS expression                                          # NegExpr
+    | NOT expression                                            # NotExpr
     | left=expression op=(STAR | DIV | MOD) right=expression    # MulDivExpr
     | left=expression op=(PLUS | MINUS) right=expression        # AddSubExpr
     | left=expression op=comparisonOp right=expression          # ComparisonExpr
     | left=expression AND right=expression                      # AndExpr
     | left=expression OR right=expression                       # OrExpr
     | functionCall                                              # CallExpr
-    | ID                                                        # IdExpr
-    | INT_LITERAL                                               # IntExpr
-    | TRUE                                                      # TrueExpr
-    | FALSE                                                     # FalseExpr
     ;
 
 /* ------------- Helper and synthetic rules ------------- */

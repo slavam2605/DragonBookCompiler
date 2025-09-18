@@ -12,6 +12,8 @@ import ir.TestCompilationFlow.compileToOptimizedSSA
 import ir.TestCompilationFlow.compileToSSA
 import ir.interpreter.BaseInterpreter.Companion.ReturnValue
 import ir.interpreter.CFGInterpreter
+import ir.interpreter.IntValue
+import ir.interpreter.InterpretedValue
 import ir.interpreter.ProtoIRInterpreter
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
@@ -30,7 +32,7 @@ abstract class CompileToIRTestBase {
     protected open val ignoreInterpretedValues: Boolean = false
     protected open val customNativeRunner: String? = null
 
-    protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, Long> {
+    protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, InterpretedValue> {
         StatsHolder.clear()
         when (mode) {
             TestMode.IR -> {
@@ -62,7 +64,7 @@ abstract class CompileToIRTestBase {
 
                 val mainFunction = ffs["test_main"]!!.value
                 if (ignoreInterpretedValues) {
-                    return mainFunction.cpValues
+                    return mainFunction.cpValues.mapValues { (_, value) -> IntValue(value) }
                 }
 
                 val optimizedFfs = ffs.map { it.value.optimizedSSA }
@@ -101,16 +103,16 @@ abstract class CompileToIRTestBase {
                     }
                 }
 
-                return output.toLongOrNull()?.let { mapOf(ReturnValue to it) } ?: emptyMap()
+                return output.toLongOrNull()?.let { mapOf(ReturnValue to IntValue(it)) } ?: emptyMap()
             }
         }
     }
 
-    private fun Map<IRVar, Long>.withValues(extraValues: Map<IRVar, Long>, equalities: Map<IRVar, IRVar>): Map<IRVar, Long> {
+    private fun Map<IRVar, InterpretedValue>.withValues(extraValues: Map<IRVar, Long>, equalities: Map<IRVar, IRVar>): Map<IRVar, InterpretedValue> {
         val result = toMutableMap()
         extraValues.forEach { (irVar, value) ->
             assertTrue(irVar !in this, "Constant propagation didn't remove variable $irVar with value $value")
-            result[irVar] = value
+            result[irVar] = IntValue(value)
         }
         equalities.forEach { (irVar, otherVar) ->
             check(irVar !in result || result[irVar] == result[otherVar])
@@ -122,7 +124,7 @@ abstract class CompileToIRTestBase {
     protected fun Map<IRVar, Long>.getVariable(varName: String) =
         entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
-    protected fun compileAndGetResult(mode: TestMode, input: String): Long? =
+    protected fun compileAndGetResult(mode: TestMode, input: String): InterpretedValue? =
         compileAndRun(mode, input)[ReturnValue]
 
     protected fun readWithPattern(file: File, vararg replacements: Pair<String, Any>) =
@@ -173,7 +175,7 @@ abstract class CompileToIRTestBase {
         private val ignoredExtensions = setOf("c")
 
         @JvmStatic
-        protected val TestFunctionHandler = handler@ { name: String, args: List<Long> ->
+        protected val TestFunctionHandler = handler@ { name: String, args: List<InterpretedValue> ->
             when (name) {
                 "assertEquals", "assertStaticEquals" -> {
                     assertEquals(args[1], args[0], "Wrong values in assertEquals")
@@ -182,7 +184,7 @@ abstract class CompileToIRTestBase {
                 "undef" -> return@handler args[0]
                 else -> error("Unknown function: $name")
             }
-            0L // default return value
+            IntValue(0) // default return value
         }
 
         private fun checkStaticallyEvaluatedValues(

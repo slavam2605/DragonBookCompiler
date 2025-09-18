@@ -8,21 +8,21 @@ import compiler.ir.cfg.ControlFlowGraph
 
 class CFGInterpreter(
     functionName: String,
-    private val arguments: List<Long>,
+    private val arguments: List<InterpretedValue>,
     private val functions: FrontendFunctions<out ControlFlowGraph>,
-    private val fallbackFunctionHandler: (String, List<Long>) -> Long = DEFAULT_FUNCTION_HANDLER,
+    private val fallbackFunctionHandler: (String, List<InterpretedValue>) -> InterpretedValue = DEFAULT_FUNCTION_HANDLER,
     private val exitAfterMaxSteps: Boolean = false
 ) : BaseInterpreter<ControlFlowGraph>(functionName, arguments, functions, fallbackFunctionHandler, exitAfterMaxSteps) {
     private val cfg = functions[functionName]?.value ?: error("Function $functionName not found")
     private var jumpedFromLabel: IRLabel? = null
     private var currentLabel: IRLabel = cfg.root
     private var currentLine: Int = 0
-    private val tempPhiBuffer = mutableMapOf<IRVar, Long>()
+    private val tempPhiBuffer = mutableMapOf<IRVar, InterpretedValue>()
 
     private val currentBlock
         get() = cfg.blocks[currentLabel] ?: error("No block for label $currentLabel")
 
-    override fun eval(): Map<IRVar, Long> {
+    override fun eval(): Map<IRVar, InterpretedValue> {
         var isInPhiPrefix = true
         while (currentLine < currentBlock.irNodes.size) {
             val currentNode = currentBlock.irNodes[currentLine]
@@ -59,7 +59,7 @@ class CFGInterpreter(
         return vars.toMap()
     }
 
-    override fun callFunction(functionName: String, args: List<Long>): Long? {
+    override fun callFunction(functionName: String, args: List<InterpretedValue>): InterpretedValue? {
         return CFGInterpreter(
             functionName,
             args,

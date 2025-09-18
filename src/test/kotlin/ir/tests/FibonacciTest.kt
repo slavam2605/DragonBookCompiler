@@ -1,6 +1,7 @@
 package ir.tests
 
 import ir.CompileToIRTestBase
+import ir.interpreter.IntValue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import kotlin.test.assertEquals
@@ -19,7 +20,7 @@ class FibonacciTest : CompileToIRTestBase() {
             val program = readWithPattern(file, "n" to n)
             val result = compileAndGetResult(mode, program)
             if (mode != TestMode.NATIVE_ARM64) {
-                assertEquals(fibonacci(n), result)
+                assertEquals(fibonacci(n), (result as? IntValue)?.value)
             }
         }
     }

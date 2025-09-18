@@ -147,6 +147,7 @@ class Arm64AssemblyCompiler(
                     else -> error("Unsupported memory location: $dst <- $value")
                 }
             }
+            is IRFloat -> error("IRFloat is not yet supported by Arm64AssemblyCompiler.emitCopy")
         }
     }
 

@@ -11,6 +11,7 @@ import compiler.backend.arm64.StpMode
 import compiler.backend.arm64.Str
 import compiler.frontend.FrontendFunction
 import compiler.ir.IRInt
+import compiler.ir.IRFloat
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
@@ -96,6 +97,7 @@ class MemoryAllocator(
                     compiler.emitAssignConstant64(it, v.value)
                 }
             }
+            is IRFloat -> error("IRFloat is not yet supported by the ARM64 MemoryAllocator readReg path")
         }
         return block(tempReg).also { free(tempReg) }
     }

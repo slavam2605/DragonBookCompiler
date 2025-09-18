@@ -11,6 +11,7 @@ fun IRLabel.printToString(): String = name
 fun IRValue.printToString(): String = when (this) {
     is IRVar -> "$name.${ssaVer}"
     is IRInt -> value.toString()
+    is IRFloat -> value.toString()
 }
 
 fun IRBinOpKind.printToString(): String = when (this) {

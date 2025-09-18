@@ -28,6 +28,7 @@ fun IRNode.evaluateSafe(rValues: List<SSCPValue>): SSCPValue {
 fun IRValue.evaluateOneValue(varValue: (IRVar) -> SSCPValue?): SSCPValue = when (this) {
     is IRVar -> varValue(this) ?: SSCPValue.Top
     is IRInt -> SSCPValue.Value(value)
+    else -> error("Floats are not supported")
 }
 
 private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {

@@ -29,6 +29,7 @@ object FoldConstantExpressions {
                 val constantCond = when (jumpNode.cond) {
                     is IRInt -> jumpNode.cond.value
                     is IRVar -> (cpValues[jumpNode.cond] as? SSCPValue.Value)?.value
+                    else -> error("Floats are not supported")
                 }
                 if (constantCond == null) {
                     return@forEach

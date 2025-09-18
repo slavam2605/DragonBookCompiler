@@ -196,11 +196,8 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {
-        val left = visit(ctx.left).checkType(ctx.left, FrontendType.INT, FrontendType.FLOAT)
-        val right = visit(ctx.right).checkType(ctx.right, FrontendType.INT, FrontendType.FLOAT)
-        left.checkSameType(ctx.right, right)
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "*", "/", "%")
-        return left
+        return visitNumberBinOp(ctx.left, ctx.right)
     }
 
     override fun visitIdExpr(ctx: MainGrammar.IdExprContext): FrontendType {
@@ -262,11 +259,8 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitAddSubExpr(ctx: MainGrammar.AddSubExprContext): FrontendType {
-        val left = visit(ctx.left).checkType(ctx.left, FrontendType.INT, FrontendType.FLOAT)
-        val right = visit(ctx.right).checkType(ctx.right,FrontendType.INT, FrontendType.FLOAT)
-        left.checkSameType(ctx.right, right)
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "+", "-")
-        return left
+        return visitNumberBinOp(ctx.left, ctx.right)
     }
 
     override fun visitAndExpr(ctx: MainGrammar.AndExprContext): FrontendType {
@@ -316,6 +310,22 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return FrontendType.ERROR_TYPE
     }
 
+    private fun visitNumberBinOp(leftCtx: MainGrammar.ExpressionContext, rightCtx: MainGrammar.ExpressionContext): FrontendType {
+        val left = visit(leftCtx)
+        val right = visit(rightCtx)
+        val leftCheck = left.checkType(leftCtx, FrontendType.INT, FrontendType.FLOAT)
+        val rightCheck = if (leftCheck) {
+            left.checkSameType(rightCtx, right)
+        } else {
+            right.checkType(rightCtx, FrontendType.INT, FrontendType.FLOAT)
+        }
+        return when {
+            leftCheck -> left
+            rightCheck -> right
+            else -> FrontendType.ERROR_TYPE
+        }
+    }
+
     private fun <T> withLoopLevel(block: () -> T): T {
         loopDepth++
         try {
@@ -325,19 +335,22 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         }
     }
 
-    private fun FrontendType.checkSameType(ctx: ParserRuleContext, other: FrontendType): FrontendType {
-        if (this != FrontendType.ERROR_TYPE && this != other) {
-            errors.add(MismatchedTypeException(ctx.asLocation(), this, this))
+    private fun FrontendType.checkSameType(ctx: ParserRuleContext, other: FrontendType): Boolean {
+        if (this == FrontendType.ERROR_TYPE || other == FrontendType.ERROR_TYPE) return true
+        if (this != other) {
+            errors.add(MismatchedTypeException(ctx.asLocation(), this, other))
+            return false
         }
-        return this
+        return true
     }
 
-    private fun FrontendType.checkType(ctx: ParserRuleContext, vararg expected: FrontendType): FrontendType {
-        if (this == FrontendType.ERROR_TYPE || expected.singleOrNull() == FrontendType.ERROR_TYPE) return this
+    private fun FrontendType.checkType(ctx: ParserRuleContext, vararg expected: FrontendType): Boolean {
+        if (this == FrontendType.ERROR_TYPE || expected.singleOrNull() == FrontendType.ERROR_TYPE) return true
         if (this !in expected) {
             errors.add(MismatchedTypeException(ctx.asLocation(), expected.toList(), this))
+            return false
         }
-        return this
+        return true
     }
 
     private fun checkOperatorSyntax(ctx: SourceLocation, op: String, vararg expectedOps: String) {

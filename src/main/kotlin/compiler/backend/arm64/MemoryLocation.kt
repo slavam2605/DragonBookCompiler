@@ -19,6 +19,10 @@ sealed class Register : MemoryLocation() {
             val CalleeSaved = (8..15).map(::D).toSet()
         }
     }
+
+    object Xzr : Register() {
+        override fun toString() = "xzr"
+    }
 }
 
 sealed class IntRegister : Register() {

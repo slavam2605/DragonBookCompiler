@@ -1,6 +1,7 @@
 package ir
 
 import MainLexer
+import compiler.backend.arm64.Arm64ConstantPool
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator
 import compiler.frontend.CompilationFailed
 import compiler.ir.printToString
@@ -26,11 +27,13 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
             val testProgram = file.readText()
             val expectedErrors = parseExpectedErrors(testProgram)
             val expectedMemoryAllocations = parseExpectedMemoryAllocation(testProgram)
+            val expectedConstantPoolStats = parseExpectedConstantPoolStats(testProgram)
 
             val visitedErrors = mutableSetOf<ExpectedError>()
             try {
                 val result = compileAndRun(mode, testProgram)
                 assertMemoryAllocation(mode, expectedMemoryAllocations)
+                assertConstantPoolSize(mode, expectedConstantPoolStats)
                 if (PRINT_DEBUG_INFO) {
                     println("\nResults:")
                     result.forEach { (varName, value) ->
@@ -59,6 +62,13 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                 assertTrue(error in visitedErrors, "Expected error was not thrown: ${error.line}:${error.col} \"${error.message}\"")
             }
         }
+    }
+
+    private fun assertConstantPoolSize(mode: TestMode, expectedConstantPoolStats: Int?) {
+        if (mode != TestMode.NATIVE_ARM64) return
+        if (expectedConstantPoolStats == null) return
+        val actual = StatsHolder.get<Arm64ConstantPool.StatConstantPoolSize>().size
+        assertEquals(expectedConstantPoolStats, actual)
     }
 
     private fun assertMemoryAllocation(mode: TestMode, expected: List<ExpectedMemoryAllocation>) {
@@ -91,6 +101,13 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                 val (functionName, used, spilled) = it.destructured
                 ExpectedMemoryAllocation(functionName, used.toInt(), spilled.toInt())
             }
+        }
+    }
+
+    private fun parseExpectedConstantPoolStats(testProgram: String): Int? {
+        val regex = "// *constant_pool_size: *([0-9]+)".toRegex()
+        return regex.find(testProgram)?.let {
+            it.groupValues[1].toInt()
         }
     }
 

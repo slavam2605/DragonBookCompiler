@@ -9,6 +9,7 @@ import compiler.backend.arm64.registerAllocation.IntMemoryAllocator
 import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.cfg.ControlFlowGraph
+import java.lang.Double.doubleToLongBits
 
 class Arm64AssemblyCompiler(
     private val function: FrontendFunction<ControlFlowGraph>,
@@ -186,6 +187,22 @@ class Arm64AssemblyCompiler(
     }
 
     fun emitAssignConstantFloat64(targetReg: D, value: Double) {
+        // TODO support mov/movk and fmov d<n>, x<m>
+
+        if (value == 0.0) {
+            ops.add(FMov(targetReg, Register.Xzr))
+            return
+        }
+
+        // Use `fmov dX, imm8` if possible
+        val bits = doubleToLongBits(value)
+        val exp = ((bits ushr 52) and 0x7FFL) - 1023
+        val frac = bits and ((1L shl 52) - 1)
+        if (exp in -3..4 && (frac and ((1L shl 48) - 1)) == 0L) {
+            ops.add(FMovImm(targetReg, value))
+            return
+        }
+
         val label = constPool.getConstant(value)
         intAllocator.tempReg { reg ->
             ops.add(Adrp(reg, "$label@PAGE"))

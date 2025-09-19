@@ -81,8 +81,12 @@ class CSet(val dst: IntRegister.X, val cond: ConditionFlag) : Instruction() {
     override fun string(): String = "cset $dst, $cond"
 }
 
-class FMov(val dst: Register.D, val from: Register.D) : Instruction() {
+class FMov(val dst: Register.D, val from: Register) : Instruction() {
     override fun string(): String = "fmov $dst, $from"
+}
+
+class FMovImm(val dst: Register.D, val imm8: Double) : Instruction() {
+    override fun string(): String = "fmov $dst, $imm8"
 }
 
 class Mov(val dst: IntRegister, val from: IntRegister) : Instruction() {

@@ -1,7 +1,10 @@
 package compiler.backend.arm64
 
 import compiler.utils.NameAllocator
+import statistics.StatsData
 import java.lang.Double.doubleToLongBits
+import java.lang.Double.longBitsToDouble
+import java.lang.Long.toHexString
 
 class Arm64ConstantPool {
     private val names = NameAllocator("Lconst")
@@ -17,7 +20,12 @@ class Arm64ConstantPool {
         ops.add(CustomText(".p2align 3"))
         map64Bits.forEach { (bits, name) ->
             ops.add(Label(name))
-            ops.add(CustomText(".quad 0x${bits.toString(16)}"))
+
+            ops.add(CustomText(".quad 0x${toHexString(bits)} ; ${longBitsToDouble(bits)}"))
         }
+
+        StatConstantPoolSize(map64Bits.size).record()
     }
+
+    class StatConstantPoolSize(val size: Int) : StatsData()
 }

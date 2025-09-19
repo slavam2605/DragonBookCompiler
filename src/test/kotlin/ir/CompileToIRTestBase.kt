@@ -2,7 +2,9 @@ package ir
 
 import TestResources
 import backend.NativeArm64TestCompilationFlow
-import compiler.backend.arm64.registerAllocation.MemoryAllocator
+import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatAvailableRegisters
+import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatSpilledRegisters
+import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatUsedRegisters
 import compiler.ir.*
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import ir.TestCompilationFlow.compileToCFG
@@ -90,9 +92,9 @@ abstract class CompileToIRTestBase {
 
                 ffs.forEach { function ->
                     val name = function.name
-                    val availableRegisters = StatsHolder.get<MemoryAllocator.StatAvailableRegisters>(name).value
-                    val usedRegisters = StatsHolder.get<MemoryAllocator.StatUsedRegisters>(name).value
-                    val spilledRegisters = StatsHolder.get<MemoryAllocator.StatSpilledRegisters>(name).value
+                    val availableRegisters = StatsHolder.get<StatAvailableRegisters>(name, IRType.INT64).value
+                    val usedRegisters = StatsHolder.get<StatUsedRegisters>(name, IRType.INT64).value
+                    val spilledRegisters = StatsHolder.get<StatSpilledRegisters>(name, IRType.INT64).value
 
                     if (PRINT_DEBUG_INFO) {
                         println("Memory allocator stats for $name:")
@@ -176,7 +178,8 @@ abstract class CompileToIRTestBase {
         @JvmStatic
         protected val TestFunctionHandler = handler@ { name: String, args: List<FrontendConstantValue> ->
             when (name) {
-                "assertEquals", "assertStaticEquals" -> {
+                "assertEquals", "assertFloatEquals",
+                "assertStaticEquals", "assertStaticFloatEquals" -> {
                     assertEquals(args[1], args[0], "Wrong values in assertEquals")
                 }
                 "assertStaticUnknown" -> { /* ignore on runtime */ }

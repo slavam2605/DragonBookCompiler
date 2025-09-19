@@ -14,6 +14,7 @@ object NativeMacAarch64 {
 
     private fun buildAssembly(ffs: FrontendFunctions<ControlFlowGraph>): List<Instruction> {
         val ops = mutableListOf<Instruction>()
+        val constPool = Arm64ConstantPool()
 
         // Generate assembly header
         ops.add(CustomText(".text"))
@@ -24,8 +25,11 @@ object NativeMacAarch64 {
 
         // Generate assembly for each function
         ffs.values.forEach {
-            Arm64AssemblyCompiler(it, ops).buildFunction()
+            Arm64AssemblyCompiler(it, constPool, ops).buildFunction()
         }
+
+        // Write constant pool to the end of the file
+        constPool.writeSection(ops)
 
         return ops
     }

@@ -22,6 +22,22 @@ class Label(val name: String) : Instruction() {
     override fun string(): String = "$name:"
 }
 
+class FAdd(val dst: Register.D, val left: Register.D, val right: Register.D) : Instruction() {
+    override fun string(): String = "fadd $dst, $left, $right"
+}
+
+class FSub(val dst: Register.D, val left: Register.D, val right: Register.D) : Instruction() {
+    override fun string(): String = "fsub $dst, $left, $right"
+}
+
+class FMul(val dst: Register.D, val left: Register.D, val right: Register.D) : Instruction() {
+    override fun string(): String = "fmul $dst, $left, $right"
+}
+
+class FDiv(val dst: Register.D, val left: Register.D, val right: Register.D) : Instruction() {
+    override fun string(): String = "fdiv $dst, $left, $right"
+}
+
 class Add(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X) : Instruction() {
     override fun string(): String = "add $dst, $left, $right"
 }
@@ -52,6 +68,10 @@ class Cmp(val left: IntRegister.X, val right: IntRegister.X) : Instruction() {
     override fun string(): String = "cmp $left, $right"
 }
 
+class FCmp(val left: Register.D, val right: Register.D) : Instruction() {
+    override fun string(): String = "fcmp $left, $right"
+}
+
 class CmpImm(val left: IntRegister.X, val imm12: Int) : Instruction() {
     init { checkImm12Value(imm12) }
     override fun string(): String = "cmp $left, $imm12"
@@ -59,6 +79,10 @@ class CmpImm(val left: IntRegister.X, val imm12: Int) : Instruction() {
 
 class CSet(val dst: IntRegister.X, val cond: ConditionFlag) : Instruction() {
     override fun string(): String = "cset $dst, $cond"
+}
+
+class FMov(val dst: Register.D, val from: Register.D) : Instruction() {
+    override fun string(): String = "fmov $dst, $from"
 }
 
 class Mov(val dst: IntRegister, val from: IntRegister) : Instruction() {
@@ -81,21 +105,25 @@ class MovK(val dst: IntRegister.X, val value: Long, val shift: Int) : Instructio
     override fun string(): String = "movk $dst, $value" + if (shift != 0) ", lsl $shift" else ""
 }
 
-class Str(val reg: IntRegister, val address: IntRegister, val offset: Int, val mode: StpMode) : Instruction() {
+class Adrp(val reg: IntRegister.X, val label: String) : Instruction() {
+    override fun string(): String = "adrp $reg, $label"
+}
+
+class Str(val reg: Register, val address: IntRegister, val offset: Any, val mode: StpMode) : Instruction() {
     override fun string(): String = "str $reg, ${stpModeAddress(address, offset, mode)}"
 }
 
-class Ldr(val dst: IntRegister, val address: IntRegister, val offset: Int, val mode: StpMode) : Instruction() {
+class Ldr(val dst: Register, val address: IntRegister, val offset: Any, val mode: StpMode) : Instruction() {
     override fun string(): String = "ldr $dst, ${stpModeAddress(address, offset, mode)}"
 }
 
-class Stp(val first: IntRegister.X, val second: IntRegister.X, val address: IntRegister,
-          val offset: Int, val mode: StpMode) : Instruction() {
+class Stp(val first: Register, val second: Register, val address: IntRegister,
+          val offset: Any, val mode: StpMode) : Instruction() {
     override fun string(): String = "stp $first, $second, ${stpModeAddress(address, offset, mode)}"
 }
 
-class Ldp(val first: IntRegister.X, val second: IntRegister.X, val address: IntRegister,
-          val offset: Int, val mode: StpMode) : Instruction() {
+class Ldp(val first: Register, val second: Register, val address: IntRegister,
+          val offset: Any, val mode: StpMode) : Instruction() {
     override fun string(): String = "ldp $first, $second, ${stpModeAddress(address, offset, mode)}"
 }
 
@@ -143,9 +171,16 @@ private object InstructionUtils {
         require(value in AllowedShiftValues) { "Invalid shift value: $value" }
     }
 
-    fun stpModeAddress(address: IntRegister, offset: Int, mode: StpMode) = "[$address" + when (mode) {
-        StpMode.SIGNED_OFFSET -> ", #$offset]"
-        StpMode.PRE_INDEXED -> ", #$offset]!"
-        StpMode.POST_INDEXED -> "], $offset"
+    fun stpModeAddress(address: IntRegister, offset: Any, mode: StpMode): String {
+        val offsetString = when (offset) {
+            is Int -> "#$offset"
+            is String -> offset
+            else -> error("Unsupported offset type: ${offset::class.simpleName}")
+        }
+        return "[$address" + when (mode) {
+            StpMode.SIGNED_OFFSET -> ", $offsetString]"
+            StpMode.PRE_INDEXED -> ", $offsetString]!"
+            StpMode.POST_INDEXED -> "], $offsetString"
+        }
     }
 }

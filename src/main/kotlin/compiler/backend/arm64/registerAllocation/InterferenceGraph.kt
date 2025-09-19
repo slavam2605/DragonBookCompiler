@@ -28,11 +28,14 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
     }
 
     companion object {
-        fun create(cfg: ControlFlowGraph): InterferenceGraph {
+        fun create(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean): InterferenceGraph {
             val graph = InterferenceGraph(cfg)
             PerNodeLiveVarAnalysis(cfg).run { irNode, _, liveOut ->
                 irNode.lvalue?.let { lVar ->
-                    liveOut.forEach { graph.addEdge(it, lVar) }
+                    if (!filter(lVar)) return@run
+                    liveOut
+                        .filter(filter)
+                        .forEach { graph.addEdge(it, lVar) }
                 }
             }
             return graph

@@ -6,7 +6,20 @@ data class StackLocation(val offset: Int) : MemoryLocation() {
     override fun toString() = "[sp, $offset]"
 }
 
-sealed class Register : MemoryLocation()
+sealed class Register : MemoryLocation() {
+    data class D(val index: Int) : Register() {
+        init {
+            require(index in 0..31) { "Invalid D register index: $index" }
+        }
+
+        override fun toString() = "d$index"
+
+        companion object {
+            val CallerSaved = ((0..7) + (16..31)).map(::D).toSet()
+            val CalleeSaved = (8..15).map(::D).toSet()
+        }
+    }
+}
 
 sealed class IntRegister : Register() {
     data class X(val index: Int) : IntRegister() {

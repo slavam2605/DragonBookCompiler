@@ -254,7 +254,10 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         val call = ctx.functionCall()
         val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
         val name = call.ID().text
-        val returnType = functionReturnType[name] ?: error("Unknown function $name (or it doesn't have a return type)")
+        val returnType = functionReturnType[name] ?: when (name) {
+            "undef" -> arguments.single().type
+            else -> error("Unknown function $name (or it doesn't have a return type)")
+        }
         return withNewVar(returnType) { IRFunctionCall(name, it, arguments).withLocation(ctx) }
     }
 

@@ -7,6 +7,7 @@ import compiler.ir.IRFloat
 import compiler.ir.IRInt
 import compiler.ir.IRNode
 import compiler.ir.IRPhi
+import compiler.ir.IRType
 import compiler.ir.IRValue
 
 object ArithmeticRules {
@@ -17,6 +18,11 @@ object ArithmeticRules {
     private fun IRValue.isZero() = asInt() == 0L || asFloat() == 0.0
 
     private fun IRValue.isOne() = asInt() == 1L || asFloat() == 1.0
+
+    private fun IRValue.typedZero() = when (type) {
+        IRType.INT64 -> IRInt(0L)
+        IRType.FLOAT64 -> IRFloat(0.0)
+    }
 
     private fun IRNode.toAssign(value: IRValue) = IRAssign(lvalue!!, value)
 
@@ -30,11 +36,11 @@ object ArithmeticRules {
                 }
                 IRBinOpKind.SUB -> when {
                     node.right.isZero() -> node.toAssign(node.left)
-                    node.left == node.right -> node.toAssign(IRInt(0))
+                    node.left == node.right -> node.toAssign(node.left.typedZero())
                     else -> null
                 }
                 IRBinOpKind.MUL -> when {
-                    node.left.isZero() || node.right.isZero() -> node.toAssign(IRInt(0))
+                    node.left.isZero() || node.right.isZero() -> node.toAssign(node.left.typedZero())
                     node.left.isOne() -> node.toAssign(node.right)
                     node.right.isOne() -> node.toAssign(node.left)
                     // TODO maybe should be replaced by strength reduction

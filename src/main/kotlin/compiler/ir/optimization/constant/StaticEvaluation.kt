@@ -14,6 +14,7 @@ import compiler.ir.IRPhi
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.IRReturn
+import compiler.ir.IRType
 
 private val equalComparisonOps = setOf(IRBinOpKind.EQ, IRBinOpKind.GE, IRBinOpKind.LE)
 private val notEqualComparisonOps = setOf(IRBinOpKind.NEQ, IRBinOpKind.GT, IRBinOpKind.LT)
@@ -71,8 +72,8 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
 
                 else -> {
                     when {
-                        op == IRBinOpKind.SUB && rvalues()[0] == rvalues()[1] -> SSCPValue.IntValue(0)
-                        op == IRBinOpKind.MUL && rValues.any { it == SSCPValue.IntValue(0) } -> SSCPValue.IntValue(0)
+                        op == IRBinOpKind.SUB && rvalues()[0] == rvalues()[1] -> lvalue.typedZero()
+                        op == IRBinOpKind.MUL && rValues.any { it.isZero() } -> lvalue.typedZero()
                         op == IRBinOpKind.MOD && rValues[1] == SSCPValue.IntValue(1) -> SSCPValue.IntValue(0)
                         op in equalComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.IntValue(1)
                         op in notEqualComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.IntValue(0)
@@ -100,6 +101,17 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
             error("Cannot evaluate node without lvalues: $this")
         }
     }
+}
+
+private fun IRValue.typedZero() = when (this.type) {
+    IRType.INT64 -> SSCPValue.IntValue(0L)
+    IRType.FLOAT64 -> SSCPValue.FloatValue(0.0)
+}
+
+private fun SSCPValue.isZero() = when (this) {
+    is SSCPValue.IntValue -> value == 0L
+    is SSCPValue.FloatValue -> value == 0.0
+    is SSCPValue.Top, is SSCPValue.Bottom -> false
 }
 
 private fun withIntValues(vararg values: SSCPValue, block: (List<Long>) -> Long): SSCPValue.IntValue {

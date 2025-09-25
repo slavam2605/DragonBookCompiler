@@ -1,5 +1,9 @@
 package compiler.backend.arm64
 
+import compiler.backend.arm64.IntRegister.Companion.D0
+import compiler.backend.arm64.IntRegister.Companion.X0
+import compiler.backend.arm64.IntRegister.Companion.X29
+import compiler.backend.arm64.IntRegister.Companion.X30
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
@@ -16,15 +20,18 @@ class Arm64AssemblyCompiler(
     private val constPool: Arm64ConstantPool,
     private val ops: MutableList<Instruction>
 ) {
+    // TODO extract common allocator that can decide which sub-allocator to use based on IRType
     private val intAllocator = IntMemoryAllocator(this, function, ops)
     private val floatAllocator = FloatMemoryAllocator(this, function, ops)
     private val returnLabel = Label(".L_${function.name}_return")
     private val orderedBlocks = mutableListOf<IRLabel>()
     private var currentBlockIndex = 0
+    internal var spShift = 0 // How much SP is different from right after prologue
 
     init {
-        intAllocator.init()
-        floatAllocator.init()
+        intAllocator.init(minStackOffset = 0)
+        // Do not allocate the same stack locations for int and float variables
+        floatAllocator.init(minStackOffset = intAllocator.nextStackOffset)
     }
 
     fun buildFunction() {
@@ -32,9 +39,9 @@ class Arm64AssemblyCompiler(
         ops.add(Label("_${function.name}"))
 
         // Prologue
-        ops.add(Stp(x29, x30, SP, -16, StpMode.PRE_INDEXED))
+        ops.add(Stp(X29, X30, SP, -16, StpMode.PRE_INDEXED))
         ops.add(PushRegsStub) // Push used callee-saved registers
-        ops.add(Mov(x29, SP))
+        ops.add(Mov(X29, SP))
         ops.add(SPAllocStub) // Allocate stack space for locals
 
         // Form some stable blocks order
@@ -64,9 +71,9 @@ class Arm64AssemblyCompiler(
 
         // Epilogue
         ops.add(returnLabel)
-        ops.add(Mov(SP, x29))
+        ops.add(Mov(SP, X29))
         ops.add(PopRegsStub)
-        ops.add(Ldp(x29, x30, SP, 16, StpMode.POST_INDEXED))
+        ops.add(Ldp(X29, X30, SP, 16, StpMode.POST_INDEXED))
         ops.add(Ret)
 
         setStackAllocSize()
@@ -79,50 +86,83 @@ class Arm64AssemblyCompiler(
     }
 
     private fun setPushPopRegs() {
-        val regs = intAllocator.usedRegisters
-            .filter { it in X.CalleeSaved }
-            .sortedBy { it.index }
-
-        // Create pairs of used callee-saved registers
-        val regPairs = mutableListOf<Pair<X, X?>>()
-        for (i in 0 until regs.size step 2) {
-            if (i == regs.lastIndex) break
-            regPairs.add(regs[i] to regs[i + 1])
-        }
-        if (regs.size % 2 == 1) regPairs.add(regs.last() to null)
+        val regPairs = mutableListOf<Pair<Register, Register?>>()
+        fillPairs(regPairs, intAllocator, X.CalleeSaved)
+        fillPairs(regPairs, floatAllocator, D.CalleeSaved)
 
         // Replace the push stub with a list of stp/str
         val pushIndex = ops.indexOfFirst { it === PushRegsStub }
         ops.removeAt(pushIndex)
-        val pushOps = regPairs.map { (r1, r2) ->
-            if (r2 != null) {
-                Stp(r1, r2, SP, -16, StpMode.PRE_INDEXED)
-            } else {
-                Str(r1, SP, -16, StpMode.PRE_INDEXED)
-            }
-        }
+        val pushOps = createPushOps(regPairs)
         ops.addAll(pushIndex, pushOps)
 
         // Replace the pop stub with a list of ldp/ldr
         val popIndex = ops.indexOfFirst { it === PopRegsStub }
         ops.removeAt(popIndex)
-        val popOps = regPairs.reversed().map { (r1, r2) ->
+        val popOps = createPopOps(regPairs)
+        ops.addAll(popIndex, popOps)
+    }
+
+    private fun createPopOps(regPairs: List<Pair<Register, Register?>>): List<Instruction> =
+        regPairs.reversed().map { (r1, r2) ->
             if (r2 != null) {
                 Ldp(r1, r2, SP, 16, StpMode.POST_INDEXED)
             } else {
                 Ldr(r1, SP, 16, StpMode.POST_INDEXED)
             }
         }
-        ops.addAll(popIndex, popOps)
+
+    private fun createPushOps(regPairs: List<Pair<Register, Register?>>): List<Instruction> =
+        regPairs.map { (r1, r2) ->
+            if (r2 != null) {
+                Stp(r1, r2, SP, -16, StpMode.PRE_INDEXED)
+            } else {
+                Str(r1, SP, -16, StpMode.PRE_INDEXED)
+            }
+        }
+
+    private fun pushCallerSaved(): List<Pair<Register, Register?>> {
+        val regPairs = mutableListOf<Pair<Register, Register?>>()
+        fillPairs(regPairs, intAllocator, X.CallerSaved)
+        fillPairs(regPairs, floatAllocator, D.CallerSaved)
+        ops.addAll(createPushOps(regPairs))
+
+        check(spShift == 0) { "SP shift must be zero before calls" }
+        spShift = regPairs.size * 16
+        return regPairs
+    }
+
+    private fun popCallerSaved(regPairs: List<Pair<Register, Register?>>) {
+        ops.addAll(createPopOps(regPairs))
+        spShift = 0
+    }
+
+    private fun fillPairs(
+        regPairs: MutableList<Pair<Register, Register?>>,
+        allocator: BaseMemoryAllocator<*>,
+        saved: Set<Register>
+    ) {
+        val regs = allocator.usedRegisters
+            .filter { it in saved }
+            .sortedBy { (it as? X)?.index ?: (it as D).index }
+
+        // Create pairs of used callee-saved registers
+        for (i in 0 until regs.size step 2) {
+            if (i == regs.lastIndex) break
+            regPairs.add(regs[i] to regs[i + 1])
+        }
+        if (regs.size % 2 == 1) regPairs.add(regs.last() to null)
     }
 
     private fun setStackAllocSize() {
         val allocOp = ops.indexOfFirst { it === SPAllocStub }
         check(allocOp >= 0) { "Failed to find stack allocation stub" }
-        if (intAllocator.alignedAllocatedSize == 0) {
+        // Float allocator is used here because it stores max of int and float stack offsets
+        // TODO tidy up this place, find explicit maximum or share this info somehow
+        if (floatAllocator.alignedAllocatedSize == 0) {
             ops.removeAt(allocOp)
         } else {
-            ops[allocOp] = SubImm(SP, SP, intAllocator.alignedAllocatedSize)
+            ops[allocOp] = SubImm(SP, SP, floatAllocator.alignedAllocatedSize)
         }
     }
 
@@ -134,15 +174,17 @@ class Arm64AssemblyCompiler(
         when (dst) {
             is X -> when (src) {
                 is X -> ops.add(Mov(dst, src))
-                is StackLocation -> ops.add(Ldr(dst, SP, src.offset, StpMode.SIGNED_OFFSET))
+                is StackLocation -> ops.add(Ldr(dst, SP, src.spOffset(spShift), StpMode.SIGNED_OFFSET))
                 else -> error("Unsupported memory locations: $dst <- $src")
             }
             is D -> when (src) {
                 is D -> ops.add(FMov(dst, src))
+                is StackLocation -> ops.add(Ldr(dst, SP, src.spOffset(spShift), StpMode.SIGNED_OFFSET))
                 else -> error("Unsupported memory locations: $dst <- $src")
             }
             is StackLocation -> when (src) {
-                is X -> ops.add(Str(src, SP, dst.offset, StpMode.SIGNED_OFFSET))
+                is X -> ops.add(Str(src, SP, dst.spOffset(spShift), StpMode.SIGNED_OFFSET))
+                is D -> ops.add(Str(src, SP, dst.spOffset(spShift), StpMode.SIGNED_OFFSET))
                 else -> error("Unsupported memory location: $dst <- $src")
             }
             else -> error("Unsupported memory location: $dst <- $src")
@@ -178,19 +220,28 @@ class Arm64AssemblyCompiler(
 
     fun emitAssignConstantInt64(targetReg: X, value: Long) {
         // TODO add support for cases with movn
+        if (value == 0L) {
+            ops.add(Mov(targetReg, IntRegister.Xzr))
+            return
+        }
+
         val parts = (0..3).map { (value ushr (16 * it)) and 0xFFFFL }
 
-        ops.add(MovZ(targetReg, parts[0]))
-        if (parts[1] != 0L) ops.add(MovK(targetReg, parts[1], 16))
-        if (parts[2] != 0L) ops.add(MovK(targetReg, parts[2], 32))
-        if (parts[3] != 0L) ops.add(MovK(targetReg, parts[3], 48))
+        var isFirstOp = true
+        parts.forEachIndexed { index, part ->
+            if (part == 0L) return@forEachIndexed
+            val opCtr = if (isFirstOp) ::MovZ else ::MovK
+            ops.add(opCtr(targetReg, part, 16 * index))
+            isFirstOp = false
+        }
+        check(!isFirstOp)
     }
 
     fun emitAssignConstantFloat64(targetReg: D, value: Double) {
         // TODO support mov/movk and fmov d<n>, x<m>
 
         if (value == 0.0) {
-            ops.add(FMov(targetReg, Register.Xzr))
+            ops.add(FMov(targetReg, IntRegister.Xzr))
             return
         }
 
@@ -200,6 +251,16 @@ class Arm64AssemblyCompiler(
         val frac = bits and ((1L shl 52) - 1)
         if (exp in -3..4 && (frac and ((1L shl 48) - 1)) == 0L) {
             ops.add(FMovImm(targetReg, value))
+            return
+        }
+
+        // TODO why only two parts?
+        val parts = (0..3).map { (bits ushr (16 * it)) and 0xFFFFL }
+        if (parts.count { it != 0L } <= 2) {
+            intAllocator.tempReg { reg ->
+                emitAssignConstantInt64(reg, bits)
+                ops.add(FMov(targetReg, reg))
+            }
             return
         }
 
@@ -234,8 +295,8 @@ class Arm64AssemblyCompiler(
     private fun emitRet(node: IRReturn) {
         node.value?.let { value ->
             val targetReg = when (value.type) {
-                IRType.INT64 -> x0
-                IRType.FLOAT64 -> d0
+                IRType.INT64 -> X0
+                IRType.FLOAT64 -> D0
             }
             emitCopy(targetReg, value)
         }
@@ -348,6 +409,9 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitCall(n: IRFunctionCall) {
+        val pushedRegs = pushCallerSaved()
+        val pushedRegsSet = pushedRegs.flatMap { listOfNotNull(it.first, it.second) }.toSet()
+
         // TODO support more than 8 arguments
         var intIndex = 0
         var floatIndex = 0
@@ -363,10 +427,27 @@ class Arm64AssemblyCompiler(
         n.result?.let { res ->
             val dst = chooseAllocator(res).loc(res)
             val resultReg = when (res.type) {
-                IRType.INT64 -> x0
-                IRType.FLOAT64 -> d0
+                IRType.INT64 -> X0
+                IRType.FLOAT64 -> D0
             }
-            emitCopy(dst, resultReg)
+
+            when {
+                resultReg !in pushedRegsSet -> {
+                    popCallerSaved(pushedRegs)
+                    emitCopy(dst, resultReg)
+                }
+                dst !in pushedRegsSet -> {
+                    emitCopy(dst, resultReg)
+                    popCallerSaved(pushedRegs)
+                }
+                else -> chooseAllocator(res).tempReg { tmp ->
+                    emitCopy(tmp, resultReg)
+                    popCallerSaved(pushedRegs)
+                    emitCopy(dst, tmp)
+                }
+            }
+        } ?: run {
+            popCallerSaved(pushedRegs)
         }
     }
 
@@ -374,11 +455,6 @@ class Arm64AssemblyCompiler(
         private val SPAllocStub = CustomText("<sp allocation of locals>")
         private val PushRegsStub = CustomText("<save callee-saved registers>")
         private val PopRegsStub = CustomText("<restore callee-saved registers>")
-
-        private val x0 = X(0)
-        private val d0 = D(0)
-        private val x29 = X(29)
-        private val x30 = X(30)
 
         private fun IRLabel.local() = ".$name"
     }

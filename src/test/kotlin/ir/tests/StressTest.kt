@@ -5,5 +5,5 @@ import org.junit.jupiter.api.TestFactory
 
 class StressTest : FileBasedCompileToIRTest() {
     @TestFactory
-    fun testVarScopes() = runTestsInFolder("/stress_test")
+    fun stressTest() = runTestsInFolder("/stress_test")
 }

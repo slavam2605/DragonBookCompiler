@@ -2,7 +2,9 @@ package compiler.backend.arm64
 
 sealed class MemoryLocation
 
-data class StackLocation(val offset: Int) : MemoryLocation() {
+data class StackLocation(private val offset: Int) : MemoryLocation() {
+    fun spOffset(spShift: Int): Int = offset + spShift
+
     override fun toString() = "[sp, $offset]"
 }
 
@@ -18,10 +20,6 @@ sealed class Register : MemoryLocation() {
             val CallerSaved = ((0..7) + (16..31)).map(::D).toSet()
             val CalleeSaved = (8..15).map(::D).toSet()
         }
-    }
-
-    object Xzr : Register() {
-        override fun toString() = "xzr"
     }
 }
 
@@ -47,5 +45,16 @@ sealed class IntRegister : Register() {
 
     object SP : IntRegister() {
         override fun toString() = "sp"
+    }
+
+    object Xzr : IntRegister() {
+        override fun toString() = "xzr"
+    }
+
+    companion object {
+        val X0 = X(0)
+        val D0 = D(0)
+        val X29 = X(29)
+        val X30 = X(30)
     }
 }

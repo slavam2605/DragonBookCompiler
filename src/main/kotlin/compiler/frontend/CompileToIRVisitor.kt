@@ -303,8 +303,12 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     override fun visitNegExpr(ctx: MainGrammar.NegExprContext): IRValue {
         // Implement unary minus as 0 - expr
         val value = visit(ctx.expression())
+        val zero = when (value.type) {
+            IRType.INT64 -> IRInt(0)
+            IRType.FLOAT64 -> IRFloat(0.0)
+        }
         return withNewVar(value.type) {
-            IRBinOp(IRBinOpKind.SUB, it, IRInt(0), value).withLocation(ctx)
+            IRBinOp(IRBinOpKind.SUB, it, zero, value).withLocation(ctx)
         }
     }
 

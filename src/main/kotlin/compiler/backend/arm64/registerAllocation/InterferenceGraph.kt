@@ -3,7 +3,7 @@ package compiler.backend.arm64.registerAllocation
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
-class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
+class InterferenceGraph private constructor(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean) {
     private val mutableEdges = mutableMapOf<IRVar, MutableSet<IRVar>>()
 
     val edges: Map<IRVar, Set<IRVar>> = mutableEdges
@@ -12,9 +12,11 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
         cfg.blocks.forEach { (_, block) ->
             block.irNodes.forEach { node ->
                 node.lvalue?.let { lVar ->
+                    if (!filter(lVar)) return@let
                     mutableEdges.putIfAbsent(lVar, mutableSetOf())
                 }
                 node.rvalues().filterIsInstance<IRVar>().forEach { rVar ->
+                    if (!filter(rVar)) return@forEach
                     mutableEdges.putIfAbsent(rVar, mutableSetOf())
                 }
             }
@@ -29,7 +31,7 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
 
     companion object {
         fun create(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean): InterferenceGraph {
-            val graph = InterferenceGraph(cfg)
+            val graph = InterferenceGraph(cfg, filter)
             PerNodeLiveVarAnalysis(cfg).run { irNode, _, liveOut ->
                 irNode.lvalue?.let { lVar ->
                     if (!filter(lVar)) return@run

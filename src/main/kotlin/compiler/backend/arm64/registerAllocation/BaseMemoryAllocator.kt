@@ -37,7 +37,8 @@ abstract class BaseMemoryAllocator<Reg : Register>(
 
     abstract fun parameterReg(index: Int): Reg
 
-    fun init() {
+    fun init(minStackOffset: Int = 0) {
+        nextStackOffset = minStackOffset
         val freeRegs = nonTempRegs.toMutableSet()
 
         check(function.parameters.size <= 8)
@@ -57,7 +58,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
             colorScore = RegScore,
             isExtraColor = { it is StackLocation }
         ) { index ->
-            val stackOffset = index * 8
+            val stackOffset = minStackOffset + index * 8
             nextStackOffset = stackOffset + 8
             StackLocation(stackOffset)
         }
@@ -103,7 +104,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
 
                 check(loc is StackLocation)
                 tempRegInternal().also {
-                    ops.add(Ldr(it, SP, loc.offset, StpMode.SIGNED_OFFSET))
+                    ops.add(Ldr(it, SP, loc.spOffset(compiler.spShift), StpMode.SIGNED_OFFSET))
                 }
             }
             is IRInt -> {
@@ -138,7 +139,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     }
 
     private fun writeBack(reg: Reg, loc: StackLocation) {
-        ops.add(Str(reg, SP, loc.offset, StpMode.SIGNED_OFFSET))
+        ops.add(Str(reg, SP, loc.spOffset(compiler.spShift), StpMode.SIGNED_OFFSET))
         free(reg)
     }
 

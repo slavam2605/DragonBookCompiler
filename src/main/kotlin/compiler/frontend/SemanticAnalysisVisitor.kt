@@ -236,8 +236,12 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitNegExpr(ctx: MainGrammar.NegExprContext): FrontendType {
-        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.INT)
-        return FrontendType.INT
+        val type = visit(ctx.expression())
+        return if (type.checkType(ctx.expression(), FrontendType.INT, FrontendType.FLOAT)) {
+            type
+        } else {
+            FrontendType.ERROR_TYPE
+        }
     }
 
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): FrontendType {

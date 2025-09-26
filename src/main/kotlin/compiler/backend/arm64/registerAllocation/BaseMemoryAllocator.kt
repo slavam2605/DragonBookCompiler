@@ -21,12 +21,31 @@ import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.printToString
 import statistics.PerFunctionStatsData
 
+interface MemoryAllocator<Reg : Register> {
+    /**
+     * Returns the size of allocated stack memory, aligned to 16 bytes.
+     */
+    val alignedAllocatedSize: Int
+
+    /**
+     * Returns the set of registered that were used at least once.
+     * If [clazz] is specified, only registers of that class are returned.
+     */
+    fun <T : Register> usedRegisters(clazz: Class<T>? = null): Set<T>
+
+    fun loc(v: IRVar): MemoryLocation
+
+    fun <T> writeReg(v: IRVar, block: (Reg) -> T): T
+
+    fun <T> readReg(v: IRValue, block: (Reg) -> T): T
+}
+
 abstract class BaseMemoryAllocator<Reg : Register>(
     val compiler: Arm64AssemblyCompiler,
     val function: FrontendFunction<ControlFlowGraph>,
     val ops: MutableList<Instruction>,
     val type: IRType
-) {
+) : MemoryAllocator<Reg> {
     private val map = HashMap<IRVar, MemoryLocation>()
     private val usedRegsHistory = mutableSetOf<Reg>()
     internal var nextStackOffset = 0
@@ -79,21 +98,22 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         StatSpilledRegisters(nextStackOffset / 8, type).record(functionName = function.name)
     }
 
-    /**
-     * Returns the size of allocated stack memory, aligned to 16 bytes.
-     */
-    val alignedAllocatedSize: Int get() = (nextStackOffset + 15) and (-16)
+    override val alignedAllocatedSize: Int get() = (nextStackOffset + 15) and (-16)
 
-    /**
-     * Returns the set of registered that were used at least once.
-     */
-    val usedRegisters: Set<Reg> get() = usedRegsHistory.toSet()
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Register> usedRegisters(clazz: Class<T>?): Set<T> {
+        if (clazz == null) return usedRegsHistory.toSet() as Set<T>
+        return usedRegsHistory.filterTo(mutableSetOf()) {
+            clazz.isInstance(it)
+        } as Set<T>
+    }
 
-    fun loc(v: IRVar): MemoryLocation {
+
+    override fun loc(v: IRVar): MemoryLocation {
         return map[v] ?: error("Unallocated variable ${v.printToString()}")
     }
 
-    fun <T> readReg(v: IRValue, block: (Reg) -> T): T {
+    override fun <T> readReg(v: IRValue, block: (Reg) -> T): T {
         val tempReg = when (v) {
             is IRVar -> {
                 val loc = loc(v)
@@ -121,7 +141,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         return block(tempReg).also { free(tempReg) }
     }
 
-    fun <T> writeReg(v: IRVar, block: (Reg) -> T): T {
+    override fun <T> writeReg(v: IRVar, block: (Reg) -> T): T {
         return when (val loc = loc(v)) {
             is Register -> {
                 @Suppress("UNCHECKED_CAST")

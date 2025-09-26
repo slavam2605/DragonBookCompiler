@@ -7,9 +7,7 @@ import compiler.backend.arm64.IntRegister.Companion.X30
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
-import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator
-import compiler.backend.arm64.registerAllocation.FloatMemoryAllocator
-import compiler.backend.arm64.registerAllocation.IntMemoryAllocator
+import compiler.backend.arm64.registerAllocation.AggregatedRegisterAllocator
 import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.cfg.ControlFlowGraph
@@ -20,19 +18,11 @@ class Arm64AssemblyCompiler(
     private val constPool: Arm64ConstantPool,
     private val ops: MutableList<Instruction>
 ) {
-    // TODO extract common allocator that can decide which sub-allocator to use based on IRType
-    private val intAllocator = IntMemoryAllocator(this, function, ops)
-    private val floatAllocator = FloatMemoryAllocator(this, function, ops)
+    val allocator = AggregatedRegisterAllocator(this, function, ops)
     private val returnLabel = Label(".L_${function.name}_return")
     private val orderedBlocks = mutableListOf<IRLabel>()
     private var currentBlockIndex = 0
     internal var spShift = 0 // How much SP is different from right after prologue
-
-    init {
-        intAllocator.init(minStackOffset = 0)
-        // Do not allocate the same stack locations for int and float variables
-        floatAllocator.init(minStackOffset = intAllocator.nextStackOffset)
-    }
 
     fun buildFunction() {
         val cfg = function.value
@@ -80,15 +70,10 @@ class Arm64AssemblyCompiler(
         setPushPopRegs()
     }
 
-    private fun chooseAllocator(value: IRValue): BaseMemoryAllocator<*> = when (value.type) {
-        IRType.INT64 -> intAllocator
-        IRType.FLOAT64 -> floatAllocator
-    }
-
     private fun setPushPopRegs() {
         val regPairs = mutableListOf<Pair<Register, Register?>>()
-        fillPairs(regPairs, intAllocator, X.CalleeSaved)
-        fillPairs(regPairs, floatAllocator, D.CalleeSaved)
+        fillPairs(regPairs, allocator.usedRegisters(X::class.java), X.CalleeSaved)
+        fillPairs(regPairs, allocator.usedRegisters(D::class.java), D.CalleeSaved)
 
         // Replace the push stub with a list of stp/str
         val pushIndex = ops.indexOfFirst { it === PushRegsStub }
@@ -123,8 +108,8 @@ class Arm64AssemblyCompiler(
 
     private fun pushCallerSaved(): List<Pair<Register, Register?>> {
         val regPairs = mutableListOf<Pair<Register, Register?>>()
-        fillPairs(regPairs, intAllocator, X.CallerSaved)
-        fillPairs(regPairs, floatAllocator, D.CallerSaved)
+        fillPairs(regPairs, allocator.usedRegisters(X::class.java), X.CallerSaved)
+        fillPairs(regPairs, allocator.usedRegisters(D::class.java), D.CallerSaved)
         ops.addAll(createPushOps(regPairs))
 
         check(spShift == 0) { "SP shift must be zero before calls" }
@@ -139,10 +124,10 @@ class Arm64AssemblyCompiler(
 
     private fun fillPairs(
         regPairs: MutableList<Pair<Register, Register?>>,
-        allocator: BaseMemoryAllocator<*>,
+        usedRegisters: Set<Register>,
         saved: Set<Register>
     ) {
-        val regs = allocator.usedRegisters
+        val regs = usedRegisters
             .filter { it in saved }
             .sortedBy { (it as? X)?.index ?: (it as D).index }
 
@@ -157,12 +142,10 @@ class Arm64AssemblyCompiler(
     private fun setStackAllocSize() {
         val allocOp = ops.indexOfFirst { it === SPAllocStub }
         check(allocOp >= 0) { "Failed to find stack allocation stub" }
-        // Float allocator is used here because it stores max of int and float stack offsets
-        // TODO tidy up this place, find explicit maximum or share this info somehow
-        if (floatAllocator.alignedAllocatedSize == 0) {
+        if (allocator.alignedAllocatedSize == 0) {
             ops.removeAt(allocOp)
         } else {
-            ops[allocOp] = SubImm(SP, SP, floatAllocator.alignedAllocatedSize)
+            ops[allocOp] = SubImm(SP, SP, allocator.alignedAllocatedSize)
         }
     }
 
@@ -196,12 +179,12 @@ class Arm64AssemblyCompiler(
      */
     fun emitCopy(dst: MemoryLocation, value: IRValue) {
         when (value) {
-            is IRVar -> emitCopy(dst, chooseAllocator(value).loc(value))
+            is IRVar -> emitCopy(dst, allocator.loc(value))
             is IRInt -> {
                 when (dst) {
                     is X -> emitAssignConstantInt64(dst, value.value)
                     is StackLocation -> {
-                        intAllocator.tempReg { reg ->
+                        allocator.tempIntReg { reg ->
                             emitAssignConstantInt64(reg, value.value)
                             emitCopy(dst, reg)
                         }
@@ -257,7 +240,7 @@ class Arm64AssemblyCompiler(
         // TODO why only two parts?
         val parts = (0..3).map { (bits ushr (16 * it)) and 0xFFFFL }
         if (parts.count { it != 0L } <= 2) {
-            intAllocator.tempReg { reg ->
+            allocator.tempIntReg { reg ->
                 emitAssignConstantInt64(reg, bits)
                 ops.add(FMov(targetReg, reg))
             }
@@ -265,7 +248,7 @@ class Arm64AssemblyCompiler(
         }
 
         val label = constPool.getConstant(value)
-        intAllocator.tempReg { reg ->
+        allocator.tempIntReg { reg ->
             ops.add(Adrp(reg, "$label@PAGE"))
             ops.add(Ldr(targetReg, reg, "$label@PAGEOFF", StpMode.SIGNED_OFFSET))
         }
@@ -304,7 +287,6 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitAssign(node: IRAssign) {
-        val allocator = chooseAllocator(node.result)
         allocator.writeReg(node.result) { dst ->
             emitCopy(dst, node.right)
         }
@@ -318,9 +300,10 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitIntBinOp(node: IRBinOp) {
-        intAllocator.writeReg(node.result) { dst ->
-            intAllocator.readReg(node.left) { left ->
-                intAllocator.readReg(node.right) { right ->
+        allocator.writeReg(node.result) { dst ->
+            allocator.readReg(node.left) { left ->
+                allocator.readReg(node.right) { right ->
+                    check(dst is X && left is X && right is X)
                     when (node.op) {
                         IRBinOpKind.ADD -> ops.add(Add(dst, left, right))
                         IRBinOpKind.SUB -> ops.add(Sub(dst, left, right))
@@ -352,9 +335,10 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitFloatBinOp(node: IRBinOp) {
-        chooseAllocator(node.result).writeReg(node.result) { dst ->
-            floatAllocator.readReg(node.left) { left ->
-                floatAllocator.readReg(node.right) { right ->
+        allocator.writeReg(node.result) { dst ->
+            allocator.readReg(node.left) { left ->
+                allocator.readReg(node.right) { right ->
+                    check(left is D && right is D)
                     when (node.op) {
                         IRBinOpKind.ADD -> ops.add(FAdd(dst as D, left, right))
                         IRBinOpKind.SUB -> ops.add(FSub(dst as D, left, right))
@@ -384,17 +368,17 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitNot(n: IRNot) {
-        intAllocator.readReg(n.value) { v ->
-            ops.add(CmpImm(v, 0))
+        allocator.readReg(n.value) { v ->
+            ops.add(CmpImm(v as X, 0))
         }
-        intAllocator.writeReg(n.result) { dst ->
-            ops.add(CSet(dst, ConditionFlag.EQ))
+        allocator.writeReg(n.result) { dst ->
+            ops.add(CSet(dst as X, ConditionFlag.EQ))
         }
     }
 
     private fun emitJcc(n: IRJumpIfTrue) {
-        intAllocator.readReg(n.cond) { v ->
-            ops.add(CmpImm(v, 0))
+        allocator.readReg(n.cond) { v ->
+            ops.add(CmpImm(v as X, 0))
         }
 
         val nextBlock = orderedBlocks.getOrNull(currentBlockIndex + 1)
@@ -425,7 +409,7 @@ class Arm64AssemblyCompiler(
 
         ops.add(BL("_${n.name}"))
         n.result?.let { res ->
-            val dst = chooseAllocator(res).loc(res)
+            val dst = allocator.loc(res)
             val resultReg = when (res.type) {
                 IRType.INT64 -> X0
                 IRType.FLOAT64 -> D0
@@ -440,7 +424,7 @@ class Arm64AssemblyCompiler(
                     emitCopy(dst, resultReg)
                     popCallerSaved(pushedRegs)
                 }
-                else -> chooseAllocator(res).tempReg { tmp ->
+                else -> allocator.tempReg(res) { tmp ->
                     emitCopy(tmp, resultReg)
                     popCallerSaved(pushedRegs)
                     emitCopy(dst, tmp)

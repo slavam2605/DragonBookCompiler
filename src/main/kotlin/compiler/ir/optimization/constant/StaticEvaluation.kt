@@ -54,19 +54,26 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
                     }
                 }
 
-                rValues.all { it is SSCPValue.FloatValue } -> {
+                rValues.all { it is SSCPValue.Value } -> {
+                    val castedRValues = rValues.map {
+                        when (it) {
+                            is SSCPValue.FloatValue -> it
+                            is SSCPValue.IntValue -> SSCPValue.FloatValue(it.value.toDouble())
+                            else -> error("Unexpected value type: $it")
+                        }
+                    }
                     when (op) {
-                        IRBinOpKind.ADD -> withFloatValues(rValues[0], rValues[1]) { it[0] + it[1] }
-                        IRBinOpKind.SUB -> withFloatValues(rValues[0], rValues[1]) { it[0] - it[1] }
-                        IRBinOpKind.MUL -> withFloatValues(rValues[0], rValues[1]) { it[0] * it[1] }
-                        IRBinOpKind.DIV -> withFloatValues(rValues[0], rValues[1]) { it[0] / it[1] }
-                        IRBinOpKind.MOD -> withFloatValues(rValues[0], rValues[1]) { it[0] % it[1] }
-                        IRBinOpKind.EQ  -> withFloatValuesBoolResult(rValues[0], rValues[1]) { it[0] == it[1] }
-                        IRBinOpKind.NEQ -> withFloatValuesBoolResult(rValues[0], rValues[1]) { it[0] != it[1] }
-                        IRBinOpKind.GT  -> withFloatValuesBoolResult(rValues[0], rValues[1]) { it[0] > it[1] }
-                        IRBinOpKind.GE  -> withFloatValuesBoolResult(rValues[0], rValues[1]) { it[0] >= it[1] }
-                        IRBinOpKind.LT  -> withFloatValuesBoolResult(rValues[0], rValues[1]) { it[0] < it[1] }
-                        IRBinOpKind.LE  -> withFloatValuesBoolResult(rValues[0], rValues[1]) { it[0] <= it[1] }
+                        IRBinOpKind.ADD -> withFloatValues(castedRValues[0], castedRValues[1]) { it[0] + it[1] }
+                        IRBinOpKind.SUB -> withFloatValues(castedRValues[0], castedRValues[1]) { it[0] - it[1] }
+                        IRBinOpKind.MUL -> withFloatValues(castedRValues[0], castedRValues[1]) { it[0] * it[1] }
+                        IRBinOpKind.DIV -> withFloatValues(castedRValues[0], castedRValues[1]) { it[0] / it[1] }
+                        IRBinOpKind.MOD -> withFloatValues(castedRValues[0], castedRValues[1]) { it[0] % it[1] }
+                        IRBinOpKind.EQ  -> withFloatValuesBoolResult(castedRValues[0], castedRValues[1]) { it[0] == it[1] }
+                        IRBinOpKind.NEQ -> withFloatValuesBoolResult(castedRValues[0], castedRValues[1]) { it[0] != it[1] }
+                        IRBinOpKind.GT  -> withFloatValuesBoolResult(castedRValues[0], castedRValues[1]) { it[0] > it[1] }
+                        IRBinOpKind.GE  -> withFloatValuesBoolResult(castedRValues[0], castedRValues[1]) { it[0] >= it[1] }
+                        IRBinOpKind.LT  -> withFloatValuesBoolResult(castedRValues[0], castedRValues[1]) { it[0] < it[1] }
+                        IRBinOpKind.LE  -> withFloatValuesBoolResult(castedRValues[0], castedRValues[1]) { it[0] <= it[1] }
                     }
                 }
 

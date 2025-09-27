@@ -12,14 +12,9 @@ class FloatMemoryAllocator(
     function: FrontendFunction<ControlFlowGraph>,
     ops: MutableList<Instruction>,
 ) : BaseMemoryAllocator<D>(compiler, function, ops, IRType.FLOAT64) {
-    override val freeTempRegs = FloatTempRegs.toMutableSet()
+    override fun callerSaved() = D.CallerSaved
 
-    override val nonTempRegs = FloatNonTempRegs
+    override fun calleeSaved() = D.CalleeSaved
 
     override fun parameterReg(index: Int): D = D(index)
-
-    companion object {
-        val FloatTempRegs = D.CalleeSaved.take(3).toSet()
-        val FloatNonTempRegs = D.CalleeSaved - FloatTempRegs
-    }
 }

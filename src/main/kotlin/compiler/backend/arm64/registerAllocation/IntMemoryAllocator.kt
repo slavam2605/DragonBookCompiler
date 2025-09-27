@@ -12,14 +12,9 @@ class IntMemoryAllocator(
     function: FrontendFunction<ControlFlowGraph>,
     ops: MutableList<Instruction>,
 ) : BaseMemoryAllocator<X>(compiler, function, ops, IRType.INT64) {
-    override val freeTempRegs = IntTempRegs.toMutableSet()
+    override fun callerSaved() = X.CallerSaved
 
-    override val nonTempRegs = IntNonTempRegs
+    override fun calleeSaved() = X.CalleeSaved
 
     override fun parameterReg(index: Int): X = X(index)
-
-    companion object {
-        val IntTempRegs = X.CallerSaved.take(5).toSet()
-        val IntNonTempRegs = X.CalleeSaved - IntTempRegs
-    }
 }

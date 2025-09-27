@@ -63,17 +63,19 @@ abstract class BaseMemoryAllocator<Reg : Register>(
 ) : MemoryAllocator<Reg> {
     private val map = HashMap<IRVar, MemoryLocation>()
     private val usedRegsHistory = mutableSetOf<Reg>()
+    private val freeTempRegs = mutableSetOf<Reg>()
+    private val nonTempRegs = mutableSetOf<Reg>()
     internal var nextStackOffset = 0
 
-    abstract val freeTempRegs: MutableSet<Reg>
-
-    abstract val nonTempRegs: Set<Reg>
+    protected abstract fun callerSaved(): Set<Reg>
+    protected abstract fun calleeSaved(): Set<Reg>
 
     abstract fun parameterReg(index: Int): Reg
 
     fun init(minStackOffset: Int = 0) {
         nextStackOffset = minStackOffset
-        val freeRegs = nonTempRegs.toMutableSet()
+        freeTempRegs.addAll(callerSaved())
+        nonTempRegs.addAll(calleeSaved())
 
         val typeIndex = mutableMapOf<IRType, Int>()
         function.parameters.forEach { parameter ->
@@ -81,14 +83,20 @@ abstract class BaseMemoryAllocator<Reg : Register>(
             check(index < 8)
             val reg = parameterReg(index)
             map[parameter] = reg
-            freeRegs.remove(reg)
+            nonTempRegs.remove(reg)
             freeTempRegs.remove(reg)
         }
+
+        freeTempRegs.take(3).let {
+            freeTempRegs.clear()
+            freeTempRegs.addAll(it)
+        }
+        nonTempRegs.removeAll(freeTempRegs)
 
         val cfg = function.value
         val interferenceGraph = InterferenceGraph.create(cfg) { it.type == type }
         val coloring = GraphColoring(
-            colors = freeRegs,
+            colors = nonTempRegs,
             initialColoring = map,
             graph = interferenceGraph,
             colorScore = RegScore,
@@ -102,8 +110,8 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         val colorMapping = coloring.findColoring()
         colorMapping.forEach { (irVar, reg) ->
             map[irVar] = reg
-            freeRegs.remove(reg)
-            freeTempRegs.remove(reg)
+            nonTempRegs.remove(reg)
+            check(reg !in freeTempRegs)
             if (reg is Register) {
                 @Suppress("UNCHECKED_CAST")
                 usedRegsHistory.add(reg as Reg)

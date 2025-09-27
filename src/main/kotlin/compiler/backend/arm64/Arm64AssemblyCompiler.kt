@@ -351,7 +351,7 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitIntToFloat(handle: RegHandle<Register>, block: (D) -> Unit) {
-        if (handle.reg is D) return block(handle.reg)
+        if (handle.reg is D) return block(handle.reg).also { handle.dispose() }
         check(handle.reg is X)
         allocator.tempFloatReg { tmp ->
             ops.add(Scvtf(tmp, handle.reg))

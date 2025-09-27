@@ -1,5 +1,7 @@
 package compiler.frontend
 
+import compiler.ir.IRType
+
 sealed class FrontendConstantValue {
     abstract operator fun plus(other: FrontendConstantValue): FrontendConstantValue
     abstract operator fun minus(other: FrontendConstantValue): FrontendConstantValue
@@ -54,6 +56,7 @@ sealed class FrontendConstantValue {
         override fun toString(): String = value.toString()
 
         override val floatValue = value.toDouble()
+        override val irType = IRType.INT64
     }
 
     internal data class FloatValue(val value: Double) : FrontendConstantValue() {
@@ -66,7 +69,10 @@ sealed class FrontendConstantValue {
         override fun toString(): String = value.toString()
 
         override val floatValue = value
+        override val irType = IRType.FLOAT64
     }
 
-    protected abstract val floatValue: Double
+    abstract val floatValue: Double
+
+    abstract val irType: IRType
 }

@@ -1,0 +1,15 @@
+fun foo(float x) {
+    assertFloatEquals(x, 11.0);
+}
+
+fun test_main() {
+    float a = undef(2) * 0.5;
+    float b = undef(1) + 0.1;
+    float c = undef(10) - 1.5;
+    float d = undef(10) / 2.5;
+
+    assertFloatEquals(a, 1.0);
+    assertFloatEquals(b, 1.1);
+    assertFloatEquals(c, 8.5);
+    assertFloatEquals(d, 4.0);
+}

@@ -42,7 +42,13 @@ abstract class BaseInterpreter<T>(
     protected fun getValue(value: IRValue): FrontendConstantValue = when (value) {
         is IRInt -> FrontendConstantValue.IntValue(value.value)
         is IRFloat -> FrontendConstantValue.FloatValue(value.value)
-        is IRVar -> vars[value] ?: error("Variable ${value.printToString()} is not initialized")
+        is IRVar -> {
+            val constantValue = vars[value] ?: error("Variable ${value.printToString()} is not initialized")
+            check(constantValue.irType == value.type) {
+                "Variable ${value.printToString()} has type ${value.type} but value has type ${constantValue.irType}"
+            }
+            constantValue
+        }
     }
 
     protected fun baseEval(node: IRProtoNode): Command {

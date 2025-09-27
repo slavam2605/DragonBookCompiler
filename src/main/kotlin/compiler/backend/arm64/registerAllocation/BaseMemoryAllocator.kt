@@ -75,8 +75,10 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         nextStackOffset = minStackOffset
         val freeRegs = nonTempRegs.toMutableSet()
 
-        check(function.parameters.size <= 8)
-        function.parameters.forEachIndexed { index, parameter ->
+        val typeIndex = mutableMapOf<IRType, Int>()
+        function.parameters.forEach { parameter ->
+            val index = typeIndex.compute(parameter.type) { _, v -> (v ?: -1) + 1 }!!
+            check(index < 8)
             val reg = parameterReg(index)
             map[parameter] = reg
             freeRegs.remove(reg)

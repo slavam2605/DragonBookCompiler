@@ -201,15 +201,22 @@ abstract class CompileToIRTestBase {
             optimized.blocks.forEach { (_, block) ->
                 block.irNodes.filterIsInstance<IRFunctionCall>().forEach { node ->
                     when (node.name) {
-                        "assertStaticEquals" -> {
+                        "assertStaticEquals", "assertStaticFloatEquals" -> {
                             check(node.arguments.size == 2)
                             val expected = node.arguments[1]
                             val actual = node.arguments[0]
-                            if (expected is IRInt) {
-                                assertTrue(actual is IRInt, "Expected ${actual.printToString()} to be statically known")
-                                assertEquals(expected.value, actual.value, "assertStaticEquals failed")
-                            } else {
-                                assertEquals(expected, actual, "assertStaticEquals failed")
+                            when (expected) {
+                                is IRInt -> {
+                                    assertTrue(actual is IRInt, "Expected ${actual.printToString()} to be statically known")
+                                    assertEquals(expected.value, actual.value, "assertStaticEquals failed")
+                                }
+                                is IRFloat -> {
+                                    assertTrue(actual is IRFloat, "Expected ${actual.printToString()} to be statically known")
+                                    assertEquals(expected.value, actual.value, "assertStaticEquals failed")
+                                }
+                                else -> {
+                                    assertEquals(expected, actual, "assertStaticEquals failed")
+                                }
                             }
                         }
                         "assertStaticUnknown" -> {

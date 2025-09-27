@@ -6,4 +6,12 @@ fun test_main() {
 
     int t2 = (1 * a) + (b * 0)
     assertStaticEquals(t2 == a, true)
+
+    float x = undef(0.0)
+    float y = undef(0.0)
+    float t3 = (x * 0.0) + y
+    assertStaticEquals(t3 == y, true)
+
+    float t4 = (1.0 * x) + (y * 0.0)
+    assertStaticEquals(t4 == x, true)
 }

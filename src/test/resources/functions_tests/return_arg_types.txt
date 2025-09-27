@@ -10,4 +10,4 @@ fun test_main() {
 // error: 6:8 "Expected type 'INT', got 'BOOL'"
 // error: 7:16 "Expected type 'INT', got 'BOOL'"
 // error: 7:12 "Expected type 'INT', got 'BOOL'"
-// error: 8:16 "Expected type 'INT', got 'BOOL'"
+// error: 8:16 "Mismatched types: expected 'INT' or 'FLOAT', got BOOL"

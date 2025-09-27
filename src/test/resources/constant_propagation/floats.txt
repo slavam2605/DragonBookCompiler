@@ -1,0 +1,6 @@
+fun test_main() {
+    float x = 1.0
+    float y = 2.0
+    float z = x + y
+    assertStaticEquals(z, 3.0)
+}

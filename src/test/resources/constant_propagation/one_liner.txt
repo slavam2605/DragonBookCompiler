@@ -1,4 +1,6 @@
 fun test_main() {
-    int result = ((2 + 3) * (4 + 5)) + ((100 / 4) - (6 * 2)) + (300 % 13) - ((20 - 3) * 2) + (7 + 8 * (1 + 1))
-    assertStaticEquals(result, 48)
+    int result_int = ((2 + 3) * (4 + 5)) + ((100 / 4) - (6 * 2)) + (300 % 13) - ((20 - 3) * 2) + (7 + 8 * (1 + 1))
+    float result_float = ((2.0 + 3.0) * (4.0 + 5.0)) + ((100.0 / 4.0) - (6.0 * 2.0)) + (300.0 % 13.0) - ((20.0 - 3.0) * 2.0) + (7.0 + 8.0 * (1.0 + 1.0))
+    assertStaticEquals(result_int, 48)
+    assertStaticEquals(result_float, 48.0)
 }

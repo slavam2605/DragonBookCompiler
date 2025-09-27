@@ -4,4 +4,10 @@ fun test_main() {
     if (a + b == 10) {
         assertStaticEquals(b + a == 10, true)
     }
+
+    float x = undef(0.0)
+    float y = undef(0.0)
+    if (x + y == 10.0) {
+        assertStaticEquals(y + x == 10.0, true)
+    }
 }

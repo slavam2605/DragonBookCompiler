@@ -21,7 +21,7 @@ sealed interface SSCPValue {
         this is Bottom || other is Bottom -> Bottom
         this is Top -> other
         other is Top -> this
-        this is IntValue && other is IntValue -> {
+        this is Value && other is Value -> {
             if (this.value == other.value) this else Bottom
         }
         else -> error("Unhandled case: $this, $other")

@@ -8,6 +8,7 @@ import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
 import compiler.backend.arm64.registerAllocation.AggregatedRegisterAllocator
+import compiler.backend.arm64.registerAllocation.RegHandle
 import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.cfg.ControlFlowGraph
@@ -293,9 +294,11 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitBinOp(node: IRBinOp) {
-        when (node.left.type) {
-            IRType.INT64 -> emitIntBinOp(node)
-            IRType.FLOAT64 -> emitFloatBinOp(node)
+        val anyFloat = node.left.type == IRType.FLOAT64 || node.right.type == IRType.FLOAT64
+        if (anyFloat) {
+            emitFloatBinOp(node)
+        } else {
+            emitIntBinOp(node)
         }
     }
 
@@ -336,33 +339,50 @@ class Arm64AssemblyCompiler(
 
     private fun emitFloatBinOp(node: IRBinOp) {
         allocator.writeReg(node.result) { dst ->
-            allocator.readReg(node.left) { left ->
-                allocator.readReg(node.right) { right ->
-                    check(left is D && right is D)
-                    when (node.op) {
-                        IRBinOpKind.ADD -> ops.add(FAdd(dst as D, left, right))
-                        IRBinOpKind.SUB -> ops.add(FSub(dst as D, left, right))
-                        IRBinOpKind.MUL -> ops.add(FMul(dst as D, left, right))
-                        IRBinOpKind.DIV -> ops.add(FDiv(dst as D, left, right))
-                        IRBinOpKind.MOD -> {
-                            error("Float modulo is not supported")
-                        }
-                        IRBinOpKind.EQ, IRBinOpKind.NEQ, IRBinOpKind.GT,
-                        IRBinOpKind.GE, IRBinOpKind.LT, IRBinOpKind.LE -> {
-                            ops.add(FCmp(left, right))
-                            val cond = when (node.op) {
-                                IRBinOpKind.EQ -> ConditionFlag.EQ
-                                IRBinOpKind.NEQ -> ConditionFlag.NE
-                                IRBinOpKind.GT -> ConditionFlag.GT
-                                IRBinOpKind.GE -> ConditionFlag.GE
-                                IRBinOpKind.LT -> ConditionFlag.LT
-                                IRBinOpKind.LE -> ConditionFlag.LE
-                                else -> error("Unexpected comparison operator: ${node.op}")
-                            }
-                            ops.add(CSet(dst as X, cond))
-                        }
-                    }
+            val left = allocator.readReg(node.left)
+            val right = allocator.readReg(node.right)
+            check(left.reg is D || right.reg is D)
+            emitIntToFloat(left) { leftD ->
+                emitIntToFloat(right) { rightD ->
+                    emitFloatBinOpWithRegs(node, dst, leftD, rightD)
                 }
+            }
+        }
+    }
+
+    private fun emitIntToFloat(handle: RegHandle<Register>, block: (D) -> Unit) {
+        if (handle.reg is D) return block(handle.reg)
+        check(handle.reg is X)
+        allocator.tempFloatReg { tmp ->
+            ops.add(Scvtf(tmp, handle.reg))
+            handle.dispose()
+            block(tmp)
+        }
+    }
+
+    private fun emitFloatBinOpWithRegs(node: IRBinOp, dst: Register, left: D, right: D): Boolean {
+        return when (node.op) {
+            IRBinOpKind.ADD -> ops.add(FAdd(dst as D, left, right))
+            IRBinOpKind.SUB -> ops.add(FSub(dst as D, left, right))
+            IRBinOpKind.MUL -> ops.add(FMul(dst as D, left, right))
+            IRBinOpKind.DIV -> ops.add(FDiv(dst as D, left, right))
+            IRBinOpKind.MOD -> {
+                error("Float modulo is not supported")
+            }
+
+            IRBinOpKind.EQ, IRBinOpKind.NEQ, IRBinOpKind.GT,
+            IRBinOpKind.GE, IRBinOpKind.LT, IRBinOpKind.LE -> {
+                ops.add(FCmp(left, right))
+                val cond = when (node.op) {
+                    IRBinOpKind.EQ -> ConditionFlag.EQ
+                    IRBinOpKind.NEQ -> ConditionFlag.NE
+                    IRBinOpKind.GT -> ConditionFlag.GT
+                    IRBinOpKind.GE -> ConditionFlag.GE
+                    IRBinOpKind.LT -> ConditionFlag.LT
+                    IRBinOpKind.LE -> ConditionFlag.LE
+                    else -> error("Unexpected comparison operator: ${node.op}")
+                }
+                ops.add(CSet(dst as X, cond))
             }
         }
     }

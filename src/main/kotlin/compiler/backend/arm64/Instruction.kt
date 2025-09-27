@@ -147,6 +147,10 @@ object Ret : Instruction() {
     override fun string(): String = "ret"
 }
 
+class Scvtf(val dst: Register.D, val src: IntRegister.X) : Instruction() {
+    override fun string(): String = "scvtf $dst, $src"
+}
+
 enum class StpMode { SIGNED_OFFSET, PRE_INDEXED, POST_INDEXED }
 
 enum class ConditionFlag {

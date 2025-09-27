@@ -37,8 +37,23 @@ interface MemoryAllocator<Reg : Register> {
 
     fun <T> writeReg(v: IRVar, block: (Reg) -> T): T
 
-    fun <T> readReg(v: IRValue, block: (Reg) -> T): T
+    fun readReg(v: IRValue): RegHandle<Reg>
+
+    fun <T> readReg(v: IRValue, block: (Reg) -> T): T {
+        val handle = readReg(v)
+        try {
+            return block(handle.reg)
+        } finally {
+            handle.dispose()
+        }
+    }
 }
+
+/**
+ * Handle for a register that should be disposed of after use
+ * (usually a temporary register that should be returned to the pool).
+ */
+class RegHandle<Reg : Register>(val reg: Reg, val dispose: () -> Unit)
 
 abstract class BaseMemoryAllocator<Reg : Register>(
     val compiler: Arm64AssemblyCompiler,
@@ -113,13 +128,13 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         return map[v] ?: error("Unallocated variable ${v.printToString()}")
     }
 
-    override fun <T> readReg(v: IRValue, block: (Reg) -> T): T {
+    override fun readReg(v: IRValue): RegHandle<Reg> {
         val tempReg = when (v) {
             is IRVar -> {
                 val loc = loc(v)
                 if (loc is Register) {
                     @Suppress("UNCHECKED_CAST")
-                    return block(loc as Reg)
+                    return RegHandle(loc as Reg) {}
                 }
 
                 check(loc is StackLocation)
@@ -138,7 +153,9 @@ abstract class BaseMemoryAllocator<Reg : Register>(
                 }
             }
         }
-        return block(tempReg).also { free(tempReg) }
+        return RegHandle(tempReg) {
+            free(tempReg)
+        }
     }
 
     override fun <T> writeReg(v: IRVar, block: (Reg) -> T): T {

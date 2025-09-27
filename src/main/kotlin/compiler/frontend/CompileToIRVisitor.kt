@@ -270,8 +270,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         }
         val left = visit(ctx.left)
         val right = visit(ctx.right)
-        check(left.type == right.type)
-        return withNewVar(left.type) {
+        return withNewVar(binOpResultType(left.type, right.type)) {
             IRBinOp(opKind, it, left, right).withLocation(ctx)
         }
     }
@@ -332,8 +331,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         }
         val left = visit(ctx.left)
         val right = visit(ctx.right)
-        check(left.type == right.type)
-        return withNewVar(left.type) {
+        return withNewVar(binOpResultType(left.type, right.type)) {
             IRBinOp(opKind, it, left, right).withLocation(ctx)
         }
     }
@@ -362,6 +360,17 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitOrExpr(ctx: MainGrammar.OrExprContext): IRValue {
         return processShortCircuitLogic(ctx.left, ctx.right, false)
+    }
+
+    private fun binOpResultType(left: IRType, right: IRType): IRType = when (left) {
+        IRType.INT64 -> when (right) {
+            IRType.INT64 -> IRType.INT64
+            IRType.FLOAT64 -> IRType.FLOAT64
+        }
+        IRType.FLOAT64 -> when (right) {
+            IRType.INT64 -> IRType.FLOAT64
+            IRType.FLOAT64 -> IRType.FLOAT64
+        }
     }
 
     private fun MainGrammar.TypeContext.irType(): IRType {

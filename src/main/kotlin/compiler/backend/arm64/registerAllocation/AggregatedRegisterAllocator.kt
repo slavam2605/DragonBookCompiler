@@ -44,8 +44,9 @@ class AggregatedRegisterAllocator(
         return chooseAllocator(v).writeReg(v, block)
     }
 
-    override fun <T> readReg(v: IRValue, block: (Register) -> T): T {
-        return chooseAllocator(v).readReg(v, block)
+    @Suppress("UNCHECKED_CAST")
+    override fun readReg(v: IRValue): RegHandle<Register> {
+        return chooseAllocator(v).readReg(v) as RegHandle<Register>
     }
 
     fun <T> tempReg(typeHolder: IRValue, block: (Register) -> T): T {

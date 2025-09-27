@@ -19,7 +19,7 @@ class IntMemoryAllocator(
     override fun parameterReg(index: Int): X = X(index)
 
     companion object {
-        val IntTempRegs = X.CallerSaved.take(3).toSet()
+        val IntTempRegs = X.CallerSaved.take(5).toSet()
         val IntNonTempRegs = X.CalleeSaved - IntTempRegs
     }
 }

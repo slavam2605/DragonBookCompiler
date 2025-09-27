@@ -184,6 +184,9 @@ abstract class CompileToIRTestBase {
                 }
                 "assertStaticUnknown" -> { /* ignore on runtime */ }
                 "undef" -> return@handler args[0]
+                "print_float", "println" -> {
+                    println(args.joinToString())
+                }
                 else -> error("Unknown function: $name")
             }
             FrontendConstantValue.IntValue(0) // default return value

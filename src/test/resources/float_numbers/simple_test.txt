@@ -1,0 +1,35 @@
+fun foo() -> float {
+    return 1.2;
+}
+
+fun test_main() {
+    float _ = foo();
+    assertFloatEquals(_, 1.2)
+
+    float a = 1.2;
+    float b = 123456789.987654321
+    float c = 123456789.987654321e38
+    float d = 123456789.987654321e+38
+    float e = 123456789.987654321e-38
+    float f = 123456789e38
+    float g = 123456789e+38
+    float h = 123456789e-38
+    float i = .987654321
+    float j = .987654321e38
+    float k = .987654321e+38
+    float l = .987654321e-38
+
+    float x1 = a + b
+    float x2 = a - b
+    float x3 = a * b
+    float x4 = a / b
+    // float x5 = a % b TODO support reminder for floats
+    bool z1 = a == b
+    bool z2 = a != b
+    bool z3 = a < b
+    bool z4 = a <= b
+    bool z5 = a > b
+    bool z6 = a >= b
+
+    assertStaticFloatEquals(a + b + c + d + e + f + g + h + i + j + k + l + x1 + x2 + x3 + x4, 4.938271599506174e46)
+}

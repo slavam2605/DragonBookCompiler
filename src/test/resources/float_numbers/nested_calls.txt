@@ -1,0 +1,18 @@
+fun f(float x, float y, float z, float w) -> float {
+    return x - y + w - 2.0 * z;
+}
+
+fun test_main() {
+    float x = 1.0
+    float y = 2.0
+    float z = 3.0
+    float w = 4.0
+    for (int i = 0; i < 10; i = i + 1) {
+        x = f(f(x, y, z, w), f(x, y, z, w), f(x, y, z, w), f(x, y, z, w));
+        y = f(f(w, z, z, x), f(w, z, z, x), f(w, z, z, x), f(w, z, z, x));
+        z = f(f(y, x, w, z), f(y, x, w, z), f(y, x, w, z), f(y, x, w, z));
+        w = f(x + y, y - x, z + f(x, y, 2.0, z), w);
+    }
+    float result = f(x, y, z, w);
+    assertFloatEquals(result, 7736918.0);
+}

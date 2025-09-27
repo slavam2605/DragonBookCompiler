@@ -1,0 +1,32 @@
+// constant_pool_size: 8
+
+fun factorial(float n) -> float {
+    if (n == 0.0) {
+        return 1.0;
+    }
+    return n * factorial(n - 1.0);
+}
+
+fun test_main() {
+    assertFloatEquals(factorial(0.0), 1.0)
+    assertFloatEquals(factorial(1.0), 1.0)
+    assertFloatEquals(factorial(2.0), 2.0)
+    assertFloatEquals(factorial(3.0), 6.0)
+    assertFloatEquals(factorial(4.0), 24.0)
+    assertFloatEquals(factorial(5.0), 120.0)
+    assertFloatEquals(factorial(6.0), 720.0)
+    assertFloatEquals(factorial(7.0), 5040.0)
+    assertFloatEquals(factorial(8.0), 40320.0)
+    assertFloatEquals(factorial(9.0), 362880.0)
+    assertFloatEquals(factorial(10.0), 3628800.0)
+    assertFloatEquals(factorial(11.0), 3.99168e7)
+    assertFloatEquals(factorial(12.0), 4.790016e8)
+    assertFloatEquals(factorial(13.0), 6.2270208e9)
+    assertFloatEquals(factorial(14.0), 8.71782912e10)
+    assertFloatEquals(factorial(15.0), 1.307674368e12)
+    assertFloatEquals(factorial(16.0), 2.0922789888e13)
+    assertFloatEquals(factorial(17.0), 3.55687428096e14)
+    assertFloatEquals(factorial(18.0), 6.402373705728e15)
+    assertFloatEquals(factorial(19.0), 1.21645100408832e17)
+    assertFloatEquals(factorial(20.0), 2.43290200817664e18)
+}

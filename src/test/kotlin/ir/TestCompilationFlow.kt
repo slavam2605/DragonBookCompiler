@@ -16,11 +16,8 @@ import kotlin.test.assertTrue
 
 object TestCompilationFlow {
     fun compileToIR(input: String): Pair<FrontendFunctions<List<IRProtoNode>>, SourceLocationMap> {
-        val (parser, _, tree) = ParserFlow.parseString(input)
-        assertTrue("Test program has ${parser.numberOfSyntaxErrors} parser errors") {
-            parser.numberOfSyntaxErrors == 0
-        }
-        return FrontendCompilationFlow.compileToIR(tree)
+        val (_, treeSupplier) = ParserFlow.parseString(input)
+        return FrontendCompilationFlow.compileToIR(treeSupplier.get())
     }
 
     fun compileToCFG(input: String): FrontendFunctions<ControlFlowGraph> {

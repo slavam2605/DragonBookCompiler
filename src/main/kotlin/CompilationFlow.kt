@@ -7,12 +7,9 @@ import kotlin.system.exitProcess
 
 object CompilationFlow {
     fun compile(inputFile: File, outputFile: File, arch: TargetArchitecture, optimize: Boolean) {
-        val (parser, tokens, tree) = ParserFlow.parseFile(inputFile)
-        if (parser.numberOfSyntaxErrors > 0) {
-            exitProcess(1)
-        }
-
+        val (tokens, treeSupplier) = ParserFlow.parseFile(inputFile)
         try {
+            val tree = treeSupplier.get()
             val (ir, sourceMap) = FrontendCompilationFlow.compileToIR(tree)
             val cfg = FrontendCompilationFlow.buildCFG(ir, sourceMap)
             val ssa = FrontendCompilationFlow.buildSSA(cfg)
@@ -28,6 +25,7 @@ object CompilationFlow {
             }.let { /* exhaustive check */ }
         } catch (e: CompilationFailed) {
             e.printErrors(tokens)
+            exitProcess(1)
         }
     }
 }

@@ -1,0 +1,63 @@
+fun test_main() {
+    // Edge cases for compound assignment operators
+
+    int large = 1000000
+    large += 234567
+    assertStaticEquals(large, 1234567)
+
+    large /= 1000
+    assertStaticEquals(large, 1234)
+
+    // Test modulo with various numbers
+    int mod_test = 17
+    mod_test %= 5
+    assertStaticEquals(mod_test, 2)
+
+    mod_test += 8;      assertStaticEquals(mod_test, 10)
+    mod_test %= 3;      assertStaticEquals(mod_test, 1)
+
+    // Test division edge cases
+    int div_test = 15
+    div_test /= 3
+    assertStaticEquals(div_test, 5)
+
+    div_test *= 7;      assertStaticEquals(div_test, 35)
+    div_test /= 5;      assertStaticEquals(div_test, 7)
+
+
+    // Test with scientific notation floats
+    float sci = 1e2
+    sci += 5e1
+    assertStaticFloatEquals(sci, 150.0)
+
+    sci /= 1.5e1
+    assertStaticFloatEquals(sci, 10.0)
+
+    sci *= 2.5e-1
+    assertStaticFloatEquals(sci, 2.5)
+
+    // Test precision with floats
+    float precision = 0.1
+    precision += 0.2;       assertStaticFloatEquals(precision, 0.30000000000000004)
+    precision *= 10.0;      assertStaticFloatEquals(precision, 3.0000000000000004)
+
+    // Test with negative operations
+    int negative = 10
+    negative += -15
+    assertStaticEquals(negative, -5)
+
+    negative *= -2
+    assertStaticEquals(negative, 10)
+
+    negative -= -5
+    assertStaticEquals(negative, 15)
+
+    // Test compound operations that result in zero
+    int to_zero = 42
+    to_zero *= 0
+    assertStaticEquals(to_zero, 0)
+
+    to_zero += 100
+    to_zero %= 25
+    assertStaticEquals(to_zero, 0)
+}

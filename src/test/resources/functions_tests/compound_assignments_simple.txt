@@ -1,0 +1,16 @@
+fun test_main() {
+    // Simple test to isolate issues
+
+    int a = 10
+    a += 5
+    assertStaticEquals(a, 15)
+
+    float f = 2.0
+    f *= 3.0
+    assertStaticFloatEquals(f, 6.0)
+
+    // Test scientific notation separately
+    float sci = 100.0
+    sci += 50.0
+    assertStaticFloatEquals(sci, 150.0)
+}

@@ -1,0 +1,79 @@
+fun test_main() {
+    // Comprehensive test of compound assignment operators
+
+    // Test all operators with integers
+    int a = 100
+    a += 25
+    assertStaticEquals(a, 125)
+
+    a -= 25
+    assertStaticEquals(a, 100)
+
+    a *= 3
+    assertStaticEquals(a, 300)
+
+    a /= 4
+    assertStaticEquals(a, 75)
+
+    a %= 10
+    assertStaticEquals(a, 5)
+
+    // Test with float variables
+    float f = 10.0
+    f += 2.5
+    assertStaticFloatEquals(f, 12.5)
+
+    f -= 1.5
+    assertStaticFloatEquals(f, 11.0)
+
+    f *= 2.0
+    assertStaticFloatEquals(f, 22.0)
+
+    f /= 4.0
+    assertStaticFloatEquals(f, 5.5)
+
+    f %= 2.0
+    assertStaticFloatEquals(f, 1.5)
+
+    // Test mixed int/float operations (float += int)
+    float g = 5.0
+    g += 3
+    assertStaticFloatEquals(g, 8.0)
+
+    g -= 1
+    assertStaticFloatEquals(g, 7.0)
+
+    g *= 2
+    assertStaticFloatEquals(g, 14.0)
+
+    g /= 7
+    assertStaticFloatEquals(g, 2.0)
+
+    // Test chaining compound assignments
+    int chain = 1
+    chain += 2;     assertStaticEquals(chain, 3)
+    chain *= 3;     assertStaticEquals(chain, 9)
+    chain -= 4;     assertStaticEquals(chain, 5)
+    chain /= 5;     assertStaticEquals(chain, 1)
+    chain += 9;     assertStaticEquals(chain, 10)
+    chain %= 3;     assertStaticEquals(chain, 1)
+
+    // Test with negative numbers
+    int neg = -10
+    neg += -5
+    assertStaticEquals(neg, -15)
+
+    neg *= -1
+    assertStaticEquals(neg, 15)
+
+    neg -= 20
+    assertStaticEquals(neg, -5)
+
+    // Test with zero
+    int zero = 0
+    zero += 42
+    assertStaticEquals(zero, 42)
+
+    zero *= 0
+    assertStaticEquals(zero, 0)
+}

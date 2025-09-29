@@ -1,0 +1,14 @@
+fun test_main() {
+    // Test type mismatch errors with compound assignments
+
+    // Boolean variable with compound assignment should error
+    bool flag = true
+    flag += 1
+
+    // Int variable with float promotion should cause error when result doesn't match
+    int x = 5
+    x += 2.5
+}
+
+// error: 6:4 "Mismatched types: expected 'INT' or 'FLOAT', got BOOL"
+// error: 10:4 "Expected type 'INT', got 'FLOAT'"

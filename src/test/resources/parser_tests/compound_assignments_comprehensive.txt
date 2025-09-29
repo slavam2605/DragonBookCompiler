@@ -1,0 +1,56 @@
+fun test_main() {
+    // Comprehensive parser test for compound assignment operators
+
+    // Test all compound assignment operators
+    int a = 10
+    a += 5
+    a -= 2
+    a *= 3
+    a /= 4
+    a %= 7
+
+    // Test with various expression types
+    float f = 1.0
+    f += 2.5
+    f -= a + 1
+    f *= (a - 2)
+    f /= a * 2
+
+    // Test in control flow contexts
+    if (a > 0) {
+        a += 1
+    } else {
+        a -= 1
+    }
+
+    while (a < 100) {
+        a += 10
+        if (a > 50) {
+            break
+        }
+    }
+
+    for (int i = 0; i < 5; i = i + 1) {
+        a += i
+        f *= 1.1
+    }
+
+    // Test with function calls
+    int result = getValue()
+    result += getValue()
+    result *= getValue()
+
+    // Test nested expressions
+    bool flag = true
+    if (flag) {
+        if (f > 5.0) {
+            a += 10
+        } else {
+            a += 5
+        }
+    }
+}
+
+fun getValue() -> int {
+    return 42
+}

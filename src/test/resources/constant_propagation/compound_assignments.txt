@@ -1,0 +1,26 @@
+fun test_main() {
+    int x = 10
+    x += 5
+    assertStaticEquals(x, 15)
+
+    int y = 20
+    y *= 2;         assertStaticEquals(y, 40)
+    y /= 4;         assertStaticEquals(y, 10)
+    y -= 3;         assertStaticEquals(y, 7)
+    y %= 5;         assertStaticEquals(y, 2)
+
+    float f = 3.14
+    f += 1.86
+    assertStaticEquals(f, 5.0)
+
+    f *= 2.0;       assertStaticEquals(f, 10.0)
+    f /= 4.0;       assertStaticEquals(f, 2.5)
+
+    int a = 5
+    int b = 3
+    a += b * 2
+    assertStaticEquals(a, 11)
+
+    a *= b + 1
+    assertStaticEquals(a, 44)
+}

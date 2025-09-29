@@ -10,12 +10,17 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     private val symbolTable = SymbolTable<FrontendType>()
     private val functionTable = mutableMapOf<String, FunctionDescriptor>()
     private val errors = mutableListOf<CompilationException>()
+    private val typeChecker = TypeChecker(this)
 
     fun analyze(tree: MainGrammar.ProgramContext) {
         visit(tree)
         if (errors.isNotEmpty()) {
             throw CompilationFailed(errors)
         }
+    }
+
+    fun addError(error: CompilationException) {
+        errors.add(error)
     }
 
     private fun ParserRuleContext.defaultVisitChildren(): Nothing? {
@@ -122,13 +127,25 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitAssignment(ctx: MainGrammar.AssignmentContext): Nothing? {
-        val type = symbolTable.lookup(ctx.ID().text)
-        if (type == null) {
+        val leftType = symbolTable.lookup(ctx.ID().text)
+        if (leftType == null) {
             errors.add(UndefinedVariableException(ctx.ID().symbol.asLocation(), ctx.ID().text))
         }
-        val right = visit(ctx.expression())
-        if (type != null) {
-            right.checkType(ctx.expression(), type)
+        val opText = ctx.op.text
+        val rightType = visit(ctx.expression())
+        if (leftType != null) {
+            if (opText == "=") {
+                rightType.checkType(ctx.expression(), leftType)
+            } else {
+                check(opText in setOf("+=", "-=", "*=", "/=", "%="))
+                typeChecker.checkNumberBinOpTypes(
+                    leftLocation = ctx.ID().asLocation(),
+                    rightLocation = ctx.expression().asLocation(),
+                    left = leftType,
+                    right = rightType,
+                    result = leftType
+                )
+            }
         }
         return null
     }
@@ -317,13 +334,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     private fun visitNumberBinOp(leftCtx: MainGrammar.ExpressionContext, rightCtx: MainGrammar.ExpressionContext): FrontendType {
         val left = visit(leftCtx)
         val right = visit(rightCtx)
-        val leftCheck = left.checkType(leftCtx, FrontendType.INT, FrontendType.FLOAT)
-        val rightCheck = right.checkType(rightCtx, FrontendType.INT, FrontendType.FLOAT)
-        return when {
-            !leftCheck || !rightCheck -> FrontendType.ERROR_TYPE
-            left == FrontendType.FLOAT || right == FrontendType.FLOAT -> FrontendType.FLOAT
-            else -> FrontendType.INT
-        }
+        return typeChecker.checkNumberBinOpTypes(leftCtx.asLocation(), rightCtx.asLocation(), left, right)
     }
 
     private fun <T> withLoopLevel(block: () -> T): T {
@@ -335,22 +346,8 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         }
     }
 
-    private fun FrontendType.checkSameType(ctx: ParserRuleContext, other: FrontendType): Boolean {
-        if (this == FrontendType.ERROR_TYPE || other == FrontendType.ERROR_TYPE) return true
-        if (this != other) {
-            errors.add(MismatchedTypeException(ctx.asLocation(), this, other))
-            return false
-        }
-        return true
-    }
-
     private fun FrontendType.checkType(ctx: ParserRuleContext, vararg expected: FrontendType): Boolean {
-        if (this == FrontendType.ERROR_TYPE || expected.singleOrNull() == FrontendType.ERROR_TYPE) return true
-        if (this !in expected) {
-            errors.add(MismatchedTypeException(ctx.asLocation(), expected.toList(), this))
-            return false
-        }
-        return true
+        return typeChecker.checkType(ctx.asLocation(), this, *expected)
     }
 
     private fun checkOperatorSyntax(ctx: SourceLocation, op: String, vararg expectedOps: String) {

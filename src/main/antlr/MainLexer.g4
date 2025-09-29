@@ -17,6 +17,11 @@ FUN : 'fun' ;
 
 // Operators
 ARROW : '->' ;
+PLUS_ASSIGN : '+=' ;
+MINUS_ASSIGN : '-=' ;
+STAR_ASSIGN : '*=' ;
+DIV_ASSIGN : '/=' ;
+MOD_ASSIGN : '%=' ;
 ASSIGN : '=' ;
 SEMICOLON : ';' ;
 COMMA : ',' ;

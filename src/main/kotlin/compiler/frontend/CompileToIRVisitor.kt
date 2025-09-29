@@ -135,7 +135,24 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
     override fun visitAssignment(ctx: MainGrammar.AssignmentContext): Nothing? {
         val leftVar = symbolTable.lookup(ctx.ID().text) ?: error("Undefined variable ${ctx.ID().text}")
-        resultIR.add(IRAssign(leftVar, visit(ctx.expression())).withLocation(ctx))
+        val opText = ctx.op.text
+        if (opText == "=") {
+            resultIR.add(IRAssign(leftVar, visit(ctx.expression())).withLocation(ctx))
+        } else {
+            val right = visit(ctx.expression())
+            val binOpKind = when (opText) {
+                "+=" -> IRBinOpKind.ADD
+                "-=" -> IRBinOpKind.SUB
+                "*=" -> IRBinOpKind.MUL
+                "/=" -> IRBinOpKind.DIV
+                "%=" -> IRBinOpKind.MOD
+                else -> error("Unsupported assignment operator $opText")
+            }
+            val resultType = binOpResultType(leftVar.type, right.type)
+            val tmp = IRVar(varAllocator.newName(), resultType, null)
+            resultIR.add(IRBinOp(binOpKind, tmp, leftVar, right).withLocation(ctx))
+            resultIR.add(IRAssign(leftVar, tmp).withLocation(ctx))
+        }
         return null
     }
 

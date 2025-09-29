@@ -58,7 +58,7 @@ type
     ;
 
 assignment
-    : ID ASSIGN expression
+    : ID op=(ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | STAR_ASSIGN | DIV_ASSIGN | MOD_ASSIGN) expression
     ;
 
 ifStatement

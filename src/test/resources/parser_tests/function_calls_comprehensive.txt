@@ -1,0 +1,29 @@
+fun helper1() -> int {
+    return 42
+}
+
+fun helper2(int x, float y) -> bool {
+    return x > y
+}
+
+fun helper3(int a, bool b, float c) {
+    // No return type
+}
+
+fun test_function_calls() {
+    // Test various function call patterns
+    int result1 = helper1()
+    bool result2 = helper2(10, 3.5)
+    helper3(5, true, 2.7)
+
+    // Test function calls in expressions
+    int complex1 = helper1() + 10
+    bool complex2 = helper2(helper1(), 2.0) && true
+
+    // Test nested function calls
+    bool nested = helper2(helper1() * 2, 1.5)
+
+    return result1
+}
+
+// error: 6:15 "Expected type 'INT', got 'FLOAT'"

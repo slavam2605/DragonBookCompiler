@@ -1,0 +1,24 @@
+// This test is designed to trigger lexer introspection methods
+// by using various token types and potentially error conditions
+
+fun test_various_tokens() -> int {
+    // Use all basic tokens
+    int integer_val = 42
+    float float_val = 3.14159
+    bool bool_val = true
+    bool other_bool = false
+
+    // Test all operators
+    int math = integer_val + 5 - 2 * 3 / 2 % 4
+    bool comparison = float_val > 3.0 && integer_val <= 50 || bool_val != other_bool
+    bool logic = !bool_val && (comparison || integer_val >= 40)
+
+    // Use all punctuation
+    if (integer_val == 42) {
+        return math, comparison; // Note: this might cause parsing issues which could trigger error handling
+    } else {
+        return 0
+    }
+}
+
+// error: 18:19 "Unexpected token ',' (use ';' to separate statements on the same line)"

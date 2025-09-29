@@ -1,0 +1,38 @@
+fun test_expressions() {
+    // Test all expression types and operator precedence
+    int a = 10
+    float b = 3.14
+    bool c = true
+    bool d = false
+
+    // Test arithmetic with precedence
+    int result1 = a * 2 + 3 - 1 / 2 % 5
+
+    // Test comparison operators
+    bool cmp1 = a < 20
+    bool cmp2 = b > 2.0
+    bool cmp3 = a <= 10
+    bool cmp4 = b >= 3.0
+    bool cmp5 = a == 10
+    bool cmp6 = b != 2.5
+
+    // Test logical operators with parentheses
+    bool logic1 = c && d
+    bool logic2 = c || d
+    bool logic3 = !c
+    bool logic4 = (a > 5) && (b < 4.0)
+    bool logic5 = !(a == 5 || b >= 10.0)
+
+    // Test unary minus with different types
+    int neg1 = -a
+    float neg2 = -b
+    int neg3 = -42
+    float neg4 = -2.5e3
+
+    // Test complex nested expressions
+    bool complex = ((a * 2 + 3) >= (b - 1.0)) && (!c || (d && (a % 3 == 1)))
+
+    return result1
+}
+
+// error: 33:35 "Expected type 'INT', got 'FLOAT'"

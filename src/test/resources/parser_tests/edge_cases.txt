@@ -1,0 +1,37 @@
+fun test_edge_cases() {
+    // Test edge cases that might not be covered
+
+    // Multiple return statements
+    if (true) {
+        return 1
+    }
+    return 2
+
+    // Empty function call arguments vs non-empty
+    test_edge_cases()
+
+    // Expressions as function arguments
+    int result = some_func(1 + 2 * 3, !true && false)
+
+    // Complex parenthesized expressions
+    bool complex = (((true || false) && !true) || (1 + 2 > 3 - 1))
+
+    // Multiple variable declarations
+    int a = 5
+    float b = 2.5
+    bool c = a > b
+
+    // Assignment in different contexts
+    a = a + 1
+    b = -b
+    c = !c
+
+    return result
+}
+
+// Test function without return type but with arrow (should be error)
+fun some_func(int x, bool y) -> {
+    return 0
+}
+
+// error: 33:32 "missing ID at '{'"

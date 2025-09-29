@@ -1,0 +1,11 @@
+fun test_main() {
+    // Test various float literal formats
+    float a = 3.14
+    float b = .5
+    float c = 2.
+    float d = 1e10
+    float e = 2.5e-3
+    float f = .123E+5
+    float g = 42e0
+    return a + b + c + d + e + f + g
+}

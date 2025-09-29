@@ -1,0 +1,65 @@
+fun test_main() {
+    int x = 10
+    int y = 5
+    bool flag = true
+
+    // Test if statements (with and without else)
+    if (x > y) {
+        x = x + 1
+    }
+
+    if (flag)
+        y = y * 2
+    else {
+        y = y / 2
+    }
+
+    // Test nested if statements
+    if (x > 0) {
+        if (y < 10) {
+            x = x - 1
+        } else {
+            y = y + 1
+        }
+    }
+
+    // Test while loop
+    while (x > 5) {
+        x = x - 1
+        if (x == 7) {
+            continue
+        }
+        if (x == 6) {
+            break
+        }
+    }
+
+    // Test do-while loop
+    do {
+        y = y + 1
+        if (y > 20) {
+            break
+        }
+    } while (y < 15)
+
+    // Test for loop with all parts
+    for (int i = 0; i < 5; i = i + 1) {
+        x = x + i
+    }
+
+    // Test for loop with missing parts
+    for (; x > 0; x = x - 1) {
+        if (x == 1) {
+            break
+        }
+    }
+
+    for (int j = 10; j > 0;) {
+        j = j - 2
+        if (j <= 2) {
+            continue
+        }
+    }
+
+    return x
+}

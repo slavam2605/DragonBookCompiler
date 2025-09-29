@@ -213,8 +213,8 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         val left = visit(ctx.left)
         val right = visit(ctx.right)
         when (left) {
-            FrontendType.INT -> right.checkType(ctx.right, FrontendType.INT)
-            FrontendType.FLOAT -> right.checkType(ctx.right, FrontendType.FLOAT)
+            FrontendType.INT, FrontendType.FLOAT ->
+                right.checkType(ctx.right, FrontendType.INT, FrontendType.FLOAT)
             FrontendType.BOOL if (ctx.op.text == "==" || ctx.op.text == "!=") ->
                 right.checkType(ctx.right, FrontendType.BOOL)
             FrontendType.ERROR_TYPE -> { /* ignore */ }

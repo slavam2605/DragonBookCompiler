@@ -59,6 +59,10 @@ NEW_LINE : [\r\n]+ -> channel(LINE_BREAK) ;
 COMMENT : '//' ~[\r\n]* -> channel(COMMENTS) ;
 COMMENT_BLOCK_START : '/*' -> pushMode(COMMENT_BLOCK_MODE), channel(COMMENTS) ;
 
+// Universal token that matches everything. Used to handle unknown symbols better.
+// Must always be the last token in the DEFAULT_MODE in this grammar.
+ERROR_TOKEN : . ;
+
 // Mode in block comment to support nested block comments
 mode COMMENT_BLOCK_MODE;
 

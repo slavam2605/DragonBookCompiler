@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.TokenStream
 
 object ParserUtils {
-    private val endTokens = setOf(MainLexer.RBRACE, MainLexer.RPAR, MainLexer.ELSE)
+    private val endTokens = setOf(MainLexer.RBRACE, MainLexer.RPAR, MainLexer.ELSE, MainLexer.ERROR_TOKEN)
 
     @JvmStatic
     fun isEndOfStatement(input: TokenStream): Boolean {

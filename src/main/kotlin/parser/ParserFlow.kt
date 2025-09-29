@@ -22,7 +22,7 @@ object ParserFlow {
     private fun parse(charStream: CharStream): Pair<CommonTokenStream, Supplier<MainGrammar.ProgramContext>> {
         val lexer = MainLexer(charStream)
         val tokens = CommonTokenStream(lexer)
-        val errorListener = UnderlineErrorListener()
+        val errorListener = ParserErrorListener()
         val parser = MainGrammar(tokens).apply {
             removeErrorListeners()
             addErrorListener(errorListener)

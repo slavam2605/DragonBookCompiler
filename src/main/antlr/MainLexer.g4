@@ -57,4 +57,11 @@ INT_LITERAL : [0-9]+ ;
 WS  : [ \t]+ -> channel(WHITESPACE) ;
 NEW_LINE : [\r\n]+ -> channel(LINE_BREAK) ;
 COMMENT : '//' ~[\r\n]* -> channel(COMMENTS) ;
-COMMENT_BLOCK : '/*' .*? '*/' -> channel(COMMENTS) ;
+COMMENT_BLOCK_START : '/*' -> pushMode(COMMENT_BLOCK_MODE), channel(COMMENTS) ;
+
+// Mode in block comment to support nested block comments
+mode COMMENT_BLOCK_MODE;
+
+COMMENT_BLOCK_NESTED_START : '/*' -> pushMode(COMMENT_BLOCK_MODE), channel(COMMENTS) ;
+COMMENT_BLOCK_END : '*/' -> popMode, channel(COMMENTS) ;
+COMMENT_BLOCK_CONTENT : . -> channel(COMMENTS) ;

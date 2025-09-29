@@ -1,0 +1,4 @@
+fun test_main() {
+    int x = 5
+    return x
+}

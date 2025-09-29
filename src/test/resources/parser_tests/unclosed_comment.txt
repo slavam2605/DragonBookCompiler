@@ -1,0 +1,7 @@
+// error: 7:1 "extraneous input '<EOF>' expecting {...}"
+
+fun test_main() {
+    int x = 5
+    /* This comment is never closed
+    return x
+}

@@ -1,0 +1,8 @@
+fun test_main() {
+    int a = 1; int b = 2  // Semicolon and no semicolon mixed
+    
+    int c = 3; // Semicolon with line break after
+    int d = 4
+    
+    return a
+}

@@ -1,0 +1,8 @@
+fun test_main() {
+    int x = 5
+    if (x > 0) {
+        int y = 1
+    } else {  // This should test ELSE as end token
+        int z = 2
+    }
+}

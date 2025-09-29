@@ -1,0 +1,8 @@
+fun test_main() {
+    if (true) {
+        int x = 1
+    } else {
+        int y = 2
+    }
+    return
+}

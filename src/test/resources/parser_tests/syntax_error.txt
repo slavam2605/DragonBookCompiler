@@ -1,0 +1,5 @@
+fun test_main() {
+    int x =
+    return x
+}
+// error: 3:4 "extraneous input 'return' expecting {...}"

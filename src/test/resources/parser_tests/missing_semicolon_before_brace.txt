@@ -1,0 +1,6 @@
+fun test_main() {
+    int x = 5
+    if (x > 0) {
+        return x  // Missing semicolon before brace
+    }
+}

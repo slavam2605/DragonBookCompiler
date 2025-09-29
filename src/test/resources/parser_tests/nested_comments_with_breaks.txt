@@ -1,0 +1,6 @@
+fun test_main() {
+    int x = 1 /* outer comment /* inner
+    comment with line break */ more text */
+    int y = 2 // single line comment
+    return x
+}

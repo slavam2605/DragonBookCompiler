@@ -49,13 +49,14 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
 
                 e.exceptions.forEach { exception ->
                     val ctx = exception.location ?: throw RuntimeException("Exceptions without location are not supported", exception)
+                    val message = simplifyErrorMessage(exception.message)
                     val expectedError = expectedErrors.find {
-                        it.line == ctx.line && it.col == ctx.start && it.message == exception.message
+                        it.line == ctx.line && it.col == ctx.start && it.message == message
                     }
-                    assertTrue(expectedError != null, "Unexpected error: ${ctx.line}:${ctx.start} \"${exception.message}\"")
+                    assertTrue(expectedError != null, "Unexpected error: ${ctx.line}:${ctx.start} \"$message\"")
                     visitedErrors.add(expectedError)
                     if (PRINT_DEBUG_INFO) {
-                        println("Expected exception: ${exception.message} at ${ctx.line}:${ctx.start}")
+                        println("Expected exception: $message at ${ctx.line}:${ctx.start}")
                     }
                 }
             }
@@ -63,6 +64,12 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                 assertTrue(error in visitedErrors, "Expected error was not thrown: ${error.line}:${error.col} \"${error.message}\"")
             }
         }
+    }
+
+    private fun simplifyErrorMessage(msg: String?): String? {
+        if (msg == null) return null
+        return msg
+            .replace("expecting \\{.*}".toRegex(), "expecting {...}")
     }
 
     private fun assertConstantPoolSize(mode: TestMode, expectedConstantPoolStats: Int?) {

@@ -1,0 +1,6 @@
+fun test_main() {
+    int x = 5
+    int y = x @@ 2  // Invalid operator
+    return y
+}
+// error: 3:14 "extraneous input '@' expecting {...}"

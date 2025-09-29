@@ -1,0 +1,6 @@
+fun test_main() {
+    int x = 5
+    int y = (x + 1
+        ) // This should test RPAR as end token  
+    return y
+}

@@ -1,0 +1,7 @@
+fun test_main() {
+    float a = 10.5
+    float b = a + 5.2
+    float c = b * 2.0
+    float result = c - 3.1
+    assertStaticFloatEquals(result, 28.299999999999997)
+}

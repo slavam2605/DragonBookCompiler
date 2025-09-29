@@ -1,0 +1,8 @@
+fun test_main() {
+    float x = 0.0
+    if (1 == 1) {
+        x = 42.7
+    }
+    float result = x
+    assertStaticFloatEquals(result, 42.7)
+}

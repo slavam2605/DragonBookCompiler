@@ -1,0 +1,8 @@
+fun test_main() {
+    float x = undef(0.0)
+    while (true) {
+        if (x == 5.0) break
+        x = undef(x)
+    }
+    assertStaticFloatEquals(x == 5.0, true)
+}

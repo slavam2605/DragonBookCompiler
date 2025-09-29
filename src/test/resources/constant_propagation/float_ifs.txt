@@ -1,0 +1,21 @@
+fun test_main() {
+    float x = undef(0.0)
+    float y = 10.5
+
+    if (y > 5.0) {
+        x = 3.14
+    } else {
+        x = 2.71
+    }
+
+    assertStaticFloatEquals(x, 3.14)
+
+    float z = undef(0.0)
+    if (y < 5.0) {
+        z = 1.41
+    } else {
+        z = 1.73
+    }
+
+    assertStaticFloatEquals(z, 1.73)
+}

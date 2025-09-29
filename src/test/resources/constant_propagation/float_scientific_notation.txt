@@ -1,0 +1,17 @@
+fun test_main() {
+    // Test scientific notation in constant propagation
+    float a = 1e3
+    float b = 2.5e2
+    float c = 1.5e-2
+    float d = 2E+1
+
+    float result1 = a + b
+    float result2 = c * d
+    float result3 = a / b
+    float result4 = d - c
+
+    assertStaticFloatEquals(result1, 1250.0)
+    assertStaticFloatEquals(result2, 0.3)
+    assertStaticFloatEquals(result3, 4.0)
+    assertStaticFloatEquals(result4, 19.985)
+}

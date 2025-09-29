@@ -10,7 +10,7 @@ fun helper3(int a, bool b, float c) {
     // No return type
 }
 
-fun test_function_calls() {
+fun test_main() {
     // Test various function call patterns
     int result1 = helper1()
     bool result2 = helper2(10, 3.5)
@@ -25,5 +25,3 @@ fun test_function_calls() {
 
     return result1
 }
-
-// error: 6:15 "Expected type 'INT', got 'FLOAT'"

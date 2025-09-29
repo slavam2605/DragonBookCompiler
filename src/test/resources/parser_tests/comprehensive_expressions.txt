@@ -1,4 +1,4 @@
-fun test_expressions() {
+fun test_main() {
     // Test all expression types and operator precedence
     int a = 10
     float b = 3.14
@@ -34,5 +34,3 @@ fun test_expressions() {
 
     return result1
 }
-
-// error: 33:35 "Expected type 'INT', got 'FLOAT'"

@@ -1,0 +1,24 @@
+fun test_main() {
+    // Test mixed int and float operations
+    int i = 5
+    float f = 2.5
+
+    // Mixed arithmetic should promote to float
+    float result1 = i + f
+    float result2 = f * i
+    float result3 = i / f
+    float result4 = f - i
+
+    // Comparisons between int and float
+    bool cmp1 = i > f
+    bool cmp2 = f == 5.0
+    bool cmp3 = i < 10.0
+
+    assertStaticFloatEquals(result1, 7.5)
+    assertStaticFloatEquals(result2, 12.5)
+    assertStaticFloatEquals(result3, 2.0)
+    assertStaticFloatEquals(result4, -2.5)
+    assertStaticEquals(cmp1, 1)
+    assertStaticEquals(cmp2, 0)
+    assertStaticEquals(cmp3, 1)
+}

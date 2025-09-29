@@ -1,0 +1,18 @@
+fun test_main() {
+    float a = 17.5
+    float b = 5.25
+    float result_add = a + b
+    float result_sub = a - b
+    float result_mul = a * b
+    float result_div = a / b
+    float result_mod = a % b
+    float result_neg_a = -a
+    float result_neg_b = -b
+    assertStaticFloatEquals(result_add, 22.75)
+    assertStaticFloatEquals(result_sub, 12.25)
+    assertStaticFloatEquals(result_mul, 91.875)
+    assertStaticFloatEquals(result_div, 3.3333333333333335)
+    assertStaticFloatEquals(result_mod, 1.75)
+    assertStaticFloatEquals(result_neg_a, -17.5)
+    assertStaticFloatEquals(result_neg_b, -5.25)
+}

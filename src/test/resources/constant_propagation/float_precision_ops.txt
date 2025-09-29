@@ -1,0 +1,21 @@
+fun test_main() {
+    float a = 0.1
+    float b = 0.3
+    float sum = a + b
+
+    float c = 1.0
+    float d = 3.0
+    float division = c / d
+
+    float large = 1e10
+    float small = 1e-10
+    float mult = large * small
+
+    float zero = 0.0
+    float neg_zero = -zero
+
+    assertStaticFloatEquals(sum, 0.4)
+    assertStaticFloatEquals(division, 0.3333333333333333)
+    assertStaticFloatEquals(mult, 1.0)
+    assertStaticFloatEquals(neg_zero, 0.0)
+}

@@ -2,13 +2,16 @@ package ir.tests
 
 import compiler.frontend.FrontendConstantValue
 import ir.CompileToIRTestBase
+import ir.NativeTestOptions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
 class CollatzTest : CompileToIRTestBase() {
-    override val customNativeRunner = "collatz/native/runner.c"
+    override val nativeTestOptions = NativeTestOptions(
+        customNativeRunner = "collatz/native/runner.c"
+    )
 
     private fun collatz(n: Long) = generateSequence(n) {
         when {

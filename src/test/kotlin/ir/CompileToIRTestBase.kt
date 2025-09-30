@@ -31,7 +31,7 @@ abstract class CompileToIRTestBase {
 
     protected open val excludeModes: Set<TestMode> = emptySet()
     protected open val ignoreInterpretedValues: Boolean = false
-    protected open val customNativeRunner: String? = null
+    protected open val nativeTestOptions: NativeTestOptions = NativeTestOptions()
 
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, FrontendConstantValue> {
         StatsHolder.clear()
@@ -88,7 +88,7 @@ abstract class CompileToIRTestBase {
             }
             TestMode.NATIVE_ARM64 -> {
                 val ffs = compileToOptimizedCFG(input).map { it.value.cfg }
-                val output = NativeArm64TestCompilationFlow.compileAndRun(ffs, customNativeRunner)
+                val output = NativeArm64TestCompilationFlow.compileAndRun(ffs, nativeTestOptions)
 
                 ffs.forEach { function ->
                     val name = function.name
@@ -173,7 +173,7 @@ abstract class CompileToIRTestBase {
     companion object {
         const val PRINT_DEBUG_INFO = false
         private const val MAIN = "test_main"
-        private val ignoredExtensions = setOf("c")
+        private val ignoredExtensions = setOf("c", "cpp", "o")
 
         @JvmStatic
         protected val TestFunctionHandler = handler@ { name: String, args: List<FrontendConstantValue> ->

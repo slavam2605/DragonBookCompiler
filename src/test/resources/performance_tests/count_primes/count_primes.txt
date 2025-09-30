@@ -1,0 +1,29 @@
+fun is_prime(int n) -> bool {
+    if (n <= 1) {
+        return false;
+    }
+    for (int i = 2; i <= n / 2; i += 1) {
+        if (n % i == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+fun count_primes(int from, int to) -> int {
+    int count = 0;
+    for (int n = from; n <= to; n += 1) {
+        if (is_prime(n)) {
+            count += 1;
+        }
+    }
+    return count;
+}
+
+fun performance_target(int n) -> int {
+    return count_primes(0, n);
+}
+
+fun test_main() {
+    assertEquals(count_primes(0, 10000), 1229);
+}

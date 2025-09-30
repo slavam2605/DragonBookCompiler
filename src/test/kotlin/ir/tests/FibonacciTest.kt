@@ -2,12 +2,15 @@ package ir.tests
 
 import compiler.frontend.FrontendConstantValue
 import ir.CompileToIRTestBase
+import ir.NativeTestOptions
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import kotlin.test.assertEquals
 
 class FibonacciTest : CompileToIRTestBase() {
-    override val customNativeRunner = "fibonacci/native/runner.c"
+    override val nativeTestOptions = NativeTestOptions(
+        customNativeRunner = "fibonacci/native/runner.c"
+    )
 
     private fun fibonacci(n: Long) = generateSequence(0L to 1L) { (a, b) -> b to a + b }
         .map { it.first }.elementAt(n.toInt())

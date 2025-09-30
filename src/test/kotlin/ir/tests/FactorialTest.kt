@@ -2,12 +2,15 @@ package ir.tests
 
 import compiler.frontend.FrontendConstantValue
 import ir.CompileToIRTestBase
+import ir.NativeTestOptions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
 class FactorialTest : CompileToIRTestBase() {
-    override val customNativeRunner = "factorial/native/runner.c"
+    override val nativeTestOptions = NativeTestOptions(
+        customNativeRunner = "factorial/native/runner.c"
+    )
 
     private fun factorial(n: Long) = (1..n).fold(1L, Long::times)
 

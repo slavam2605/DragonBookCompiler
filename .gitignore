@@ -1,6 +1,12 @@
 # Generated token files in sources
 src/main/antlr/*.tokens
 
+# Benchmark repository and build files
+benchmark_helper/benchmark
+benchmark_helper/.idea
+benchmark_helper/*build*
+src/test/resources/native/benchmark_helper.o
+
 # Generated files in src/main
 src/main/gen
 

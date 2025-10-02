@@ -1,0 +1,79 @@
+fun lcg_next(int seed) -> int {
+    // Linear Congruential Generator: (a * seed + c) % m
+    // Using common LCG values
+    int a = 1103515245;
+    int c = 12345;
+    int m = 2147483647;  // 2^31 - 1
+    return (a * seed + c) % m;
+}
+
+fun random_float(int seed) -> float {
+    // Convert int [0, 2^31-1] to float [0.0, 1.0]
+    return seed / 2147483647.0;
+}
+
+fun estimate_pi(int iterations, int seed) -> float {
+    int inside = 0;
+    int current_seed = seed;
+
+    for (int i = 0; i < iterations; i += 1) {
+        // Generate random x coordinate
+        current_seed = lcg_next(current_seed);
+        float x = random_float(current_seed);
+
+        // Generate random y coordinate
+        current_seed = lcg_next(current_seed);
+        float y = random_float(current_seed);
+
+        // Check if point is inside quarter circle
+        float distance_squared = x * x + y * y;
+        if (distance_squared <= 1.0) {
+            inside += 1;
+        }
+    }
+
+    return 4.0 * inside / iterations;
+}
+
+fun run_monte_carlo_trials(int iterations_per_trial, int num_trials) -> float {
+    float sum = 0.0;
+    for (int trial = 0; trial < num_trials; trial += 1) {
+        int seed = 12345 + trial * 1000;
+        float pi_estimate = estimate_pi(iterations_per_trial, seed);
+        sum += pi_estimate;
+    }
+    return sum / num_trials;
+}
+
+fun performance_target(int n) -> int {
+    // n = 10000
+    // Run trials with n iterations each
+    int num_trials = n / 200;
+    float avg_pi = run_monte_carlo_trials(n, num_trials);
+    return 0;
+}
+
+fun test_main() {
+    // Test LCG produces expected sequence
+    int seed1 = lcg_next(12345);
+    assertEquals(seed1, 1406938949);
+
+    int seed2 = lcg_next(seed1);
+    assertEquals(seed2, 178066070);
+
+    // Test random_float is in range [0, 1]
+    float r1 = random_float(seed1);
+    assertEquals(r1 > 0.0 && r1 < 1.0, true);
+
+    // Test pi estimation with small sample
+    float pi_small = estimate_pi(1000, 12345);
+    assertEquals(pi_small > 2.5 && pi_small < 3.5, true);
+
+    // Test with larger sample for better accuracy
+    float pi_medium = estimate_pi(10000, 12345);
+    assertEquals(pi_medium > 3.0 && pi_medium < 3.3, true);
+
+    // Test trials
+    float pi_avg = run_monte_carlo_trials(1000, 10);
+    assertEquals(pi_avg > 3.14 && pi_avg < 3.15, true);
+}

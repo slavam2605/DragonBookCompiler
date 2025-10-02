@@ -33,6 +33,8 @@ abstract class CompileToIRTestBase {
     protected open val ignoreInterpretedValues: Boolean = false
     protected open val nativeTestOptions: NativeTestOptions = NativeTestOptions()
 
+    protected open fun handleNativeOutput(output: String) {}
+
     protected fun compileAndRun(mode: TestMode, input: String): Map<IRVar, FrontendConstantValue> {
         StatsHolder.clear()
         when (mode) {
@@ -104,6 +106,7 @@ abstract class CompileToIRTestBase {
                     }
                 }
 
+                handleNativeOutput(output)
                 return output.toLongOrNull()?.let { mapOf(IntReturnValue to FrontendConstantValue.IntValue(it)) } ?: emptyMap()
             }
         }

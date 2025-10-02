@@ -1,0 +1,40 @@
+fun test_main() {
+    // Int to float conversions
+    int x = 42;
+    float f1 = x as float;
+    assertStaticEquals(f1 > 41.99 && f1 < 42.01, true);
+
+    int negative = -10;
+    float f2 = negative as float;
+    assertStaticEquals(f2 > -10.01 && f2 < -9.99, true);
+
+    // Float to int conversions (truncate toward zero)
+    float y = 3.7;
+    int i1 = y as int;
+    assertStaticEquals(i1, 3);
+
+    float neg_float = -2.9;
+    int i2 = neg_float as int;
+    assertStaticEquals(i2, -2);
+
+    float exact = 5.0;
+    int i3 = exact as int;
+    assertStaticEquals(i3, 5);
+
+    // Chained conversions
+    int original = 100;
+    float as_float = original as float;
+    int back_to_int = as_float as int;
+    assertStaticEquals(back_to_int, 100);
+
+    // Conversions in expressions
+    int a = 10;
+    int b = 3;
+    float ratio = a as float / b as float;
+    assertStaticEquals(ratio > 3.33 && ratio < 3.34, true);
+
+    // Truncation test
+    float pi = 3.14159;
+    int truncated = pi as int;
+    assertStaticEquals(truncated, 3);
+}

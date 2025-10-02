@@ -1,0 +1,8 @@
+fun test_main() {
+    int x = undef(1)
+    float y = undef(2.0)
+    float x_float = x as float;
+    int y_int = y as int;
+    assertStaticFloatEquals(x_float, x as float)
+    assertStaticEquals(y_int, y as int)
+}

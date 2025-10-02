@@ -28,7 +28,7 @@ fun sqrt_newton(float x) -> float {
 fun compute_sqrt_sum(int n) -> float {
     float sum = 0.0;
     for (int i = 1; i <= n; i += 1) {
-        float val = i * 3.0 / 3.0; // TODO here is bug if i * 1.0 => simplified to int variable
+        float val = i as float;
         sum += sqrt_newton(val);
     }
     return sum;

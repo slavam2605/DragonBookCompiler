@@ -1,0 +1,11 @@
+fun test_main() {
+    int x = undef(1)
+    float y = undef(2.0)
+    int z = undef(3)
+    float t = undef(4.0)
+
+    assertStaticFloatEquals(
+        ((x + z) * (y as int) * (-t)) as float / (y + t + x as float),
+        ((x + z) * (y as int) * (-t)) as float / (y + t + x as float)
+    )
+}

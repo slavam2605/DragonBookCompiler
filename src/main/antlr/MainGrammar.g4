@@ -98,6 +98,7 @@ expression
     | MINUS? FLOAT_LITERAL                                      # FloatExpr
     | MINUS expression                                          # NegExpr
     | NOT expression                                            # NotExpr
+    | expression AS type                                        # CastExpr
     | left=expression op=(STAR | DIV | MOD) right=expression    # MulDivExpr
     | left=expression op=(PLUS | MINUS) right=expression        # AddSubExpr
     | left=expression op=comparisonOp right=expression          # ComparisonExpr

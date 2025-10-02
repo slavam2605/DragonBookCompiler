@@ -279,6 +279,21 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return visit(ctx.expression())
     }
 
+    override fun visitCastExpr(ctx: MainGrammar.CastExprContext): FrontendType {
+        val targetType = visit(ctx.type())
+        val sourceType = visit(ctx.expression())
+
+        // Verify that the cast is between int and float
+        if ((targetType != FrontendType.INT && targetType != FrontendType.FLOAT) ||
+            (sourceType != FrontendType.INT && sourceType != FrontendType.FLOAT)) {
+            errors.add(SyntaxErrorException(ctx.asLocation(), "Type cast is only supported between int and float types"))
+        }
+
+        // Casting to the same type is allowed but redundant (just a warning, not an error)
+        // TODO add a warning here
+        return targetType
+    }
+
     override fun visitAddSubExpr(ctx: MainGrammar.AddSubExprContext): FrontendType {
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "+", "-")
         return visitNumberBinOp(ctx.left, ctx.right)

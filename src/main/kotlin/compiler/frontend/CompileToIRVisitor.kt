@@ -340,6 +340,21 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return visit(ctx.expression())
     }
 
+    override fun visitCastExpr(ctx: MainGrammar.CastExprContext): IRValue {
+        val targetType = ctx.type().irType()
+        val sourceValue = visit(ctx.expression())
+
+        // If types are the same, no conversion needed
+        if (sourceValue.type == targetType) {
+            return sourceValue
+        }
+
+        // Create conversion instruction
+        return withNewVar(targetType) {
+            IRConvert(it, sourceValue).withLocation(ctx)
+        }
+    }
+
     override fun visitAddSubExpr(ctx: MainGrammar.AddSubExprContext): IRValue {
         val opKind = when (ctx.op.text) {
             "+" -> IRBinOpKind.ADD

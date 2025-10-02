@@ -3,6 +3,7 @@ package compiler.ir.optimization.constant
 import compiler.ir.IRAssign
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
+import compiler.ir.IRConvert
 import compiler.ir.IRFloat
 import compiler.ir.IRFunctionCall
 import compiler.ir.IRInt
@@ -97,6 +98,27 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
                 "Cannot evaluate 'not' on non-int value: ${rValues[0]}"
             }
             withBoolValues(rValues[0]) { !it[0] }
+        }
+
+        is IRConvert -> {
+            val sourceValue = rValues[0]
+            when {
+                sourceValue == SSCPValue.Top -> SSCPValue.Top
+                sourceValue == SSCPValue.Bottom -> SSCPValue.Bottom
+                result.type == IRType.INT64 -> {
+                    check(sourceValue is SSCPValue.FloatValue) {
+                        "Cannot convert non-float value to int: $sourceValue"
+                    }
+                    SSCPValue.IntValue(sourceValue.value.toLong())
+                }
+                result.type == IRType.FLOAT64 -> {
+                    check(sourceValue is SSCPValue.IntValue) {
+                        "Cannot convert non-int value to float: $sourceValue"
+                    }
+                    SSCPValue.FloatValue(sourceValue.value.toDouble())
+                }
+                else -> error("Unexpected target type: ${result.type}")
+            }
         }
 
         is IRPhi -> {

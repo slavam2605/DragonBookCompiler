@@ -3,6 +3,7 @@ package compiler.ir.optimization.constant
 import compiler.ir.IRAssign
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
+import compiler.ir.IRConvert
 import compiler.ir.IRFloat
 import compiler.ir.IRInt
 import compiler.ir.IRNode
@@ -26,6 +27,14 @@ object ArithmeticRules {
 
     private fun IRNode.toAssign(value: IRValue) = IRAssign(lvalue!!, value)
 
+    private fun IRNode.toAssignCast(value: IRValue): IRNode {
+        val targetType = lvalue!!.type
+        if (value.type == targetType) {
+            return IRAssign(lvalue!!, value)
+        }
+        return IRConvert(lvalue!!, value)
+    }
+
     fun simplifyNode(node: IRNode): IRNode? {
         return when (node) {
             is IRBinOp -> when (node.op) {
@@ -41,8 +50,8 @@ object ArithmeticRules {
                 }
                 IRBinOpKind.MUL -> when {
                     node.left.isZero() || node.right.isZero() -> node.toAssign(node.left.typedZero())
-                    node.left.isOne() -> node.toAssign(node.right)
-                    node.right.isOne() -> node.toAssign(node.left)
+                    node.left.isOne() -> node.toAssignCast(node.right)
+                    node.right.isOne() -> node.toAssignCast(node.left)
                     // TODO maybe should be replaced by strength reduction
                     node.left.asInt() == 2L -> IRBinOp(IRBinOpKind.ADD, node.result, node.right, node.right)
                     node.right.asInt() == 2L -> IRBinOp(IRBinOpKind.ADD, node.result, node.left, node.left)

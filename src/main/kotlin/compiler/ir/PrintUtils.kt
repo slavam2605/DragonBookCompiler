@@ -32,11 +32,12 @@ fun IRSource.printToString(): String = "${from.printToString()}: ${value.printTo
 
 fun IRProtoNode.printToString(): String = when (this) {
     is IRLabel -> "$name:"
-    is IRPhi -> "${result.printToString()} = phi(${sources.joinToString(", ") { it.printToString() }})"
-    is IRAssign -> "${result.printToString()} = ${right.printToString()}"
-    is IRBinOp -> "${result.printToString()} = ${left.printToString()} ${op.printToString()} ${right.printToString()}"
-    is IRNot -> "${result.printToString()} = ! ${value.printToString()}"
-    is IRFunctionCall -> (if (result != null) "${result.printToString()} = " else "") + "$name(${arguments.joinToString(", ") { it.printToString() }})"
+    is IRPhi -> "${result.printToString()}: ${result.type} = phi(${sources.joinToString(", ") { it.printToString() }})"
+    is IRAssign -> "${result.printToString()}: ${result.type} = ${right.printToString()}"
+    is IRBinOp -> "${result.printToString()}: ${result.type} = ${left.printToString()} ${op.printToString()} ${right.printToString()}"
+    is IRNot -> "${result.printToString()}: ${result.type} = ! ${value.printToString()}"
+    is IRConvert -> "${result.printToString()}: ${result.type} = ${value.printToString()} as ${result.type}"
+    is IRFunctionCall -> (if (result != null) "${result.printToString()}: ${result.type} = " else "") + "$name(${arguments.joinToString(", ") { it.printToString() }})"
     is IRJump -> "jump ${target.printToString()}"
     is IRJumpIfTrue -> "jump-if-true ${cond.printToString()} ${target.printToString()} else ${elseTarget.printToString()}"
     is IRReturn -> "return${if (value != null) " ${value.printToString()}" else ""}"

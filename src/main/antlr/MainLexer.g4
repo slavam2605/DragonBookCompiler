@@ -14,6 +14,7 @@ TRUE : 'true' ;
 FALSE : 'false' ;
 DO : 'do' ;
 FUN : 'fun' ;
+AS : 'as' ;
 
 // Operators
 ARROW : '->' ;

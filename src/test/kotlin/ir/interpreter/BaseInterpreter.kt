@@ -83,6 +83,20 @@ abstract class BaseInterpreter<T>(
                 val value = getValue(node.value)
                 vars[node.result] = FrontendConstantValue.IntValue(if ((value as FrontendConstantValue.IntValue).value == 0L) 1 else 0)
             }
+            is IRConvert -> {
+                val value = getValue(node.value)
+                val result = when (node.result.type) {
+                    IRType.INT64 -> {
+                        val floatVal = (value as FrontendConstantValue.FloatValue).value
+                        FrontendConstantValue.IntValue(floatVal.toLong())
+                    }
+                    IRType.FLOAT64 -> {
+                        val intVal = (value as FrontendConstantValue.IntValue).value
+                        FrontendConstantValue.FloatValue(intVal.toDouble())
+                    }
+                }
+                vars[node.result] = result
+            }
             is IRFunctionCall -> {
                 val arguments = node.arguments.map { getValue(it) }
                 val result = if (node.name in functions) {

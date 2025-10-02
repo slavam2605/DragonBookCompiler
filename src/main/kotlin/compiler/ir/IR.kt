@@ -3,7 +3,14 @@ package compiler.ir
 // values
 
 enum class IRType {
-    INT64, FLOAT64
+    INT64, FLOAT64;
+
+    override fun toString(): String {
+        return when (this) {
+            INT64 -> "i64"
+            FLOAT64 -> "f64"
+        }
+    }
 }
 
 sealed interface IRValue {
@@ -77,6 +84,13 @@ data class IRPhi(val result: IRVar, val sources: List<IRSource>) : IRNode {
 }
 
 data class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
+    init {
+        check(result.type == right.type) {
+            "Different types in IRAssign: ${result.type} != ${right.type} " +
+                    "(variables ${result.printToString()} and ${right.printToString()})"
+        }
+    }
+
     override val lvalue get() = result
     override fun rvalues() = listOf(right)
     override fun transform(transformer: IRTransformer) = IRAssign(
@@ -100,6 +114,19 @@ data class IRNot(val result: IRVar, val value: IRValue) : IRNode {
     override val lvalue get() = result
     override fun rvalues() = listOf(value)
     override fun transform(transformer: IRTransformer) = IRNot(
+        transformer.transformLValue(result),
+        transformer.transformRValue(this, 0, value)
+    )
+}
+
+data class IRConvert(val result: IRVar, val value: IRValue) : IRNode {
+    init {
+        require(result.type != value.type) { "IRConvert requires different source and target types" }
+    }
+
+    override val lvalue get() = result
+    override fun rvalues() = listOf(value)
+    override fun transform(transformer: IRTransformer) = IRConvert(
         transformer.transformLValue(result),
         transformer.transformRValue(this, 0, value)
     )

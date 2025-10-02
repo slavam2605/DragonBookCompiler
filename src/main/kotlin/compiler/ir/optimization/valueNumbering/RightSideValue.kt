@@ -11,6 +11,7 @@ data class RightSideValue private constructor(private val tag: RSVTag, private v
                 is IRBinOp -> RSVTag.BinOp(node.op)
                 is IRAssign -> RSVTag.Assign
                 is IRNot -> RSVTag.Not
+                is IRConvert -> RSVTag.Convert(node.result.type)
 
                 is IRJump,          // ignore nodes without a result
                 is IRJumpIfTrue,
@@ -33,6 +34,7 @@ private sealed interface RSVTag {
 
     object Assign : RSVTag
     object Not : RSVTag
+    data class Convert(val targetType: IRType) : RSVTag
 
     val isCommutative: Boolean get() = false
 }

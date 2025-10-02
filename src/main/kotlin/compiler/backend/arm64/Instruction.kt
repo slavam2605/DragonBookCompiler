@@ -151,6 +151,10 @@ class Scvtf(val dst: Register.D, val src: IntRegister.X) : Instruction() {
     override fun string(): String = "scvtf $dst, $src"
 }
 
+class Fcvtzs(val dst: IntRegister.X, val src: Register.D) : Instruction() {
+    override fun string(): String = "fcvtzs $dst, $src"
+}
+
 enum class StpMode { SIGNED_OFFSET, PRE_INDEXED, POST_INDEXED }
 
 enum class ConditionFlag {

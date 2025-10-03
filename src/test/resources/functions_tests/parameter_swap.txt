@@ -1,0 +1,20 @@
+fun first(int a, int b) -> int {
+    return a;
+}
+
+fun second(int a, int b) -> int {
+    return b;
+}
+
+fun swap_first(int a, int b) -> int {
+    return first(b, a);
+}
+
+fun swap_second(int a, int b) -> int {
+    return second(b, a);
+}
+
+fun test_main() {
+    assertEquals(swap_first(1, 2), 2);
+    assertEquals(swap_second(1, 2), 1);
+}

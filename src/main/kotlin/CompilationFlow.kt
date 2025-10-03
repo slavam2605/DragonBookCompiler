@@ -1,3 +1,4 @@
+import compiler.backend.PrepareForNativeCompilation
 import compiler.backend.arm64.Arm64CompilationFlow
 import compiler.frontend.CompilationFailed
 import compiler.frontend.FrontendCompilationFlow
@@ -17,10 +18,11 @@ object CompilationFlow {
                 FrontendCompilationFlow.optimizeSSA(ssa).map { it.value.optimizedSSA }
             } else ssa
             val nonSSA = FrontendCompilationFlow.convertFromSSA(optimizedSSA)
+            val preNative = nonSSA.map { PrepareForNativeCompilation.run(it.value) }
 
             when (arch) {
                 TargetArchitecture.ARM64 -> {
-                    Arm64CompilationFlow.compileToAsm(nonSSA, outputFile)
+                    Arm64CompilationFlow.compileToAsm(preNative, outputFile)
                 }
             }.let { /* exhaustive check */ }
         } catch (e: CompilationFailed) {

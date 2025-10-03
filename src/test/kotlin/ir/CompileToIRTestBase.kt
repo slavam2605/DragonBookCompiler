@@ -2,6 +2,7 @@ package ir
 
 import TestResources
 import backend.NativeArm64TestCompilationFlow
+import compiler.backend.PrepareForNativeCompilation
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatAvailableRegisters
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatSpilledRegisters
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatUsedRegisters
@@ -89,7 +90,9 @@ abstract class CompileToIRTestBase {
                     .withValues(mainCpValues, mainEqualities)
             }
             TestMode.NATIVE_ARM64 -> {
-                val ffs = compileToOptimizedCFG(input).map { it.value.cfg }
+                val ffs = compileToOptimizedCFG(input).map {
+                    PrepareForNativeCompilation.run(it.value.cfg)
+                }
                 val output = NativeArm64TestCompilationFlow.compileAndRun(ffs, nativeTestOptions)
 
                 ffs.forEach { function ->

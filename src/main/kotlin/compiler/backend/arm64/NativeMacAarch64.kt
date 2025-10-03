@@ -1,5 +1,6 @@
 package compiler.backend.arm64
 
+import compiler.backend.PrepareForNativeCompilation
 import compiler.frontend.FrontendFunctions
 import compiler.ir.cfg.ControlFlowGraph
 import java.io.File
@@ -25,6 +26,7 @@ object NativeMacAarch64 {
 
         // Generate assembly for each function
         ffs.values.forEach {
+            require(PrepareForNativeCompilation.isPrepared(it.value))
             Arm64AssemblyCompiler(it, constPool, ops).buildFunction()
         }
 

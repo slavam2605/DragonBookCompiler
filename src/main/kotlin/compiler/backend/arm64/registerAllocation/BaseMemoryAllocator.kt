@@ -77,15 +77,15 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         freeTempRegs.addAll(callerSaved())
         nonTempRegs.addAll(calleeSaved())
 
-        val typeIndex = mutableMapOf<IRType, Int>()
-        function.parameters.forEach { parameter ->
-            val index = typeIndex.compute(parameter.type) { _, v -> (v ?: -1) + 1 }!!
-            check(index < 8)
-            val reg = parameterReg(index)
-            map[parameter] = reg
-            nonTempRegs.remove(reg)
-            freeTempRegs.remove(reg)
-        }
+        function.parameters
+            .filter { it.type == type }
+            .forEachIndexed { index, parameter ->
+                check(index < 8)
+                val reg = parameterReg(index)
+                map[parameter] = reg
+                nonTempRegs.remove(reg)
+                freeTempRegs.remove(reg)
+            }
 
         freeTempRegs.take(3).let {
             freeTempRegs.clear()

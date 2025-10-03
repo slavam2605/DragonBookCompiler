@@ -148,9 +148,9 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
                 "%=" -> IRBinOpKind.MOD
                 else -> error("Unsupported assignment operator $opText")
             }
-            val resultType = binOpResultType(leftVar.type, right.type)
+            val (unifiedLeft, unifiedRight, resultType) = unifyTypes(leftVar, right, ctx)
             val tmp = IRVar(varAllocator.newName(), resultType, null)
-            resultIR.add(IRBinOp(binOpKind, tmp, leftVar, right).withLocation(ctx))
+            resultIR.add(IRBinOp(binOpKind, tmp, unifiedLeft, unifiedRight).withLocation(ctx))
             resultIR.add(IRAssign(leftVar, tmp).withLocation(ctx))
         }
         return null
@@ -287,8 +287,9 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         }
         val left = visit(ctx.left)
         val right = visit(ctx.right)
-        return withNewVar(binOpResultType(left.type, right.type)) {
-            IRBinOp(opKind, it, left, right).withLocation(ctx)
+        val (unifiedLeft, unifiedRight, resultType) = unifyTypes(left, right, ctx)
+        return withNewVar(resultType) {
+            IRBinOp(opKind, it, unifiedLeft, unifiedRight).withLocation(ctx)
         }
     }
 
@@ -307,8 +308,11 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
             "!=" -> IRBinOpKind.NEQ
             else -> throw IllegalStateException("Unknown operator ${ctx.op.text}")
         }
+        val left = visit(ctx.left)
+        val right = visit(ctx.right)
+        val (unifiedLeft, unifiedRight, _) = unifyTypes(left, right, ctx)
         return withNewVar(IRType.INT64) {
-            IRBinOp(opKind, it, visit(ctx.left), visit(ctx.right)).withLocation(ctx)
+            IRBinOp(opKind, it, unifiedLeft, unifiedRight).withLocation(ctx)
         }
     }
 
@@ -363,8 +367,9 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         }
         val left = visit(ctx.left)
         val right = visit(ctx.right)
-        return withNewVar(binOpResultType(left.type, right.type)) {
-            IRBinOp(opKind, it, left, right).withLocation(ctx)
+        val (unifiedLeft, unifiedRight, resultType) = unifyTypes(left, right, ctx)
+        return withNewVar(resultType) {
+            IRBinOp(opKind, it, unifiedLeft, unifiedRight).withLocation(ctx)
         }
     }
 
@@ -394,15 +399,37 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return processShortCircuitLogic(ctx.left, ctx.right, false)
     }
 
-    private fun binOpResultType(left: IRType, right: IRType): IRType = when (left) {
-        IRType.INT64 -> when (right) {
-            IRType.INT64 -> IRType.INT64
-            IRType.FLOAT64 -> IRType.FLOAT64
+    /**
+     * Unifies types of two operands by inserting IRConvert nodes where needed.
+     * If types differ, converts int to float (float has precedence).
+     * @return Triple of (unified left, unified right, result type)
+     */
+    private fun unifyTypes(left: IRValue, right: IRValue, ctx: ParserRuleContext): Triple<IRValue, IRValue, IRType> {
+        if (left.type == right.type) {
+            return Triple(left, right, left.type)
         }
-        IRType.FLOAT64 -> when (right) {
-            IRType.INT64 -> IRType.FLOAT64
-            IRType.FLOAT64 -> IRType.FLOAT64
+
+        // One is INT64, the other is FLOAT64 - convert INT64 to FLOAT64
+        val resultType = IRType.FLOAT64
+        val unifiedLeft = if (left.type == IRType.INT64) {
+            withNewVar(IRType.FLOAT64) {
+                IRConvert(it, left).withLocation(ctx)
+            }
+        } else {
+            check(left.type == IRType.FLOAT64)
+            left
         }
+
+        val unifiedRight = if (right.type == IRType.INT64) {
+            withNewVar(IRType.FLOAT64) {
+                IRConvert(it, right).withLocation(ctx)
+            }
+        } else {
+            check(right.type == IRType.FLOAT64)
+            right
+        }
+
+        return Triple(unifiedLeft, unifiedRight, resultType)
     }
 
     private fun MainGrammar.TypeContext.irType(): IRType {

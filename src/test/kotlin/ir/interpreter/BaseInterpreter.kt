@@ -64,6 +64,9 @@ abstract class BaseInterpreter<T>(
             is IRBinOp -> {
                 val left = getValue(node.left)
                 val right = getValue(node.right)
+                require(left.irType == right.irType) {
+                    "IRBinOp requires operands of the same type, got ${left.irType} and ${right.irType}"
+                }
                 val result = when (node.op) {
                     IRBinOpKind.ADD -> left + right
                     IRBinOpKind.SUB -> left - right

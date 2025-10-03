@@ -100,6 +100,13 @@ data class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
 }
 
 data class IRBinOp(val op: IRBinOpKind, val result: IRVar, val left: IRValue, val right: IRValue) : IRNode {
+    init {
+        require(left.type == right.type) {
+            "IRBinOp requires operands of the same type, got left: ${left.type} (${left.printToString()}) " +
+                    "and right: ${right.type} (${right.printToString()})"
+        }
+    }
+
     override val lvalue get() = result
     override fun rvalues() = listOf(left, right)
     override fun transform(transformer: IRTransformer) = IRBinOp(

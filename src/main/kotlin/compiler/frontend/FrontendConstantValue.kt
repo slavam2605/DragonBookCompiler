@@ -12,67 +12,63 @@ sealed class FrontendConstantValue {
 
     internal data class IntValue(val value: Long) : FrontendConstantValue() {
         override fun plus(other: FrontendConstantValue): FrontendConstantValue {
-            if (other is IntValue) {
-                return IntValue(value + other.value)
-            }
-            return FloatValue(value + other.floatValue)
+            return IntValue(value + (other as IntValue).value)
         }
 
         override fun minus(other: FrontendConstantValue): FrontendConstantValue {
-            if (other is IntValue) {
-                return IntValue(value - other.value)
-            }
-            return FloatValue(value - other.floatValue)
+            return IntValue(value - (other as IntValue).value)
         }
 
         override fun times(other: FrontendConstantValue): FrontendConstantValue {
-            if (other is IntValue) {
-                return IntValue(value * other.value)
-            }
-            return FloatValue(value * other.floatValue)
+            return IntValue(value * (other as IntValue).value)
         }
 
         override fun div(other: FrontendConstantValue): FrontendConstantValue {
-            if (other is IntValue) {
-                return IntValue(value / other.value)
-            }
-            return FloatValue(value / other.floatValue)
+            return IntValue(value / (other as IntValue).value)
         }
 
         override fun rem(other: FrontendConstantValue): FrontendConstantValue {
-            if (other is IntValue) {
-                return IntValue(value % other.value)
-            }
-            return FloatValue(value % other.floatValue)
+            return IntValue(value % (other as IntValue).value)
         }
 
         override fun compareTo(other: FrontendConstantValue): Int {
-            if (other is IntValue) {
-                return value.compareTo(other.value)
-            }
-            return floatValue.compareTo(other.floatValue)
+            return value.compareTo((other as IntValue).value)
         }
 
         override fun toString(): String = value.toString()
 
-        override val floatValue = value.toDouble()
         override val irType = IRType.INT64
     }
 
     internal data class FloatValue(val value: Double) : FrontendConstantValue() {
-        override fun plus(other: FrontendConstantValue) = FloatValue(value + other.floatValue)
-        override fun minus(other: FrontendConstantValue) = FloatValue(value - other.floatValue)
-        override fun times(other: FrontendConstantValue) = FloatValue(value * other.floatValue)
-        override fun div(other: FrontendConstantValue) = FloatValue(value / other.floatValue)
-        override fun rem(other: FrontendConstantValue) = FloatValue(value % other.floatValue)
-        override fun compareTo(other: FrontendConstantValue): Int = value.compareTo(other.floatValue)
+        override fun plus(other: FrontendConstantValue): FrontendConstantValue {
+            return FloatValue(value + (other as FloatValue).value)
+        }
+
+        override fun minus(other: FrontendConstantValue): FrontendConstantValue {
+            return FloatValue(value - (other as FloatValue).value)
+        }
+
+        override fun times(other: FrontendConstantValue): FrontendConstantValue {
+            return FloatValue(value * (other as FloatValue).value)
+        }
+
+        override fun div(other: FrontendConstantValue): FrontendConstantValue {
+            return FloatValue(value / (other as FloatValue).value)
+        }
+
+        override fun rem(other: FrontendConstantValue): FrontendConstantValue {
+            return FloatValue(value % (other as FloatValue).value)
+        }
+
+        override fun compareTo(other: FrontendConstantValue): Int {
+            return value.compareTo((other as FloatValue).value)
+        }
+
         override fun toString(): String = value.toString()
 
-        override val floatValue = value
         override val irType = IRType.FLOAT64
     }
-
-    abstract val floatValue: Double
 
     abstract val irType: IRType
 }

@@ -61,6 +61,15 @@ class AggregatedRegisterAllocator(
         return floatAllocator.tempReg(block)
     }
 
+    /**
+     * Returns combined liveness-at-calls information from both int and float allocators.
+     * Note: Both allocators analyze the same CFG, so they produce identical liveAtCalls maps.
+     * We use the int allocator's data as the canonical source.
+     *
+     * instead of running it separately for int and float allocators.
+     */
+    fun getLiveAtCalls() = intAllocator.interferenceGraph.liveAtCalls
+
     private fun chooseAllocator(value: IRValue): BaseMemoryAllocator<*> = when (value.type) {
         IRType.INT64 -> intAllocator
         IRType.FLOAT64 -> floatAllocator

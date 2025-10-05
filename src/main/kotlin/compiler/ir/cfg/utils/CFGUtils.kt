@@ -1,5 +1,6 @@
 package compiler.ir.cfg.utils
 
+import compiler.ir.IRFunctionCall
 import compiler.ir.IRLabel
 import compiler.ir.IRPhi
 import compiler.ir.cfg.ControlFlowGraph
@@ -25,4 +26,10 @@ fun ControlFlowGraph.reachableFrom(start: IRLabel): Set<IRLabel> {
         queue.addAll(edges(label))
     }
     return visited
+}
+
+fun ControlFlowGraph.hasFunctionCalls(): Boolean {
+    return blocks.values.any { block ->
+        block.irNodes.any { it is IRFunctionCall }
+    }
 }

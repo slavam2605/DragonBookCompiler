@@ -16,5 +16,5 @@ class FloatMemoryAllocator(
 
     override fun calleeSaved() = D.CalleeSaved
 
-    override fun parameterReg(index: Int): D = D(index)
+    override fun parameterRegs() = (0..7).map { D(it) }
 }

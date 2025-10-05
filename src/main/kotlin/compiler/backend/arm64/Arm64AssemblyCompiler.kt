@@ -107,10 +107,19 @@ class Arm64AssemblyCompiler(
             }
         }
 
-    private fun pushCallerSaved(): List<Pair<Register, Register?>> {
+    private fun pushCallerSaved(liveVars: Set<IRVar>): List<Pair<Register, Register?>> {
+        // Only consider registers that contain live variables
+        val liveRegs = liveVars.mapNotNull {
+            allocator.loc(it) as? Register
+        }.toSet()
+
+        // Filter used registers to only those containing live variables
+        val liveUsedIntRegs = allocator.usedRegisters(X::class.java).filter { it in liveRegs }
+        val liveUsedFloatRegs = allocator.usedRegisters(D::class.java).filter { it in liveRegs }
+
         val regPairs = mutableListOf<Pair<Register, Register?>>()
-        fillPairs(regPairs, allocator.usedRegisters(X::class.java), X.CallerSaved)
-        fillPairs(regPairs, allocator.usedRegisters(D::class.java), D.CallerSaved)
+        fillPairs(regPairs, liveUsedIntRegs.toSet(), X.CallerSaved)
+        fillPairs(regPairs, liveUsedFloatRegs.toSet(), D.CallerSaved)
         ops.addAll(createPushOps(regPairs))
 
         check(spShift == 0) { "SP shift must be zero before calls" }
@@ -399,10 +408,23 @@ class Arm64AssemblyCompiler(
     }
 
     private fun emitCall(n: IRFunctionCall) {
-        val pushedRegs = pushCallerSaved()
+        // Get the set of variables that are live after this call
+        val liveVars = allocator.getLiveAtCalls()[n] ?: emptySet()
+        val pushedRegs = pushCallerSaved(liveVars)
         val pushedRegsSet = pushedRegs.flatMap { listOfNotNull(it.first, it.second) }.toSet()
 
         // TODO support more than 8 arguments
+        val writtenArgRegs = mutableSetOf<Register>()
+        fun checkArgumentRegister(arg: IRValue) {
+            if (arg !is IRVar) return
+            val argReg = allocator.loc(arg) as? Register ?: return
+            if (argReg !in writtenArgRegs) return
+
+            error("Argument conflict detected: argument ${arg.printToString()} " +
+                    "reads from $argReg which is overwritten by an earlier argument.")
+        }
+
+        // Emit argument copies
         var intIndex = 0
         var floatIndex = 0
         n.arguments.forEach { arg ->
@@ -410,7 +432,9 @@ class Arm64AssemblyCompiler(
                 IRType.INT64 -> X(intIndex++).also { check(intIndex <= 8) }
                 IRType.FLOAT64 -> D(floatIndex++).also { check(floatIndex <= 8) }
             }
+            checkArgumentRegister(arg)
             emitCopy(reg, arg)
+            writtenArgRegs.add(reg)
         }
 
         ops.add(BL("_${n.name}"))
@@ -421,24 +445,12 @@ class Arm64AssemblyCompiler(
                 IRType.FLOAT64 -> D0
             }
 
-            when {
-                resultReg !in pushedRegsSet -> {
-                    popCallerSaved(pushedRegs)
-                    emitCopy(dst, resultReg)
-                }
-                dst !in pushedRegsSet -> {
-                    emitCopy(dst, resultReg)
-                    popCallerSaved(pushedRegs)
-                }
-                else -> allocator.tempReg(res) { tmp ->
-                    emitCopy(tmp, resultReg)
-                    popCallerSaved(pushedRegs)
-                    emitCopy(dst, tmp)
-                }
+            check(dst !in pushedRegsSet) {
+                "Result register $dst must not be pushed, it is not live during the call"
             }
-        } ?: run {
-            popCallerSaved(pushedRegs)
+            emitCopy(dst, resultReg)
         }
+        popCallerSaved(pushedRegs)
     }
 
     private fun IRBinOpKind.toConditionFlag(): ConditionFlag {

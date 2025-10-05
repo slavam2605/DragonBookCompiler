@@ -16,5 +16,5 @@ class IntMemoryAllocator(
 
     override fun calleeSaved() = X.CalleeSaved
 
-    override fun parameterReg(index: Int): X = X(index)
+    override fun parameterRegs() = (0..7).map { X(it) }
 }

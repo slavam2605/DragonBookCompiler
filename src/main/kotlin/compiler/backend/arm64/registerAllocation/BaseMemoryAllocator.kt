@@ -67,34 +67,52 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     private val nonTempRegs = mutableSetOf<Reg>()
     internal var nextStackOffset = 0
 
+    lateinit var interferenceGraph: InterferenceGraph
+        private set
+
     protected abstract fun callerSaved(): Set<Reg>
     protected abstract fun calleeSaved(): Set<Reg>
+    protected abstract fun parameterRegs(): List<Reg>
 
-    abstract fun parameterReg(index: Int): Reg
+    private fun initRegisters() {
+        val callerSaved = callerSaved()
+        val calleeSaved = calleeSaved()
+        val parameterRegs = parameterRegs()
 
-    fun init(minStackOffset: Int = 0) {
-        nextStackOffset = minStackOffset
-        freeTempRegs.addAll(callerSaved())
-        nonTempRegs.addAll(calleeSaved())
+        freeTempRegs.addAll(callerSaved - parameterRegs.toSet())
+        nonTempRegs.addAll(callerSaved + calleeSaved)
 
+        // Process parameter registers
         function.parameters
             .filter { it.type == type }
             .forEachIndexed { index, parameter ->
                 check(index < 8)
-                val reg = parameterReg(index)
+                val reg = parameterRegs[index]
                 map[parameter] = reg
-                nonTempRegs.remove(reg)
                 freeTempRegs.remove(reg)
             }
 
+        // Take 3 registers as temp registers
         freeTempRegs.take(3).let {
             freeTempRegs.clear()
             freeTempRegs.addAll(it)
         }
         nonTempRegs.removeAll(freeTempRegs)
+    }
+
+    fun init(minStackOffset: Int = 0) {
+        nextStackOffset = minStackOffset
+        initRegisters()
 
         val cfg = function.value
-        val interferenceGraph = InterferenceGraph.create(cfg) { it.type == type }
+        interferenceGraph = InterferenceGraph.create(cfg) { it.type == type }
+
+        // Collect variables that are live across function calls
+        val liveAcrossCalls = interferenceGraph.liveAtCalls.values
+            .flatMapTo(mutableSetOf()) { liveVars ->
+                liveVars.filter { it.type == type }
+            }
+
         // Collect register allocation preferences
         val preferences = PreferenceCollector.collect(
             cfg = cfg,
@@ -123,7 +141,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
             colors = nonTempRegs,
             initialColoring = map,
             graph = interferenceGraph,
-            colorScore = RegScore,
+            colorScore = regScore(function.value.hasFunctionCalls()),
             isExtraColor = { it is StackLocation },
             extraColorProvider = { index ->
                 val stackOffset = minStackOffset + index * 8
@@ -233,11 +251,12 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     }
 
     companion object {
-        val RegScore = { loc: MemoryLocation ->
+        fun regScore(hasCalls: Boolean) = { loc: MemoryLocation ->
+            val calleeSavedScore = if (hasCalls) 0 else 1
             when (loc) {
-                is X -> 0
-                is D -> 0
-                is StackLocation -> 1
+                is X -> if (loc in X.CalleeSaved) calleeSavedScore else 1 - calleeSavedScore
+                is D -> if (loc in D.CalleeSaved) calleeSavedScore else 1 - calleeSavedScore
+                is StackLocation -> 100
                 else -> error("Unsupported memory location: $loc")
             }
         }

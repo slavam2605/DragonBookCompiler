@@ -1,4 +1,4 @@
-// memory_allocation test_main: used 10, spilled 144
+// memory_allocation test_main: used 25, spilled 129
 
 fun test_main() {
     int grand; grand = undef(0);

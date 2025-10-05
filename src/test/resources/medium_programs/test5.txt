@@ -1,4 +1,4 @@
-// memory_allocation test_main: used 3, spilled 0
+// memory_allocation test_main: used 4, spilled 0
 
 fun test_main() {
     bool p = undef(false);

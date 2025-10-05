@@ -48,6 +48,7 @@ tasks.compileTestKotlin {
 
 tasks.test {
     useJUnitPlatform()
+    maxHeapSize = "1G" // Increased heap size for StressTest
 
     System.getProperty("testNames")?.let {
         systemProperty("testNames", it)

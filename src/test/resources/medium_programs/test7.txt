@@ -1,4 +1,4 @@
-// memory_allocation test_main: used 5, spilled 0
+// memory_allocation test_main: used 6, spilled 0
 
 fun test_main() {
     int outer = 0;

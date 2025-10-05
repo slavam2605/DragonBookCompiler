@@ -2,13 +2,28 @@ package compiler.backend.arm64.registerAllocation
 
 import compiler.ir.IRVar
 
+/**
+ * Holds register allocation preferences for variables.
+ *
+ * @param hardRequirements Map from variable to the mandatory color
+ * @param explicitPreferences Map from variable to list of preferred colors (in priority order)
+ * @param copyRelations Set of copy relations (entries should prefer to have the same color)
+ */
+data class ColoringPreferences<out Color>(
+    val hardRequirements: List<Pair<IRVar, Color>> = emptyList(),
+    val explicitPreferences: Map<IRVar, List<Color>> = emptyMap(),
+    val copyRelations: Map<IRVar, Set<IRVar>> = emptyMap()
+)
+
 class GraphColoring<Color>(
     colors: Set<Color>,
     private val initialColoring: Map<IRVar, Color>,
     private val graph: InterferenceGraph,
     private val colorScore: (Color) -> Int,
     private val isExtraColor: (Color) -> Boolean,
-    private val extraColorProvider: (Int) -> Color
+    private val extraColorProvider: (Int) -> Color,
+    private val preferences: ColoringPreferences<Color> = ColoringPreferences(),
+    private val shouldAvoidColor: (IRVar, Color) -> Boolean = { _, _ -> false }
 ) {
     private val coloring = initialColoring.toMutableMap()
     private val forbiddenColors = mutableMapOf<IRVar, MutableMap<Color, Int>>()
@@ -67,17 +82,34 @@ class GraphColoring<Color>(
         val allowedNonExtraColors = colors.filterTo(mutableSetOf()) {
             !isExtraColor(it) && it !in forbiddenColors
         }
-        val allowedUsedColors = allowedNonExtraColors - unusedColors
 
-        // 1. Try to pick an already used non-extra color
-        if (allowedUsedColors.isNotEmpty()) {
-            return allowedUsedColors.minBy(colorScore)
+        // 1. Try explicit preferences first
+        preferences.explicitPreferences[irVar]?.let { preferredColors ->
+            for (preferredColor in preferredColors) {
+                // Check if the color should be avoided
+                if (shouldAvoidColor(irVar, preferredColor)) {
+                    continue
+                }
+                if (preferredColor in allowedNonExtraColors) {
+                    unusedColors.remove(preferredColor)
+                    return preferredColor
+                }
+            }
         }
 
-        // 2. Try to recolor neighbors with used colors to free up a color
-        tryRecolorNeighbors(irVar, colors - unusedColors)?.let { color ->
-            return color
-        }
+        // 2. Try to match the color of copy-related variables
+        preferences.copyRelations[irVar]
+            ?.flatMap { otherVar ->
+                coloring[otherVar]?.let { listOf(it) }
+                    ?: preferences.explicitPreferences[otherVar]
+                    ?: emptyList()
+            }
+            ?.filter { it in allowedNonExtraColors && !shouldAvoidColor(irVar, it) }
+            ?.minByOrNull(colorScore)
+            ?.let { chosen ->
+                unusedColors.remove(chosen)
+                return chosen
+            }
 
         // 3. Try to pick an unused non-extra color
         if (allowedNonExtraColors.isNotEmpty()) {

@@ -95,17 +95,50 @@ abstract class BaseMemoryAllocator<Reg : Register>(
 
         val cfg = function.value
         val interferenceGraph = InterferenceGraph.create(cfg) { it.type == type }
+        // Collect register allocation preferences
+        val preferences = PreferenceCollector.collect(
+            cfg = cfg,
+            typeFilter = { it.type == type },
+            parameterRegs = parameterRegs()
+        )
+        preferences.hardRequirements.forEach { (reg, color) ->
+            map.put(reg, color)?.let { oldColor ->
+                error("Hard requirement conflict: variable ${reg.name} already has color $oldColor, " +
+                        "but must also have the color $color")
+            }
+        }
+
+        interferenceGraph.edges.forEach { (irVar, adj) ->
+            val thisColor = map[irVar] ?: return@forEach
+            adj.forEach { otherVar ->
+                val otherColor = map[otherVar] ?: return@forEach
+                check(thisColor != otherColor) {
+                    "Initial coloring is wrong: variable ${irVar.name} has color $thisColor, " +
+                            "but variable ${otherVar.name} has color $otherColor"
+                }
+            }
+        }
+
         val coloring = GraphColoring(
             colors = nonTempRegs,
             initialColoring = map,
             graph = interferenceGraph,
             colorScore = RegScore,
-            isExtraColor = { it is StackLocation }
-        ) { index ->
-            val stackOffset = minStackOffset + index * 8
-            nextStackOffset = stackOffset + 8
-            StackLocation(stackOffset)
-        }
+            isExtraColor = { it is StackLocation },
+            extraColorProvider = { index ->
+                val stackOffset = minStackOffset + index * 8
+                nextStackOffset = stackOffset + 8
+                StackLocation(stackOffset)
+            },
+            preferences = preferences,
+            shouldAvoidColor = { irVar, color ->
+                // Variables live across calls should avoid caller-saved registers
+                when (irVar) {
+                    in liveAcrossCalls -> color in callerSaved()
+                    else -> false
+                }
+            }
+        )
 
         val colorMapping = coloring.findColoring()
         colorMapping.forEach { (irVar, reg) ->

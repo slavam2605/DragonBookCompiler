@@ -294,7 +294,9 @@ class Arm64AssemblyCompiler(
             }
             emitCopy(targetReg, value)
         }
-        ops.add(B(returnLabel.name))
+        if (currentBlockIndex != orderedBlocks.lastIndex) {
+            ops.add(B(returnLabel.name))
+        }
     }
 
     private fun emitAssign(node: IRAssign) {

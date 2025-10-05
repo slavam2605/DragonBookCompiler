@@ -91,7 +91,7 @@ abstract class CompileToIRTestBase {
             }
             TestMode.NATIVE_ARM64 -> {
                 val ffs = compileToOptimizedCFG(input).map {
-                    PrepareForNativeCompilation.run(it.value.cfg)
+                    PrepareForNativeCompilation.run(it.value.cfg, it.parameters)
                 }
                 val output = NativeArm64TestCompilationFlow.compileAndRun(ffs, nativeTestOptions)
 

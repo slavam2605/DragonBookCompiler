@@ -18,7 +18,7 @@ object CompilationFlow {
                 FrontendCompilationFlow.optimizeSSA(ssa).map { it.value.optimizedSSA }
             } else ssa
             val nonSSA = FrontendCompilationFlow.convertFromSSA(optimizedSSA)
-            val preNative = nonSSA.map { PrepareForNativeCompilation.run(it.value) }
+            val preNative = nonSSA.map { PrepareForNativeCompilation.run(it.value, it.parameters) }
 
             when (arch) {
                 TargetArchitecture.ARM64 -> {

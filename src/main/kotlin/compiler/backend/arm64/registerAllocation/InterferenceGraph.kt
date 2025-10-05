@@ -6,27 +6,26 @@ import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
 /**
- * Result of building an interference graph and collecting liveness information.
+ * Result of register allocation analysis, containing interference graph and liveness information.
  */
-data class InterferenceGraphResult(
+data class AllocationAnalysisResult(
     val graph: InterferenceGraph,
     val livenessInfo: LivenessInfo
 )
 
-class InterferenceGraph private constructor(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean) {
+class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
     private val mutableEdges = mutableMapOf<IRVar, MutableSet<IRVar>>()
 
     val edges: Map<IRVar, Set<IRVar>> = mutableEdges
 
     init {
+        // Initialize vertices for all variables (type-agnostic)
         cfg.blocks.forEach { (_, block) ->
             block.irNodes.forEach { node ->
                 node.lvalue?.let { lVar ->
-                    if (!filter(lVar)) return@let
                     mutableEdges.putIfAbsent(lVar, mutableSetOf())
                 }
                 node.rvalues().filterIsInstance<IRVar>().forEach { rVar ->
-                    if (!filter(rVar)) return@forEach
                     mutableEdges.putIfAbsent(rVar, mutableSetOf())
                 }
             }
@@ -41,11 +40,11 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph, filter: (IRVa
 
     companion object {
         /**
-         * Builds interference graph and collects liveness information in a single pass.
-         * The filter parameter is only applied to interference graph construction, not to liveness info.
+         * Builds a type-agnostic interference graph and collects liveness information in a single pass.
+         * The graph contains all variables, but edges are only added between variables of the same type.
          */
-        fun create(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean): InterferenceGraphResult {
-            val graph = InterferenceGraph(cfg, filter)
+        fun create(cfg: ControlFlowGraph): AllocationAnalysisResult {
+            val graph = InterferenceGraph(cfg)
             val liveAtCallsMap = mutableMapOf<IRFunctionCall, Set<IRVar>>()
 
             PerNodeLiveVarAnalysis(cfg).run { irNode, liveIn, liveOut ->
@@ -54,30 +53,28 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph, filter: (IRVa
                     liveAtCallsMap[irNode] = liveIn.intersect(liveOut)
                 }
 
-                // Build interference edges (type-specific via filter)
+                // Build interference edges (same-type only)
                 irNode.lvalue?.let { lVar ->
-                    if (!filter(lVar)) return@run
+                    // Filter live variables to same type as lVar
+                    val sameLiveOut = liveOut.filter { it.type == lVar.type }
 
                     // Special handling for copy instructions: x = y
                     // x interferes with everything live EXCEPT y
                     // This allows x and y to be coalesced (get the same register)
                     if (irNode is IRAssign && irNode.right is IRVar) {
                         val copySource = irNode.right
-                        liveOut
-                            .filter(filter)
+                        sameLiveOut
                             .filter { it != copySource }  // Exclude the copy source from interference
                             .forEach { graph.addEdge(it, lVar) }
                     } else {
-                        // Non-copy: lhs interferes with everything live
-                        liveOut
-                            .filter(filter)
-                            .forEach { graph.addEdge(it, lVar) }
+                        // Non-copy: lhs interferes with everything live of the same type
+                        sameLiveOut.forEach { graph.addEdge(it, lVar) }
                     }
                 }
             }
 
             val livenessInfo = LivenessInfo(liveAtCallsMap)
-            return InterferenceGraphResult(graph, livenessInfo)
+            return AllocationAnalysisResult(graph, livenessInfo)
         }
     }
 }

@@ -19,6 +19,7 @@ class GraphColoring<Color>(
     colors: Set<Color>,
     private val initialColoring: Map<IRVar, Color>,
     private val graph: InterferenceGraph,
+    private val typeFilter: (IRVar) -> Boolean,
     private val allocationScorer: (IRVar, Color) -> AllocationScore,
     private val isExtraColor: (Color) -> Boolean,
     private val extraColorProvider: (Int) -> Color,
@@ -31,8 +32,9 @@ class GraphColoring<Color>(
     private var extraColorCounter = 0
 
     fun findColoring(): Map<IRVar, Color> {
-        // Initialize forbidden colors
+        // Initialize forbidden colors (only for variables matching the type filter)
         graph.edges.forEach { (irVar, adj) ->
+            if (!typeFilter(irVar)) return@forEach
             val forbidden = mutableMapOf<Color, Int>()
             adj.forEach { otherVar ->
                 coloring[otherVar]?.let {
@@ -42,9 +44,10 @@ class GraphColoring<Color>(
             forbiddenColors[irVar] = forbidden
         }
 
-        // Initialize bucket queue
-        val bucketQueue = GraphColoringBucketQueue(graph.edges.size)
+        // Initialize bucket queue (only with variables matching the type filter)
+        val bucketQueue = GraphColoringBucketQueue(forbiddenColors.size)
         graph.edges.forEach { (irVar, adj) ->
+            if (!typeFilter(irVar)) return@forEach
             if (irVar in coloring) return@forEach
             val weight = adj.count { it !in coloring }
             bucketQueue.preInitAdd(irVar, weight)

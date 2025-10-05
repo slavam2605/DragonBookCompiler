@@ -11,13 +11,18 @@ import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
-class AggregatedRegisterAllocator(
+/**
+ * Composite register allocator that manages both integer and floating-point register allocation.
+ * Creates a single type-agnostic interference graph and liveness info, then delegates to
+ * type-specific allocators.
+ */
+class CompositeRegisterAllocator(
     compiler: Arm64AssemblyCompiler,
     function: FrontendFunction<ControlFlowGraph>,
     ops: MutableList<Instruction>
 ) : MemoryAllocator<Register> {
-    private val intAllocator = IntMemoryAllocator(compiler, function, ops)
-    private val floatAllocator = FloatMemoryAllocator(compiler, function, ops)
+    private val intAllocator: IntMemoryAllocator
+    private val floatAllocator: FloatMemoryAllocator
 
     override val alignedAllocatedSize: Int
         get() {
@@ -27,7 +32,14 @@ class AggregatedRegisterAllocator(
         }
 
     init {
+        // Create a type-agnostic interference graph and liveness info once
+        val result = InterferenceGraph.create(function.value)
+
+        // Initialize allocators with shared graph and liveness info
+        intAllocator = IntMemoryAllocator(compiler, function, ops, result)
         intAllocator.init(minStackOffset = 0)
+
+        floatAllocator = FloatMemoryAllocator(compiler, function, ops, result)
         // Do not allocate the same stack locations for int and float variables
         floatAllocator.init(minStackOffset = intAllocator.nextStackOffset)
     }
@@ -62,11 +74,9 @@ class AggregatedRegisterAllocator(
     }
 
     /**
-     * Returns liveness information from the int allocator.
-     * Note: Both int and float allocators analyze the same CFG, so they produce identical liveness info.
-     * We use the int allocator's data as the canonical source.
-     *
-     * instead of running it separately for int and float allocators.
+     * Returns liveness information shared by both allocators.
+     * The liveness analysis is performed once during initialization and shared
+     * between int and float allocators via AllocationAnalysisResult.
      */
     fun getLivenessInfo() = intAllocator.livenessInfo
 

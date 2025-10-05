@@ -11,7 +11,8 @@ class IntMemoryAllocator(
     compiler: Arm64AssemblyCompiler,
     function: FrontendFunction<ControlFlowGraph>,
     ops: MutableList<Instruction>,
-) : BaseMemoryAllocator<X>(compiler, function, ops, IRType.INT64) {
+    analysisResult: AllocationAnalysisResult
+) : BaseMemoryAllocator<X>(compiler, function, ops, IRType.INT64, analysisResult) {
     override fun callerSaved() = X.CallerSaved
 
     override fun calleeSaved() = X.CalleeSaved

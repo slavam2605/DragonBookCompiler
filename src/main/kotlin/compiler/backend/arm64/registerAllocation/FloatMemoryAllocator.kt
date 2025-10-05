@@ -11,7 +11,8 @@ class FloatMemoryAllocator(
     compiler: Arm64AssemblyCompiler,
     function: FrontendFunction<ControlFlowGraph>,
     ops: MutableList<Instruction>,
-) : BaseMemoryAllocator<D>(compiler, function, ops, IRType.FLOAT64) {
+    analysisResult: AllocationAnalysisResult
+) : BaseMemoryAllocator<D>(compiler, function, ops, IRType.FLOAT64, analysisResult) {
     override fun callerSaved() = D.CallerSaved
 
     override fun calleeSaved() = D.CalleeSaved

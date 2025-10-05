@@ -59,7 +59,8 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     val compiler: Arm64AssemblyCompiler,
     val function: FrontendFunction<ControlFlowGraph>,
     val ops: MutableList<Instruction>,
-    val type: IRType
+    val type: IRType,
+    private val analysisResult: AllocationAnalysisResult
 ) : MemoryAllocator<Reg> {
     private val map = HashMap<IRVar, MemoryLocation>()
     private val usedRegsHistory = mutableSetOf<Reg>()
@@ -67,8 +68,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     private val nonTempRegs = mutableSetOf<Reg>()
     internal var nextStackOffset = 0
 
-    lateinit var livenessInfo: LivenessInfo
-        private set
+    val livenessInfo: LivenessInfo = analysisResult.livenessInfo
 
     protected abstract fun callerSaved(): Set<Reg>
     protected abstract fun calleeSaved(): Set<Reg>
@@ -105,9 +105,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         initRegisters()
 
         val cfg = function.value
-        val result = InterferenceGraph.create(cfg) { it.type == type }
-        val interferenceGraph = result.graph
-        livenessInfo = result.livenessInfo
+        val interferenceGraph = analysisResult.graph
 
         // Collect register allocation preferences
         val preferences = PreferenceCollector.collect(
@@ -137,6 +135,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
             colors = nonTempRegs,
             initialColoring = map,
             graph = interferenceGraph,
+            typeFilter = { it.type == type },  // Filter to only process variables of this type
             allocationScorer = { irVar, color ->
                 AllocationScore.score(irVar, color, livenessInfo)
             },

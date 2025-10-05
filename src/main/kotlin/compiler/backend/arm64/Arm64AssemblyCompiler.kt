@@ -7,7 +7,7 @@ import compiler.backend.arm64.IntRegister.Companion.X30
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
-import compiler.backend.arm64.registerAllocation.AggregatedRegisterAllocator
+import compiler.backend.arm64.registerAllocation.CompositeRegisterAllocator
 import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.IRBinOpKind
@@ -19,7 +19,7 @@ class Arm64AssemblyCompiler(
     private val constPool: Arm64ConstantPool,
     private val ops: MutableList<Instruction>
 ) {
-    val allocator = AggregatedRegisterAllocator(this, function, ops)
+    val allocator = CompositeRegisterAllocator(this, function, ops)
     private val returnLabel = Label(".L_${function.name}_return")
     private val orderedBlocks = mutableListOf<IRLabel>()
     private var currentBlockIndex = 0

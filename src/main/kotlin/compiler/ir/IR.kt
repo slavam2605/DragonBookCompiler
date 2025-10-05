@@ -29,6 +29,10 @@ class IRVar(val name: String, val ssaVer: Int, override val type: IRType, val so
     override fun hashCode(): Int {
         return 31 * ssaVer + name.hashCode()
     }
+
+    override fun toString(): String {
+        return printToString()
+    }
 }
 
 data class IRInt(val value: Long) : IRValue {

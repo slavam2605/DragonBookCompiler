@@ -67,7 +67,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     private val nonTempRegs = mutableSetOf<Reg>()
     internal var nextStackOffset = 0
 
-    lateinit var interferenceGraph: InterferenceGraph
+    lateinit var livenessInfo: LivenessInfo
         private set
 
     protected abstract fun callerSaved(): Set<Reg>
@@ -105,13 +105,9 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         initRegisters()
 
         val cfg = function.value
-        interferenceGraph = InterferenceGraph.create(cfg) { it.type == type }
-
-        // Collect variables that are live across function calls
-        val liveAcrossCalls = interferenceGraph.liveAtCalls.values
-            .flatMapTo(mutableSetOf()) { liveVars ->
-                liveVars.filter { it.type == type }
-            }
+        val result = InterferenceGraph.create(cfg) { it.type == type }
+        val interferenceGraph = result.graph
+        livenessInfo = result.livenessInfo
 
         // Collect register allocation preferences
         val preferences = PreferenceCollector.collect(
@@ -141,21 +137,16 @@ abstract class BaseMemoryAllocator<Reg : Register>(
             colors = nonTempRegs,
             initialColoring = map,
             graph = interferenceGraph,
-            colorScore = regScore(function.value.hasFunctionCalls()),
+            allocationScorer = { irVar, color ->
+                AllocationScore.score(irVar, color, livenessInfo)
+            },
             isExtraColor = { it is StackLocation },
             extraColorProvider = { index ->
                 val stackOffset = minStackOffset + index * 8
                 nextStackOffset = stackOffset + 8
                 StackLocation(stackOffset)
             },
-            preferences = preferences,
-            shouldAvoidColor = { irVar, color ->
-                // Variables live across calls should avoid caller-saved registers
-                when (irVar) {
-                    in liveAcrossCalls -> color in callerSaved()
-                    else -> false
-                }
-            }
+            preferences = preferences
         )
 
         val colorMapping = coloring.findColoring()
@@ -248,18 +239,6 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         freeTempRegs.remove(tempReg)
         usedRegsHistory.add(tempReg)
         return tempReg
-    }
-
-    companion object {
-        fun regScore(hasCalls: Boolean) = { loc: MemoryLocation ->
-            val calleeSavedScore = if (hasCalls) 0 else 1
-            when (loc) {
-                is X -> if (loc in X.CalleeSaved) calleeSavedScore else 1 - calleeSavedScore
-                is D -> if (loc in D.CalleeSaved) calleeSavedScore else 1 - calleeSavedScore
-                is StackLocation -> 100
-                else -> error("Unsupported memory location: $loc")
-            }
-        }
     }
 
     class StatAvailableRegisters(val value: Int, type: IRType) : PerFunctionStatsData(type)

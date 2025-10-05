@@ -5,17 +5,18 @@ import compiler.ir.IRFunctionCall
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
+/**
+ * Result of building an interference graph and collecting liveness information.
+ */
+data class InterferenceGraphResult(
+    val graph: InterferenceGraph,
+    val livenessInfo: LivenessInfo
+)
+
 class InterferenceGraph private constructor(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean) {
     private val mutableEdges = mutableMapOf<IRVar, MutableSet<IRVar>>()
-    private val mutableLiveAtCalls = mutableMapOf<IRFunctionCall, Set<IRVar>>()
 
     val edges: Map<IRVar, Set<IRVar>> = mutableEdges
-
-    /**
-     * Maps each function call to the set of variables whose live ranges span the call.
-     * These are variables in the intersection of liveIn and liveOut at the call site.
-     */
-    val liveAtCalls: Map<IRFunctionCall, Set<IRVar>> = mutableLiveAtCalls
 
     init {
         cfg.blocks.forEach { (_, block) ->
@@ -39,15 +40,21 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph, filter: (IRVa
     }
 
     companion object {
-        fun create(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean): InterferenceGraph {
+        /**
+         * Builds interference graph and collects liveness information in a single pass.
+         * The filter parameter is only applied to interference graph construction, not to liveness info.
+         */
+        fun create(cfg: ControlFlowGraph, filter: (IRVar) -> Boolean): InterferenceGraphResult {
             val graph = InterferenceGraph(cfg, filter)
+            val liveAtCallsMap = mutableMapOf<IRFunctionCall, Set<IRVar>>()
+
             PerNodeLiveVarAnalysis(cfg).run { irNode, liveIn, liveOut ->
-                // Collect liveness at call sites
+                // Collect liveness at call sites (type-agnostic)
                 if (irNode is IRFunctionCall) {
-                    graph.mutableLiveAtCalls[irNode] = liveIn.intersect(liveOut)
+                    liveAtCallsMap[irNode] = liveIn.intersect(liveOut)
                 }
 
-                // Build interference edges
+                // Build interference edges (type-specific via filter)
                 irNode.lvalue?.let { lVar ->
                     if (!filter(lVar)) return@run
 
@@ -68,7 +75,9 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph, filter: (IRVa
                     }
                 }
             }
-            return graph
+
+            val livenessInfo = LivenessInfo(liveAtCallsMap)
+            return InterferenceGraphResult(graph, livenessInfo)
         }
     }
 }

@@ -411,7 +411,7 @@ class Arm64AssemblyCompiler(
 
     private fun emitCall(n: IRFunctionCall) {
         // Get the set of variables that are live after this call
-        val liveVars = allocator.getLiveAtCalls()[n] ?: emptySet()
+        val liveVars = allocator.getLivenessInfo().liveAtCalls[n] ?: emptySet()
         val pushedRegs = pushCallerSaved(liveVars)
         val pushedRegsSet = pushedRegs.flatMap { listOfNotNull(it.first, it.second) }.toSet()
 

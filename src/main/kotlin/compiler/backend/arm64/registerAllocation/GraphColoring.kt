@@ -19,11 +19,10 @@ class GraphColoring<Color>(
     colors: Set<Color>,
     private val initialColoring: Map<IRVar, Color>,
     private val graph: InterferenceGraph,
-    private val colorScore: (Color) -> Int,
+    private val allocationScorer: (IRVar, Color) -> AllocationScore,
     private val isExtraColor: (Color) -> Boolean,
     private val extraColorProvider: (Int) -> Color,
-    private val preferences: ColoringPreferences<Color> = ColoringPreferences(),
-    private val shouldAvoidColor: (IRVar, Color) -> Boolean = { _, _ -> false }
+    private val preferences: ColoringPreferences<Color> = ColoringPreferences()
 ) {
     private val coloring = initialColoring.toMutableMap()
     private val forbiddenColors = mutableMapOf<IRVar, MutableMap<Color, Int>>()
@@ -86,8 +85,9 @@ class GraphColoring<Color>(
         // 1. Try explicit preferences first
         preferences.explicitPreferences[irVar]?.let { preferredColors ->
             for (preferredColor in preferredColors) {
-                // Check if the color should be avoided
-                if (shouldAvoidColor(irVar, preferredColor)) {
+                // Skip avoided colors in preference selection
+                val score = allocationScorer(irVar, preferredColor)
+                if (score.isAvoided) {
                     continue
                 }
                 if (preferredColor in allowedNonExtraColors) {
@@ -104,16 +104,20 @@ class GraphColoring<Color>(
                     ?: preferences.explicitPreferences[otherVar]
                     ?: emptyList()
             }
-            ?.filter { it in allowedNonExtraColors && !shouldAvoidColor(irVar, it) }
-            ?.minByOrNull(colorScore)
+            ?.filter { color ->
+                if (color !in allowedNonExtraColors) return@filter false
+                val score = allocationScorer(irVar, color)
+                !score.isAvoided
+            }
+            ?.minByOrNull { color -> allocationScorer(irVar, color).score }
             ?.let { chosen ->
                 unusedColors.remove(chosen)
                 return chosen
             }
 
-        // 3. Try to pick an unused non-extra color
+        // 3. Try to pick a non-extra color (sorted by score)
         if (allowedNonExtraColors.isNotEmpty()) {
-            return allowedNonExtraColors.minBy(colorScore)
+            return allowedNonExtraColors.minBy { color -> allocationScorer(irVar, color).score }
         }
 
         // 4. Try to recolor neighbors to free up a color
@@ -124,7 +128,7 @@ class GraphColoring<Color>(
         // 5. Try to pick a used extra color
         val allowedAllColors = colors.filterTo(mutableSetOf()) { it !in forbiddenColors }
         if (allowedAllColors.isNotEmpty()) {
-            return allowedAllColors.minBy(colorScore)
+            return allowedAllColors.minBy { color -> allocationScorer(irVar, color).score }
         }
 
         // 6. Create a new extra color
@@ -148,7 +152,7 @@ class GraphColoring<Color>(
 
             if (allowedRecolors.isNotEmpty()) {
                 val oldColor = coloring[neighbor]!!
-                val newColor = allowedRecolors.minBy(colorScore)
+                val newColor = allowedRecolors.minBy { color -> allocationScorer(neighbor, color).score }
                 unusedColors.remove(newColor)
                 coloring[neighbor] = newColor
                 val adjacent = graph.edges[neighbor]!!

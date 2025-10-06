@@ -2,6 +2,7 @@ package compiler.backend.arm64.registerAllocation
 
 import compiler.ir.IRAssign
 import compiler.ir.IRFunctionCall
+import compiler.ir.IRJumpIfTrue
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 
@@ -46,11 +47,15 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
         fun create(cfg: ControlFlowGraph): AllocationAnalysisResult {
             val graph = InterferenceGraph(cfg)
             val liveAtCallsMap = mutableMapOf<IRFunctionCall, Set<IRVar>>()
+            val liveAfterBranchMap = mutableMapOf<IRJumpIfTrue, Set<IRVar>>()
 
             PerNodeLiveVarAnalysis(cfg).run { irNode, liveIn, liveOut ->
                 // Collect liveness at call sites (type-agnostic)
                 if (irNode is IRFunctionCall) {
                     liveAtCallsMap[irNode] = liveIn.intersect(liveOut)
+                }
+                if (irNode is IRJumpIfTrue) {
+                    liveAfterBranchMap[irNode] = liveOut
                 }
 
                 // Build interference edges (same-type only)
@@ -73,7 +78,7 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
                 }
             }
 
-            val livenessInfo = LivenessInfo(liveAtCallsMap)
+            val livenessInfo = LivenessInfo(liveAtCallsMap, liveAfterBranchMap)
             return AllocationAnalysisResult(graph, livenessInfo)
         }
     }

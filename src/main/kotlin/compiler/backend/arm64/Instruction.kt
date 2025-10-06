@@ -160,6 +160,24 @@ enum class StpMode { SIGNED_OFFSET, PRE_INDEXED, POST_INDEXED }
 enum class ConditionFlag {
     EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL;
 
+    fun invert(): ConditionFlag = when (this) {
+        EQ -> NE
+        NE -> EQ
+        CS -> CC
+        CC -> CS
+        MI -> PL
+        PL -> MI
+        VS -> VC
+        VC -> VS
+        HI -> LS
+        LS -> HI
+        GE -> LT
+        LT -> GE
+        GT -> LE
+        LE -> GT
+        AL -> error("AL is not invertible")
+    }
+
     override fun toString() = name.lowercase()
 }
 

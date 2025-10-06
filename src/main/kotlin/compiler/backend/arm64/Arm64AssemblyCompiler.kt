@@ -55,8 +55,9 @@ class Arm64AssemblyCompiler(
             }
 
             currentBlockIndex = blockIndex
-            cfg.blocks[label]!!.irNodes.forEach { node ->
-                emitNode(node)
+            val window = IRPeepholeWindow(cfg.blocks[label]!!.irNodes)
+            while (window.hasNext) {
+                emitOnce(window)
             }
         }
 
@@ -264,9 +265,11 @@ class Arm64AssemblyCompiler(
         }
     }
 
-    private fun emitNode(node: IRNode) {
+    private fun emitOnce(window: IRPeepholeWindow) {
+        val node = window.current ?: return
+        window.move()
         when (node) {
-            is IRBinOp -> emitBinOp(node)
+            is IRBinOp -> emitBinOp(node, window)
             is IRAssign -> emitAssign(node)
             is IRNot -> emitNot(node)
             is IRConvert -> emitConvert(node)
@@ -323,18 +326,18 @@ class Arm64AssemblyCompiler(
         }
     }
 
-    private fun emitBinOp(node: IRBinOp) {
+    private fun emitBinOp(node: IRBinOp, window: IRPeepholeWindow) {
         require(node.left.type == node.right.type) {
             "IRBinOp requires operands of the same type, got ${node.left.type} and ${node.right.type}"
         }
         if (node.left.type == IRType.FLOAT64) {
-            emitFloatBinOp(node)
+            emitFloatBinOp(node, window)
         } else {
-            emitIntBinOp(node)
+            emitIntBinOp(node, window)
         }
     }
 
-    private fun emitIntBinOp(node: IRBinOp) {
+    private fun emitIntBinOp(node: IRBinOp, window: IRPeepholeWindow) {
         allocator.writeReg(node.result) { dst ->
             allocator.readReg(node.left) { left ->
                 allocator.readReg(node.right) { right ->
@@ -352,7 +355,7 @@ class Arm64AssemblyCompiler(
                         IRBinOpKind.EQ, IRBinOpKind.NEQ, IRBinOpKind.GT,
                         IRBinOpKind.GE, IRBinOpKind.LT, IRBinOpKind.LE -> {
                             ops.add(Cmp(left, right))
-                            ops.add(CSet(dst, node.op.toConditionFlag()))
+                            insertComparisonJumpOrSet(window, node, node.op, dst)
                         }
                     }
                 }
@@ -360,7 +363,7 @@ class Arm64AssemblyCompiler(
         }
     }
 
-    private fun emitFloatBinOp(node: IRBinOp) {
+    private fun emitFloatBinOp(node: IRBinOp, window: IRPeepholeWindow) {
         allocator.writeReg(node.result) { dst ->
             allocator.readReg(node.left) { left -> left as D
                 allocator.readReg(node.right) { right -> right as D
@@ -376,10 +379,39 @@ class Arm64AssemblyCompiler(
                         IRBinOpKind.EQ, IRBinOpKind.NEQ, IRBinOpKind.GT,
                         IRBinOpKind.GE, IRBinOpKind.LT, IRBinOpKind.LE -> {
                             ops.add(FCmp(left, right))
-                            ops.add(CSet(dst as X, node.op.toConditionFlag()))
+                            insertComparisonJumpOrSet(window, node, node.op, dst as X)
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun insertComparisonJumpOrSet(window: IRPeepholeWindow, node: IRBinOp, op: IRBinOpKind, dst: X) {
+        val nextIr = window.current as? IRJumpIfTrue
+        if (nextIr?.cond == node.result && !allocator.getLivenessInfo().isLiveAfterBranch(node.result, nextIr)) {
+            window.move()
+            insertBranches(op.toConditionFlag(), nextIr.target, nextIr.elseTarget)
+        } else {
+            ops.add(CSet(dst, op.toConditionFlag()))
+        }
+    }
+
+    private fun insertBranches(flag: ConditionFlag, trueTarget: IRLabel, falseTarget: IRLabel) {
+        val nextLabel = orderedBlocks.getOrNull(currentBlockIndex + 1)?.local() ?: returnLabel.name
+        val trueLabel = trueTarget.local()
+        val falseLabel = falseTarget.local()
+
+        when (nextLabel) {
+            trueLabel -> {
+                ops.add(BCond(flag.invert(), falseLabel))
+            }
+            falseLabel -> {
+                ops.add(BCond(flag, trueLabel))
+            }
+            else -> {
+                ops.add(BCond(flag, trueLabel))
+                ops.add(B(falseLabel))
             }
         }
     }
@@ -398,15 +430,7 @@ class Arm64AssemblyCompiler(
             ops.add(CmpImm(v as X, 0))
         }
 
-        val nextBlock = orderedBlocks.getOrNull(currentBlockIndex + 1)
-        when {
-            n.target == nextBlock -> ops.add(BCond(ConditionFlag.EQ, n.elseTarget.local()))
-            n.elseTarget == nextBlock -> ops.add(BCond(ConditionFlag.NE, n.target.local()))
-            else -> {
-                ops.add(BCond(ConditionFlag.NE, n.target.local()))
-                ops.add(B(n.elseTarget.local()))
-            }
-        }
+        insertBranches(ConditionFlag.NE, n.target, n.elseTarget)
     }
 
     private fun emitCall(n: IRFunctionCall) {

@@ -1,7 +1,3 @@
-#include <iostream>
-
-extern "C" void assertEquals(long long a, long long b) {}
-
 long long ackermann_gold(long long m, long long n) {
     if (m == 0) {
         return n + 1;

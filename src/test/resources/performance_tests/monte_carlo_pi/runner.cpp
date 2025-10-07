@@ -1,7 +1,3 @@
-#include <iostream>
-
-extern "C" void assertEquals(long long a, long long b) {}
-
 long long lcg_next_gold(long long seed) {
     // Linear Congruential Generator: (a * seed + c) % m
     long long a = 1103515245LL;

@@ -42,6 +42,7 @@ echo "[setup_benchmark] Build completed."
 echo "[setup_benchmark] Configuring and building benchmark_helper project (Release)..."
 declare -r NATIVE_BUILD_DIR="build"
 cmake -E make_directory "$NATIVE_BUILD_DIR"
+rm -f "$NATIVE_BUILD_DIR/benchmark_helper.o" 2>/dev/null || true
 cmake -E chdir "$NATIVE_BUILD_DIR" cmake -DCMAKE_BUILD_TYPE=Release ../
 cmake --build "$NATIVE_BUILD_DIR" --config Release
 

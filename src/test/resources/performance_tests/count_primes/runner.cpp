@@ -1,7 +1,3 @@
-#include <iostream>
-
-extern "C" void assertEquals(long long a, long long b) {}
-
 bool is_prime_gold(long long n) {
     if (n <= 1) {
         return false;

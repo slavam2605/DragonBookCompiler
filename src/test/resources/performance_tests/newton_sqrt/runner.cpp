@@ -1,7 +1,4 @@
-#include <iostream>
 #include <cmath>
-
-extern "C" void assertEquals(long long a, long long b) {}
 
 double abs_float_gold(double x) {
     if (x < 0.0) {

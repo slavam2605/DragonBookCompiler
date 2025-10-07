@@ -1,18 +1,18 @@
 package compiler.backend.arm64.registerAllocation
 
-import compiler.backend.arm64.Arm64AssemblyCompiler
 import compiler.backend.arm64.Instruction
 import compiler.backend.arm64.IntRegister.X
+import compiler.backend.arm64.NativeCompilerContext
 import compiler.frontend.FrontendFunction
 import compiler.ir.IRType
 import compiler.ir.cfg.ControlFlowGraph
 
 class IntMemoryAllocator(
-    compiler: Arm64AssemblyCompiler,
+    context: NativeCompilerContext,
     function: FrontendFunction<ControlFlowGraph>,
     ops: MutableList<Instruction>,
     analysisResult: AllocationAnalysisResult
-) : BaseMemoryAllocator<X>(compiler, function, ops, IRType.INT64, analysisResult) {
+) : BaseMemoryAllocator<X>(context, function, ops, IRType.INT64, analysisResult) {
     override fun callerSaved() = X.CallerSaved
 
     override fun calleeSaved() = X.CalleeSaved

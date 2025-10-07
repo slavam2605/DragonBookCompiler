@@ -1,24 +1,13 @@
 package compiler.backend.arm64.registerAllocation
 
-import compiler.backend.arm64.Arm64AssemblyCompiler
-import compiler.backend.arm64.Instruction
+import compiler.backend.arm64.*
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
-import compiler.backend.arm64.Ldr
-import compiler.backend.arm64.MemoryLocation
-import compiler.backend.arm64.Register
 import compiler.backend.arm64.Register.D
-import compiler.backend.arm64.StackLocation
-import compiler.backend.arm64.StpMode
-import compiler.backend.arm64.Str
+import compiler.backend.arm64.ops.utils.NumberUtils
 import compiler.frontend.FrontendFunction
-import compiler.ir.IRInt
-import compiler.ir.IRFloat
-import compiler.ir.IRType
-import compiler.ir.IRValue
-import compiler.ir.IRVar
+import compiler.ir.*
 import compiler.ir.cfg.ControlFlowGraph
-import compiler.ir.printToString
 import statistics.PerFunctionStatsData
 
 interface MemoryAllocator<Reg : Register> {
@@ -56,7 +45,7 @@ interface MemoryAllocator<Reg : Register> {
 class RegHandle<Reg : Register>(val reg: Reg, val dispose: () -> Unit)
 
 abstract class BaseMemoryAllocator<Reg : Register>(
-    val compiler: Arm64AssemblyCompiler,
+    val context: NativeCompilerContext,
     val function: FrontendFunction<ControlFlowGraph>,
     val ops: MutableList<Instruction>,
     val type: IRType,
@@ -190,17 +179,17 @@ abstract class BaseMemoryAllocator<Reg : Register>(
 
                 check(loc is StackLocation)
                 tempRegInternal().also {
-                    ops.add(Ldr(it, SP, loc.spOffset(compiler.spShift), StpMode.SIGNED_OFFSET))
+                    ops.add(Ldr(it, SP, loc.spOffset(context.spShift), StpMode.SIGNED_OFFSET))
                 }
             }
             is IRInt -> {
                 tempRegInternal().also {
-                    compiler.emitAssignConstantInt64(it as X, v.value)
+                    NumberUtils.emitAssignConstantInt64(context, it as X, v.value)
                 }
             }
             is IRFloat -> {
                 tempRegInternal().also {
-                    compiler.emitAssignConstantFloat64(it as D, v.value)
+                    NumberUtils.emitAssignConstantFloat64(context, it as D, v.value)
                 }
             }
         }
@@ -227,7 +216,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     }
 
     private fun writeBack(reg: Reg, loc: StackLocation) {
-        ops.add(Str(reg, SP, loc.spOffset(compiler.spShift), StpMode.SIGNED_OFFSET))
+        ops.add(Str(reg, SP, loc.spOffset(context.spShift), StpMode.SIGNED_OFFSET))
         free(reg)
     }
 

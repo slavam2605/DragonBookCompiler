@@ -1,10 +1,6 @@
 package compiler.backend.arm64.registerAllocation
 
-import compiler.backend.arm64.Arm64AssemblyCompiler
-import compiler.backend.arm64.Instruction
-import compiler.backend.arm64.IntRegister
-import compiler.backend.arm64.MemoryLocation
-import compiler.backend.arm64.Register
+import compiler.backend.arm64.*
 import compiler.frontend.FrontendFunction
 import compiler.ir.IRType
 import compiler.ir.IRValue
@@ -17,7 +13,7 @@ import compiler.ir.cfg.ControlFlowGraph
  * type-specific allocators.
  */
 class CompositeRegisterAllocator(
-    compiler: Arm64AssemblyCompiler,
+    context: NativeCompilerContext,
     function: FrontendFunction<ControlFlowGraph>,
     ops: MutableList<Instruction>
 ) : MemoryAllocator<Register> {
@@ -36,10 +32,10 @@ class CompositeRegisterAllocator(
         val result = InterferenceGraph.create(function.value)
 
         // Initialize allocators with shared graph and liveness info
-        intAllocator = IntMemoryAllocator(compiler, function, ops, result)
+        intAllocator = IntMemoryAllocator(context, function, ops, result)
         intAllocator.init(minStackOffset = 0)
 
-        floatAllocator = FloatMemoryAllocator(compiler, function, ops, result)
+        floatAllocator = FloatMemoryAllocator(context, function, ops, result)
         // Do not allocate the same stack locations for int and float variables
         floatAllocator.init(minStackOffset = intAllocator.nextStackOffset)
     }

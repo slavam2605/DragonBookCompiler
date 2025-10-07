@@ -12,6 +12,7 @@ import compiler.backend.arm64.Register.D
 import compiler.backend.arm64.ops.utils.EmitUtils
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
+import compiler.ir.IRFloat
 
 class FloatBinOpEmitter(private val context: NativeCompilerContext) {
     fun emitFloatBinOp(node: IRBinOp, window: IRPeepholeWindow) {
@@ -29,6 +30,12 @@ class FloatBinOpEmitter(private val context: NativeCompilerContext) {
                         context.ops.add(FMul(dst as D, left, right as D))
                     }
                     IRBinOpKind.DIV -> {
+                        if (node.right is IRFloat) {
+                            val success = FloatConstantDivision.tryEmitConstantDivision(
+                                context, dst as D, left, node.right.value
+                            )
+                            if (success) return@readReg
+                        }
                         context.allocator.readReg(node.right) { right ->
                             context.ops.add(FDiv(dst as D, left, right as D))
                         }

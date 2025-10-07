@@ -29,6 +29,6 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun newtonSqrtTest() = runPerformanceTest(
         sourceFile = "/performance_tests/newton_sqrt/newton_sqrt.txt",
         nativeRunner = "performance_tests/newton_sqrt/runner.cpp",
-        expectedPerformance = 0.57
+        expectedPerformance = 0.77
     )
 }

@@ -26,8 +26,15 @@ class IntegerBinOpEmitter(private val context: NativeCompilerContext) {
                         IRBinOpKind.DIV -> context.ops.add(SDiv(dst, left, right))
                         IRBinOpKind.MOD -> {
                             // dst = l - (l / r) * r
-                            context.ops.add(SDiv(dst, left, right))
-                            context.ops.add(MSub(dst, dst, right, left))
+                            if (dst == left || dst == right) {
+                                context.allocator.tempIntReg { temp ->
+                                    context.ops.add(SDiv(temp, left, right))
+                                    context.ops.add(MSub(dst, temp, right, left))
+                                }
+                            } else {
+                                context.ops.add(SDiv(dst, left, right))
+                                context.ops.add(MSub(dst, dst, right, left))
+                            }
                         }
                         IRBinOpKind.EQ, IRBinOpKind.NEQ, IRBinOpKind.GT,
                         IRBinOpKind.GE, IRBinOpKind.LT, IRBinOpKind.LE -> {

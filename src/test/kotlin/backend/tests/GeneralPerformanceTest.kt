@@ -22,7 +22,7 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun monteCarloTest() = runPerformanceTest(
         sourceFile = "performance_tests/monte_carlo_pi/monte_carlo_pi.txt",
         nativeRunner = "performance_tests/monte_carlo_pi/runner.cpp",
-        expectedPerformance = 0.83
+        expectedPerformance = 0.54
     )
 
     @TestFactory

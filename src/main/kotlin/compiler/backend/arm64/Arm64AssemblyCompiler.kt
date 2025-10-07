@@ -12,6 +12,7 @@ import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.IRBinOpKind
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.extensions.LoopInfo
 import java.lang.Double.doubleToLongBits
 
 class Arm64AssemblyCompiler(
@@ -35,16 +36,9 @@ class Arm64AssemblyCompiler(
         ops.add(Mov(X29, SP))
         ops.add(SPAllocStub) // Allocate stack space for locals
 
-        // Form some stable blocks order
-        cfg.blocks.entries.forEach { (label, _) ->
-            orderedBlocks.add(label)
-        }
-        orderedBlocks.indexOf(cfg.root).let { rootIndex ->
-            if (rootIndex == 0) return@let
-            // Root must be the first block
-            orderedBlocks.removeAt(rootIndex)
-            orderedBlocks.add(0, cfg.root)
-        }
+        // Order blocks to minimize branching cost using loop-aware greedy algorithm
+        val loopInfo = LoopInfo.get(cfg)
+        orderedBlocks.addAll(computeBlockOrder(cfg, loopInfo))
         check(orderedBlocks[0] == cfg.root) {
             "Root block must be the first block in the order"
         }
@@ -497,5 +491,54 @@ class Arm64AssemblyCompiler(
         private val PopRegsStub = CustomText("<restore callee-saved registers>")
 
         private fun IRLabel.local() = ".$name"
+
+        /**
+         * Computes optimal block ordering using a greedy algorithm that minimizes
+         * the total cost of edges that require explicit branches.
+         *
+         * Cost model:
+         * - If blocks A and B are consecutive and A→B exists, cost = 0 (fall-through)
+         * - Otherwise, cost = edge_weight(A→B) from loop analysis
+         *
+         * Algorithm: Greedy chain-building
+         * 1. Start with the root block
+         * 2. At each step, follow the highest-weight outgoing edge to an unvisited block
+         * 3. If no unvisited successors, pick the highest-weight unvisited block
+         */
+        private fun computeBlockOrder(cfg: ControlFlowGraph, loopInfo: LoopInfo): List<IRLabel> {
+            val resultOrder = mutableListOf<IRLabel>()
+            val visited = mutableSetOf<IRLabel>()
+
+            fun visit(block: IRLabel) {
+                if (block in visited) return
+                visited.add(block)
+                resultOrder.add(block)
+
+                // Find the best successor to visit next (highest nesting level edge to unvisited block)
+                val bestSuccessor = cfg.edges(block)
+                    .filter { it !in visited }
+                    .maxByOrNull { successor ->
+                        // Prefer edges with higher nesting level (more deeply nested in loops)
+                        // This keeps loop bodies together in the generated code
+                        loopInfo.edgeNestingLevel[block to successor]!!
+                    }
+
+                if (bestSuccessor != null) {
+                    visit(bestSuccessor)
+                }
+            }
+
+            // Start with root
+            visit(cfg.root)
+
+            // Visit any remaining unvisited blocks (unreachable code)
+            // Prioritize blocks with higher nesting level (likely more important)
+            cfg.blocks.keys
+                .filter { it !in visited }
+                .sortedByDescending { loopInfo.blockNestingLevel[it] ?: 0 }
+                .forEach { visit(it) }
+
+            return resultOrder
+        }
     }
 }

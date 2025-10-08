@@ -20,7 +20,7 @@ object FloatConstantDivision {
         return true
     }
 
-    private fun getReciprocal(c: Double): Double? {
+    internal fun getReciprocal(c: Double): Double? {
         // Step 1: C must be finite and nonzero (reject ±0, NaN, ±∞).
         if (c == 0.0 || c.isInfinite()) return null
 
@@ -39,7 +39,7 @@ object FloatConstantDivision {
      * or denormalized floats with a single 1-bit).
      */
     private fun isExactPowerOfTwo(c: Double): Boolean {
-        val bits = c.toBits()                        // preserves sign; canonicalizes NaN (we already rejected NaN)
+        val bits = c.toBits()
         val exp  = ((bits ushr 52) and 0x7FFL).toInt()
         val frac = bits and ((1L shl 52) - 1L)
         return if (exp != 0) {

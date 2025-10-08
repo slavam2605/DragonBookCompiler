@@ -42,8 +42,15 @@ class Add(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegiste
     override fun string(): String = "add $dst, $left, $right"
 }
 
-class Sub(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X) : Instruction() {
-    override fun string(): String = "sub $dst, $left, $right"
+class Sub(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
+    init {
+        require(shiftKind != ShiftKind.ROR)
+        if (shiftKind != null || imm != null) {
+            require(shiftKind != null && imm != null) { "Both shiftKind and imm must be specified" }
+            require(imm in 0..63) { "Invalid imm value: $imm" }
+        }
+    }
+    override fun string(): String = "sub $dst, $left, $right${if (shiftKind != null) ", $shiftKind $imm" else ""}"
 }
 
 class SubImm(val dst: IntRegister, val left: IntRegister, val imm12: Int) : Instruction() {
@@ -79,6 +86,59 @@ class CmpImm(val left: IntRegister.X, val imm12: Int) : Instruction() {
 
 class CSet(val dst: IntRegister.X, val cond: ConditionFlag) : Instruction() {
     override fun string(): String = "cset $dst, $cond"
+}
+
+class CSel(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X, val cond: ConditionFlag) : Instruction() {
+    override fun string(): String = "csel $dst, $left, $right, $cond"
+}
+
+class CSNeg(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X, val cond: ConditionFlag) : Instruction() {
+    override fun string(): String = "csneg $dst, $left, $right, $cond"
+}
+
+class Asr(val dst: IntRegister.X, val left: IntRegister.X, val shift: IntRegister.X) : Instruction() {
+    override fun string(): String = "asr $dst, $left, $shift"
+}
+
+class AsrImm(val dst: IntRegister.X, val left: IntRegister.X, val imm: Int) : Instruction() {
+    init { require(imm in 0..63) }
+    override fun string(): String = "asr $dst, $left, $imm"
+}
+
+class Neg(val dst: IntRegister.X, val src: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
+    init {
+        require(shiftKind != ShiftKind.ROR)
+        if (shiftKind != null || imm != null) {
+            require(shiftKind != null && imm != null) { "Both shiftKind and imm must be specified" }
+            require(imm in 0..63) { "Invalid imm value: $imm" }
+        }
+    }
+    override fun string(): String = "neg $dst, $src${if (shiftKind != null) ", $shiftKind $imm" else ""}"
+}
+
+class Negs(val dst: IntRegister.X, val src: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
+    init {
+        require(shiftKind != ShiftKind.ROR)
+        if (shiftKind != null || imm != null) {
+            require(shiftKind != null && imm != null) { "Both shiftKind and imm must be specified" }
+            require(imm in 0..63) { "Invalid imm value: $imm" }
+        }
+    }
+    override fun string(): String = "negs $dst, $src${if (shiftKind != null) ", $shiftKind $imm" else ""}"
+}
+
+class And(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
+    init {
+        if (shiftKind != null || imm != null) {
+            require(shiftKind != null && imm != null) { "Both shiftKind and imm must be specified" }
+            require(imm in 0..63) { "Invalid imm value: $imm" }
+        }
+    }
+    override fun string(): String = "and $dst, $left, $right${if (shiftKind != null) ", $shiftKind $imm" else ""}"
+}
+
+class AndImm(val dst: IntRegister.X, val left: IntRegister.X, val imm: Long) : Instruction() {
+    override fun string(): String = "and $dst, $left, $imm"
 }
 
 class FMov(val dst: Register.D, val from: Register) : Instruction() {
@@ -156,6 +216,12 @@ class Fcvtzs(val dst: IntRegister.X, val src: Register.D) : Instruction() {
 }
 
 enum class StpMode { SIGNED_OFFSET, PRE_INDEXED, POST_INDEXED }
+
+enum class ShiftKind {
+    LSL, LSR, ASR, ROR;
+
+    override fun toString() = name.lowercase()
+}
 
 enum class ConditionFlag {
     EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL;

@@ -12,19 +12,40 @@ import compiler.backend.arm64.Sub
 import compiler.backend.arm64.ops.utils.EmitUtils
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
+import compiler.ir.IRInt
 
 class IntegerBinOpEmitter(private val context: NativeCompilerContext) {
     fun emitIntBinOp(node: IRBinOp, window: IRPeepholeWindow) {
         context.allocator.writeReg(node.result) { dst ->
             context.allocator.readReg(node.left) { left ->
-                context.allocator.readReg(node.right) { right ->
-                    check(dst is X && left is X && right is X)
-                    when (node.op) {
-                        IRBinOpKind.ADD -> context.ops.add(Add(dst, left, right))
-                        IRBinOpKind.SUB -> context.ops.add(Sub(dst, left, right))
-                        IRBinOpKind.MUL -> context.ops.add(Mul(dst, left, right))
-                        IRBinOpKind.DIV -> context.ops.add(SDiv(dst, left, right))
-                        IRBinOpKind.MOD -> {
+                check(dst is X && left is X)
+                when (node.op) {
+                    IRBinOpKind.ADD -> context.allocator.readReg(node.right) { right ->
+                        context.ops.add(Add(dst, left, right as X))
+                    }
+                    IRBinOpKind.SUB -> context.allocator.readReg(node.right) { right ->
+                        context.ops.add(Sub(dst, left, right as X))
+                    }
+                    IRBinOpKind.MUL -> context.allocator.readReg(node.right) { right ->
+                        context.ops.add(Mul(dst, left, right as X))
+                    }
+                    IRBinOpKind.DIV -> {
+                        if (node.right is IRInt) {
+                            val success = IntConstantDivision.tryEmitConstantDivision(context, dst, left,
+                                node.right.value, false)
+                            if (success) return@readReg
+                        }
+                        context.allocator.readReg(node.right) { right ->
+                            context.ops.add(SDiv(dst, left, right as X))
+                        }
+                    }
+                    IRBinOpKind.MOD -> {
+                        if (node.right is IRInt) {
+                            val success = IntConstantDivision.tryEmitConstantDivision(context, dst, left,
+                                node.right.value, true)
+                            if (success) return@readReg
+                        }
+                        context.allocator.readReg(node.right) { right -> right as X
                             // dst = l - (l / r) * r
                             if (dst == left || dst == right) {
                                 context.allocator.tempIntReg { temp ->
@@ -36,9 +57,11 @@ class IntegerBinOpEmitter(private val context: NativeCompilerContext) {
                                 context.ops.add(MSub(dst, dst, right, left))
                             }
                         }
-                        IRBinOpKind.EQ, IRBinOpKind.NEQ, IRBinOpKind.GT,
-                        IRBinOpKind.GE, IRBinOpKind.LT, IRBinOpKind.LE -> {
-                            context.ops.add(Cmp(left, right))
+                    }
+                    IRBinOpKind.EQ, IRBinOpKind.NEQ, IRBinOpKind.GT,
+                    IRBinOpKind.GE, IRBinOpKind.LT, IRBinOpKind.LE -> {
+                        context.allocator.readReg(node.right) { right ->
+                            context.ops.add(Cmp(left, right as X))
                             EmitUtils.insertComparisonJumpOrSet(context, window, node, node.op, dst)
                         }
                     }

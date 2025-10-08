@@ -1,0 +1,39 @@
+fun calculate_div_p2(int n) -> int {
+    int a = n / 1 + n / 2 + n / 4 + n / 8 + n / 1024 + n / 131072 + n / 1048576;
+    int b = n % 1 + n % 2 + n % 4 + n % 8 + n % 1024 + n % 131072 + n % 1048576;
+    int c = n / -1 + n / -2 + n / -4 + n / -8 + n / -1024 + n / -131072 + n / -1048576 + n / -9223372036854775808;
+    int d = n % -1 + n % -2 + n % -4 + n % -8 + n % -1024 + n % -131072 + n % -1048576 + n % -9223372036854775808;
+    return a + b + 3 * (c + d) / 7;
+}
+
+fun performance_target(int n) -> int {
+    int result = 0;
+    for (int i = 0; i < n; i += 1) {
+        result += calculate_div_p2(i * i);
+    }
+    return result;
+}
+
+fun test_main() {
+    assertEquals(calculate_div_p2(0), 0);
+    assertEquals(calculate_div_p2(1), 9);
+    assertEquals(calculate_div_p2(-1), -9);
+    assertEquals(calculate_div_p2(2), 16);
+    assertEquals(calculate_div_p2(-2), -16);
+    assertEquals(calculate_div_p2(3), 26);
+    assertEquals(calculate_div_p2(-3), -26);
+    assertEquals(calculate_div_p2(4), 28);
+    assertEquals(calculate_div_p2(-4), -28);
+    assertEquals(calculate_div_p2(5), 38);
+    assertEquals(calculate_div_p2(-5), -38);
+    assertEquals(calculate_div_p2(2187), 9737);
+    assertEquals(calculate_div_p2(-2187), -9737);
+    assertEquals(calculate_div_p2(37872387), 57184299);
+    assertEquals(calculate_div_p2(-37872387), -57184299);
+    assertEquals(calculate_div_p2(271381379094), 407225630210);
+    assertEquals(calculate_div_p2(-271381379094), -407225630210);
+    assertEquals(calculate_div_p2(27138137909432877), 40722484016901297);
+    assertEquals(calculate_div_p2(-27138137909432877), -40722484016901297);
+    assertEquals(calculate_div_p2(9223372036854775807), -1971244656986084783);
+    assertEquals(calculate_div_p2(-9223372036854775808), 653620080294232065);
+}

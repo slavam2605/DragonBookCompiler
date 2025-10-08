@@ -15,7 +15,7 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun countPrimesTest() = runPerformanceTest(
         sourceFile = "performance_tests/count_primes/count_primes.txt",
         nativeRunner = "performance_tests/count_primes/runner.cpp",
-        expectedPerformance = 0.49
+        expectedPerformance = 0.82
     )
 
     @TestFactory
@@ -27,8 +27,15 @@ class GeneralPerformanceTest : PerformanceTestBase() {
 
     @TestFactory
     fun newtonSqrtTest() = runPerformanceTest(
-        sourceFile = "/performance_tests/newton_sqrt/newton_sqrt.txt",
+        sourceFile = "performance_tests/newton_sqrt/newton_sqrt.txt",
         nativeRunner = "performance_tests/newton_sqrt/runner.cpp",
         expectedPerformance = 0.77
+    )
+
+    @TestFactory
+    fun divisionTest() = runPerformanceTest(
+        sourceFile = "performance_tests/division/division.txt",
+        nativeRunner = "performance_tests/division/runner.cpp",
+        expectedPerformance = 0.24
     )
 }

@@ -76,6 +76,7 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
                         op == IRBinOpKind.SUB && rvalues()[0] == rvalues()[1] -> lvalue.typedZero()
                         op == IRBinOpKind.MUL && rValues.any { it.isZero() } -> lvalue.typedZero()
                         op == IRBinOpKind.MOD && rValues[1] == SSCPValue.IntValue(1) -> SSCPValue.IntValue(0)
+                        op == IRBinOpKind.MOD && rValues[1] == SSCPValue.IntValue(-1) -> SSCPValue.IntValue(0)
                         op in equalComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.IntValue(1)
                         op in notEqualComparisonOps && rvalues()[0] == rvalues()[1] -> SSCPValue.IntValue(0)
                         else -> if (rValues.any { it == SSCPValue.Bottom }) SSCPValue.Bottom else SSCPValue.Top

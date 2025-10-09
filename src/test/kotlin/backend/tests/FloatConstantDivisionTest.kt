@@ -1,4 +1,4 @@
-package ir.tests
+package backend.tests
 
 import compiler.backend.arm64.ops.floats.FloatConstantDivision
 import org.junit.jupiter.api.Test

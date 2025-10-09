@@ -169,6 +169,14 @@ class MovK(val dst: IntRegister.X, val value: Long, val shift: Int) : Instructio
     override fun string(): String = "movk $dst, $value" + if (shift != 0) ", lsl $shift" else ""
 }
 
+class MovN(val dst: IntRegister.X, val value: Long, val shift: Int) : Instruction() {
+    init {
+        checkUShortValue(value)
+        checkShiftValue(shift)
+    }
+    override fun string(): String = "movn $dst, $value" + if (shift != 0) ", lsl $shift" else ""
+}
+
 class Adrp(val reg: IntRegister.X, val label: String) : Instruction() {
     override fun string(): String = "adrp $reg, $label"
 }

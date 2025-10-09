@@ -8,6 +8,7 @@ import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Ldr
 import compiler.backend.arm64.Mov
 import compiler.backend.arm64.MovK
+import compiler.backend.arm64.MovN
 import compiler.backend.arm64.MovZ
 import compiler.backend.arm64.NativeCompilerContext
 import compiler.backend.arm64.Register.D
@@ -17,18 +18,32 @@ import kotlin.ranges.contains
 
 object NumberUtils {
     fun emitAssignConstantInt64(context: NativeCompilerContext, targetReg: X, value: Long) {
-        // TODO add support for cases with movn
         if (value == 0L) {
             context.ops.add(Mov(targetReg, IntRegister.Xzr))
             return
         }
+        if (value == -1L) {
+            context.ops.add(MovN(targetReg, 0L, 0))
+            return
+        }
 
         val parts = (0..3).map { (value ushr (16 * it)) and 0xFFFFL }
+        val negParts = (0..3).map { (value.inv() ushr (16 * it)) and 0xFFFFL }
+        val nonZeroPartsCount = parts.count { it != 0L }
+        val nonZeroNegPartsCount = negParts.count { it != 0L }
+        check(nonZeroPartsCount >= 1 && nonZeroNegPartsCount >= 1)
 
+        val useNeg = nonZeroNegPartsCount < nonZeroPartsCount
+        val targetParts = if (useNeg) negParts else parts
         var isFirstOp = true
-        parts.forEachIndexed { index, part ->
+        targetParts.forEachIndexed { index, part ->
             if (part == 0L) return@forEachIndexed
-            val opCtr = if (isFirstOp) ::MovZ else ::MovK
+            val opCtr = when {
+                isFirstOp && useNeg -> ::MovN
+                isFirstOp && !useNeg -> ::MovZ
+                else -> ::MovK
+            }
+            val part = if (useNeg && !isFirstOp) parts[index] else part
             context.ops.add(opCtr(targetReg, part, 16 * index))
             isFirstOp = false
         }

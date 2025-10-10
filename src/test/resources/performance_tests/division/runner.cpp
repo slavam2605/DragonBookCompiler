@@ -24,7 +24,7 @@ long long calculate_div_gold(long long n) {
 extern "C" long long performance_gold(long long n) {
     long long result = 0;
     for (long long i = 0; i < n; i++) {
-        result += calculate_div_gold_p2(i * i) + calculate_div_gold(i * i + 1);
+        result += calculate_div_gold_p2(i * i) + calculate_div_gold(i * i + 1) * 1081052807777227316;
     }
     return result;
 }

@@ -17,7 +17,7 @@ fun calculate_div(int n) -> int {
 fun performance_target(int n) -> int {
     int result = 0;
     for (int i = 0; i < n; i += 1) {
-        result += calculate_div_p2(i * i) + calculate_div(i * i + 1);
+        result += calculate_div_p2(i * i) + calculate_div(i * i + 1) * 1081052807777227316;
     }
     return result;
 }

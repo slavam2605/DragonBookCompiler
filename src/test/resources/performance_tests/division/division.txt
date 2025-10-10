@@ -6,10 +6,18 @@ fun calculate_div_p2(int n) -> int {
     return a + b + 3 * (c + d) / 7;
 }
 
+fun calculate_div(int n) -> int {
+    int a = n / 3 + n / 5 + n / 7 + n / 11 + n / 13 + n / 97 + n / 1009 + n / 128712 + n / 2147483647 + n / 8589935681 + n / 489133282872437279;
+    int b = n % 3 + n % 5 + n % 7 + n % 11 + n % 13 + n % 97 + n % 1009 + n % 128712 + n % 2147483647 + n % 8589935681 + n % 489133282872437279;
+    int c = n / -3 + n / -5 + n / -7 + n / -11 + n / -13 + n / -97 + n / -1009 + n / -128712 + n / -2147483647 + n / -8589935681 + n / -489133282872437279;
+    int d = n % -3 + n % -5 + n % -7 + n % -11 + n % -13 + n % -97 + n % -1009 + n % -128712 + n % -2147483647 + n % -8589935681 + n % -489133282872437279;
+    return a + b + 2 * (c + d) / 5;
+}
+
 fun performance_target(int n) -> int {
     int result = 0;
     for (int i = 0; i < n; i += 1) {
-        result += calculate_div_p2(i * i);
+        result += calculate_div_p2(i * i) + calculate_div(i * i + 1);
     }
     return result;
 }
@@ -36,4 +44,26 @@ fun test_main() {
     assertEquals(calculate_div_p2(-27138137909432877), -40722484016901297);
     assertEquals(calculate_div_p2(9223372036854775807), -1971244656986084783);
     assertEquals(calculate_div_p2(-9223372036854775808), 653620080294232065);
+
+    assertEquals(calculate_div(0), 0);
+    assertEquals(calculate_div(1), 15);
+    assertEquals(calculate_div(-1), -15);
+    assertEquals(calculate_div(2), 30);
+    assertEquals(calculate_div(-2), -30);
+    assertEquals(calculate_div(3), 42);
+    assertEquals(calculate_div(-3), -42);
+    assertEquals(calculate_div(4), 58);
+    assertEquals(calculate_div(-4), -58);
+    assertEquals(calculate_div(5), 67);
+    assertEquals(calculate_div(-5), -67);
+    assertEquals(calculate_div(2187), 13702);
+    assertEquals(calculate_div(-2187), -13702);
+    assertEquals(calculate_div(37872387), 178544520);
+    assertEquals(calculate_div(-37872387), -178544520);
+    assertEquals(calculate_div(271381379094), 527455125971);
+    assertEquals(calculate_div(-271381379094), -527455125971);
+    assertEquals(calculate_div(27138137909432877), 51920652385151601);
+    assertEquals(calculate_div(-27138137909432877), -51920652385151601);
+    assertEquals(calculate_div(9223372036854775807), 9009331306168050958);
+    assertEquals(calculate_div(-9223372036854775808), -9009331306168050974);
 }

@@ -5,7 +5,6 @@ import compiler.backend.arm64.InstructionUtils.checkLabelName
 import compiler.backend.arm64.InstructionUtils.checkShiftValue
 import compiler.backend.arm64.InstructionUtils.checkUShortValue
 import compiler.backend.arm64.InstructionUtils.stpModeAddress
-import kotlin.ranges.contains
 
 sealed class Instruction {
     abstract fun string(): String
@@ -49,7 +48,7 @@ class Add(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegiste
     override fun string(): String = "add $dst, $left, $right${if (shiftKind != null) ", $shiftKind $imm" else ""}"
 }
 
-class Sub(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
+class Sub(val dst: IntRegister.X, val left: IntRegister, val right: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
     init {
         require(shiftKind != ShiftKind.ROR)
         if (shiftKind != null || imm != null) {
@@ -116,6 +115,11 @@ class AsrImm(val dst: IntRegister.X, val left: IntRegister.X, val imm: Int) : In
     override fun string(): String = "asr $dst, $left, $imm"
 }
 
+class LslImm(val dst: IntRegister.X, val left: IntRegister.X, val imm: Int) : Instruction() {
+    init { require(imm in 0..63) }
+    override fun string(): String = "lsl $dst, $left, $imm"
+}
+
 class Neg(val dst: IntRegister.X, val src: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
     init {
         require(shiftKind != ShiftKind.ROR)
@@ -162,6 +166,13 @@ class FMovImm(val dst: Register.D, val imm8: Double) : Instruction() {
 
 class Mov(val dst: IntRegister, val from: IntRegister) : Instruction() {
     override fun string(): String = "mov $dst, $from"
+}
+
+class MovBitPattern(val dst: IntRegister.X, val imm: Long) : Instruction() {
+    init {
+        require(InstructionUtils.isBitPattern(imm))
+    }
+    override fun string(): String = "mov $dst, $imm"
 }
 
 class MovZ(val dst: IntRegister.X, val value: Long, val shift: Int = 0) : Instruction() {
@@ -264,38 +275,4 @@ enum class ConditionFlag {
     }
 
     override fun toString() = name.lowercase()
-}
-
-private object InstructionUtils {
-    private val AllowedShiftValues = setOf(0, 16, 32, 48)
-    private val LabelNameRegex = "^[a-zA-Z0-9_.]+$".toRegex()
-
-    fun checkLabelName(name: String) {
-        require(name.matches(LabelNameRegex)) { "Invalid label name: $name" }
-    }
-
-    fun checkImm12Value(value: Int) {
-        require(value in 0..4095) { "Invalid value: $value, must be in range 0..4095" }
-    }
-
-    fun checkUShortValue(value: Long) {
-        require(value in 0..0xFFFF) { "Invalid value: $value" }
-    }
-
-    fun checkShiftValue(value: Int) {
-        require(value in AllowedShiftValues) { "Invalid shift value: $value" }
-    }
-
-    fun stpModeAddress(address: IntRegister, offset: Any, mode: StpMode): String {
-        val offsetString = when (offset) {
-            is Int -> "#$offset"
-            is String -> offset
-            else -> error("Unsupported offset type: ${offset::class.simpleName}")
-        }
-        return "[$address" + when (mode) {
-            StpMode.SIGNED_OFFSET -> ", $offsetString]"
-            StpMode.PRE_INDEXED -> ", $offsetString]!"
-            StpMode.POST_INDEXED -> "], $offsetString"
-        }
-    }
 }

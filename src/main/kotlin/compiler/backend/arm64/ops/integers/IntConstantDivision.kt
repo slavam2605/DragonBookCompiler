@@ -2,7 +2,7 @@ package compiler.backend.arm64.ops.integers
 
 import compiler.backend.arm64.*
 import compiler.backend.arm64.ops.utils.NumberUtils
-import utils.isPowerOfTwo
+import utils.absIsPowerOfTwo
 import kotlin.math.absoluteValue
 
 object IntConstantDivision {
@@ -15,7 +15,7 @@ object IntConstantDivision {
 
     fun tryEmitPowerOfTwoDivision(context: NativeCompilerContext, dst: IntRegister.X,
                                   dividend: IntRegister.X, divisor: Long, isMod: Boolean): Boolean {
-        if (!divisor.isPowerOfTwo()) return false
+        if (!divisor.absIsPowerOfTwo()) return false
 
         val ops = context.ops
         val absDivisor = divisor.absoluteValue

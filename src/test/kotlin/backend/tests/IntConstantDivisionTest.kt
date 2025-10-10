@@ -3,7 +3,7 @@ package backend.tests
 import compiler.backend.arm64.ops.integers.MagicIntConstantDivision
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
-import utils.isPowerOfTwo
+import utils.absIsPowerOfTwo
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
@@ -90,7 +90,7 @@ class IntConstantDivisionTest {
             // Test range around each power of 2
             for (offset in -30L..30L) {
                 val d = pow + offset
-                if (d > 0 && !d.isPowerOfTwo()) {
+                if (d > 0 && !d.absIsPowerOfTwo()) {
                     divisors.add(d)
                     divisors.add(-d)
                 }
@@ -109,7 +109,7 @@ class IntConstantDivisionTest {
     private fun testDivisorSet(vararg divisorRanges: Iterable<Long>) {
         val wholeSet = divisorRanges.flatMapTo(mutableSetOf()) { it }
         for (d in wholeSet) {
-            if (d == 0L || d.isPowerOfTwo()) continue
+            if (d == 0L || d.absIsPowerOfTwo()) continue
 
             val magic = MagicIntConstantDivision.getMagic(d)
 

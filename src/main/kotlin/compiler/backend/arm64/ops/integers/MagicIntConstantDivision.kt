@@ -9,7 +9,7 @@ import compiler.backend.arm64.SMulh
 import compiler.backend.arm64.ShiftKind
 import compiler.backend.arm64.Sub
 import compiler.backend.arm64.ops.utils.NumberUtils
-import utils.isPowerOfTwo
+import utils.absIsPowerOfTwo
 import kotlin.math.absoluteValue
 
 internal object MagicIntConstantDivision {
@@ -17,7 +17,7 @@ internal object MagicIntConstantDivision {
 
     fun tryEmitMagicDivision(context: NativeCompilerContext, dst: IntRegister.X,
                              dividend: IntRegister.X, divisor: Long, isMod: Boolean): Boolean {
-        if (divisor == 0L || divisor.isPowerOfTwo()) return false
+        if (divisor == 0L || divisor.absIsPowerOfTwo()) return false
 
         val m = getMagic(divisor)
         context.allocator.tempIntReg { temp ->

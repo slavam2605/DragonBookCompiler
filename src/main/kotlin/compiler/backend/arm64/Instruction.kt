@@ -38,8 +38,15 @@ class FDiv(val dst: Register.D, val left: Register.D, val right: Register.D) : I
     override fun string(): String = "fdiv $dst, $left, $right"
 }
 
-class Add(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X) : Instruction() {
-    override fun string(): String = "add $dst, $left, $right"
+class Add(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
+    init {
+        require(shiftKind != ShiftKind.ROR)
+        if (shiftKind != null || imm != null) {
+            require(shiftKind != null && imm != null) { "Both shiftKind and imm must be specified" }
+            require(imm in 0..63) { "Invalid imm value: $imm" }
+        }
+    }
+    override fun string(): String = "add $dst, $left, $right${if (shiftKind != null) ", $shiftKind $imm" else ""}"
 }
 
 class Sub(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X, val shiftKind: ShiftKind? = null, val imm: Int? = null) : Instruction() {
@@ -60,6 +67,10 @@ class SubImm(val dst: IntRegister, val left: IntRegister, val imm12: Int) : Inst
 
 class Mul(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X) : Instruction() {
     override fun string(): String = "mul $dst, $left, $right"
+}
+
+class SMulh(val dst: IntRegister.X, val left: IntRegister.X, val right: IntRegister.X) : Instruction() {
+    override fun string(): String = "smulh $dst, $left, $right"
 }
 
 /** `dst = minuend - left * right` */

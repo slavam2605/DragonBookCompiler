@@ -2,18 +2,20 @@ package compiler.backend.arm64.ops.integers
 
 import compiler.backend.arm64.*
 import compiler.backend.arm64.ops.utils.NumberUtils
+import utils.isPowerOfTwo
 import kotlin.math.absoluteValue
 
 object IntConstantDivision {
     fun tryEmitConstantDivision(context: NativeCompilerContext, dst: IntRegister.X,
                                 dividend: IntRegister.X, divisor: Long, isMod: Boolean): Boolean {
         if (tryEmitPowerOfTwoDivision(context, dst, dividend, divisor, isMod)) return true
+        if (MagicIntConstantDivision.tryEmitMagicDivision(context, dst, dividend, divisor, isMod)) return true
         return false
     }
 
     fun tryEmitPowerOfTwoDivision(context: NativeCompilerContext, dst: IntRegister.X,
                                   dividend: IntRegister.X, divisor: Long, isMod: Boolean): Boolean {
-        if (!isPowerOfTwo(divisor)) return false
+        if (!divisor.isPowerOfTwo()) return false
 
         val ops = context.ops
         val absDivisor = divisor.absoluteValue
@@ -82,12 +84,5 @@ object IntConstantDivision {
                 ops.add(Neg(dst, dst, ShiftKind.ASR, power))
             }
         }
-    }
-
-    private fun isPowerOfTwo(value: Long): Boolean {
-        if (value == 0L) return false
-        val abs = value.absoluteValue
-        // Works for Long.MIN_VALUE as well
-        return (abs and abs - 1) == 0L
     }
 }

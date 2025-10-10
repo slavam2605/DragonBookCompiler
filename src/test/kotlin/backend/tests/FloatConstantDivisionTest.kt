@@ -1,11 +1,11 @@
 package backend.tests
 
 import compiler.backend.arm64.ops.floats.FloatConstantDivision
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.absoluteValue
 import kotlin.math.pow
 import kotlin.random.Random
-import kotlin.test.assertEquals
 
 class FloatConstantDivisionTest {
     @Test
@@ -19,15 +19,17 @@ class FloatConstantDivisionTest {
             val r = FloatConstantDivision.getReciprocal(value) ?: return@forEach
             successCount++
 
-            repeat(1000) {
+            repeat(10000) {
                 val numerator = randomDouble(random)
                 val expected = numerator / value
                 val actual = numerator * r
 
                 // Test exact equality, the optimization must preserve IEEE 754 behavior
-                assertEquals(expected, actual, "Wrong value for $numerator / $value (2^$power):\n" +
-                        "bits: ${value.toBitString64()}\n" +
-                        "denormalized: ${value.isDenormalized()}")
+                assertEquals(expected, actual)  {
+                    "Wrong value for $numerator / $value (2^$power):\n" +
+                            "bits: ${value.toBitString64()}\n" +
+                            "denormalized: ${value.isDenormalized()}"
+                }
             }
         }
 

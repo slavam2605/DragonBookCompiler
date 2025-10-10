@@ -22,7 +22,7 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun monteCarloTest() = runPerformanceTest(
         sourceFile = "performance_tests/monte_carlo_pi/monte_carlo_pi.txt",
         nativeRunner = "performance_tests/monte_carlo_pi/runner.cpp",
-        expectedPerformance = 0.54
+        expectedPerformance = 0.59
     )
 
     @TestFactory
@@ -36,6 +36,6 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun divisionTest() = runPerformanceTest(
         sourceFile = "performance_tests/division/division.txt",
         nativeRunner = "performance_tests/division/runner.cpp",
-        expectedPerformance = 0.24
+        expectedPerformance = 0.39
     )
 }

@@ -52,16 +52,16 @@ abstract class PerformanceTestBase : FileBasedCompileToIRTest() {
         return runTestsInFolder(sourceFile)
     }
 
-    private fun parseTimeNs(benchmarkName: String, output: String): Pair<Long, Long> {
-        val regex = Regex("$benchmarkName\\s+([0-9]+) ns\\s+([0-9]+) ns")
+    private fun parseTimeNs(benchmarkName: String, output: String): Pair<Double, Double> {
+        val regex = Regex("$benchmarkName\\s+([0-9]+\\.?[0-9]*) ns\\s+([0-9]+\\.?[0-9]*) ns")
         val match = regex.find(output) ?: error("Failed parse benchmark result: $benchmarkName")
-        return match.groupValues[1].toLong() to match.groupValues[2].toLong()
+        return match.groupValues[1].toDouble() to match.groupValues[2].toDouble()
     }
 
     override fun handleNativeOutput(output: String) {
         val (_, actualCpuTime) = parseTimeNs("BM_Target", output)
         val (_, goldCpuTime) = parseTimeNs("BM_Gold", output)
-        val actualPerformance = goldCpuTime.toDouble() / actualCpuTime * 100
+        val actualPerformance = goldCpuTime / actualCpuTime * 100
         val expectedPerformance = expectedPerformance * 100
         if (PRINT_DEBUG_INFO) {
             println("Benchmark results:")

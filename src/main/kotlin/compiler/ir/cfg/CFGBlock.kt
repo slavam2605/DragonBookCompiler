@@ -13,11 +13,13 @@ class CFGBlock(val irNodes: List<IRNode>) {
      * Keeps the source location of each node, if [sourceMap] is provided.
      */
     fun transform(transformer: IRTransformer, sourceMap: SourceLocationMap? = null) =
-        CFGBlock(irNodes.mapNotNull { oldNode ->
-            val transformNode = transformer.transformNode(oldNode) ?: return@mapNotNull null
-            transformNode.transform(transformer).also { newNode ->
-                if (sourceMap != null) {
-                    sourceMap[oldNode]?.let { sourceMap[newNode] = it }
+        CFGBlock(irNodes.flatMap { oldNode ->
+            val transformNode = transformer.transformNode(oldNode)
+            transformNode.map {
+                it.transform(transformer).also { newNode ->
+                    if (sourceMap != null) {
+                        sourceMap[oldNode]?.let { sourceMap[newNode] = it }
+                    }
                 }
             }
         })

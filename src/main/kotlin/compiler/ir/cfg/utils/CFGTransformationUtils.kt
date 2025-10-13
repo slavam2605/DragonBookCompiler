@@ -139,8 +139,8 @@ private class PhiTransformer(
     private val reachableBlocks: Set<IRLabel>,
     private val newBlocks: Map<IRLabel, CFGBlock>,
     private val changed: Map<Pair<OriginalPredecessor, NewTarget>, List<CFGEdgeChanged>>
-) : BaseIRTransformer() {
-    override fun transformNode(node: IRNode): IRNode {
+) : SimpleIRTransformer() {
+    override fun transformNodeSimple(node: IRNode): IRNode {
         if (node !is IRPhi) {
             return node
         }

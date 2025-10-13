@@ -1,7 +1,7 @@
 package compiler.ir
 
 interface IRTransformer {
-    fun transformNode(node: IRNode): IRNode?
+    fun transformNode(node: IRNode): List<IRNode>
 
     fun transformLValue(value: IRVar): IRVar
 
@@ -11,11 +11,19 @@ interface IRTransformer {
 }
 
 abstract class BaseIRTransformer : IRTransformer {
-    override fun transformNode(node: IRNode): IRNode? = node
+    override fun transformNode(node: IRNode): List<IRNode> = listOf(node)
 
     override fun transformLValue(value: IRVar): IRVar = value
 
     override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue = value
 
     override fun transformLabel(label: IRLabel): IRLabel = label
+}
+
+abstract class SimpleIRTransformer : BaseIRTransformer() {
+    abstract fun transformNodeSimple(node: IRNode): IRNode?
+
+    override fun transformNode(node: IRNode): List<IRNode> {
+        return transformNodeSimple(node)?.let { listOf(it) } ?: emptyList()
+    }
 }

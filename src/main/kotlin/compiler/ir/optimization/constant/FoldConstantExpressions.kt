@@ -1,6 +1,5 @@
 package compiler.ir.optimization.constant
 
-import compiler.ir.BaseIRTransformer
 import compiler.ir.IRAssign
 import compiler.ir.IRFloat
 import compiler.ir.IRInt
@@ -12,6 +11,7 @@ import compiler.ir.IRNode
 import compiler.ir.IRPhi
 import compiler.ir.IRValue
 import compiler.ir.IRVar
+import compiler.ir.SimpleIRTransformer
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -47,8 +47,8 @@ object FoldConstantExpressions {
         }
 
         val newBlocks = cfg.blocks.mapValues { (currentLabel, block) ->
-            block.transform(object : BaseIRTransformer() {
-                override fun transformNode(node: IRNode): IRNode? {
+            block.transform(object : SimpleIRTransformer() {
+                override fun transformNodeSimple(node: IRNode): IRNode? {
                     // Remove assignments for known constants
                     node.lvalue?.let { lVar ->
                         if (cpValues[lVar] is SSCPValue.Value) {

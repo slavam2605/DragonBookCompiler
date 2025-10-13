@@ -1,11 +1,11 @@
 package compiler.ir.optimization.valueNumbering
 
-import compiler.ir.BaseIRTransformer
 import compiler.ir.IRAssign
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRValue
 import compiler.ir.IRVar
+import compiler.ir.SimpleIRTransformer
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.extensions.DominatorTree
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
@@ -52,8 +52,8 @@ class GlobalValueNumbering(private val cfg: SSAControlFlowGraph) {
     }
 
     private fun transformBlock(label: IRLabel) {
-        newBlocks[label] = cfg.blocks[label]!!.transform(object : BaseIRTransformer() {
-            override fun transformNode(node: IRNode): IRNode {
+        newBlocks[label] = cfg.blocks[label]!!.transform(object : SimpleIRTransformer() {
+            override fun transformNodeSimple(node: IRNode): IRNode {
                 val irVar = node.lvalue ?: return node
                 val rNumbers = node.rvalues().map { irValue ->
                     numberMap.get(irValue)

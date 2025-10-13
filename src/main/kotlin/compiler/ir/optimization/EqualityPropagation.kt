@@ -1,11 +1,11 @@
 package compiler.ir.optimization
 
-import compiler.ir.BaseIRTransformer
 import compiler.ir.IRAssign
 import compiler.ir.IRNode
 import compiler.ir.IRPhi
 import compiler.ir.IRValue
 import compiler.ir.IRVar
+import compiler.ir.SimpleIRTransformer
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 
 class EqualityPropagation(private val cfg: SSAControlFlowGraph) {
@@ -31,8 +31,8 @@ class EqualityPropagation(private val cfg: SSAControlFlowGraph) {
         makeTransitiveClosure(assignMap)
 
         if (assignMap.isEmpty()) return cfg
-        return cfg.transform(object : BaseIRTransformer() {
-            override fun transformNode(node: IRNode): IRNode? {
+        return cfg.transform(object : SimpleIRTransformer() {
+            override fun transformNodeSimple(node: IRNode): IRNode? {
                 if (node.lvalue in assignMap) {
                     return null
                 }

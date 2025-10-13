@@ -1,11 +1,11 @@
 package compiler.ir.optimization.clean
 
-import compiler.ir.BaseIRTransformer
 import compiler.ir.IRAssign
 import compiler.ir.IRLabel
 import compiler.ir.IRNode
 import compiler.ir.IRPhi
 import compiler.ir.IRSource
+import compiler.ir.SimpleIRTransformer
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
@@ -68,8 +68,8 @@ class CombineBlocks(private val cfg: ControlFlowGraph) {
             }
         }
         newBlocks.forEach { (label, block) ->
-            newBlocks[label] = block.transform(object : BaseIRTransformer() {
-                override fun transformNode(node: IRNode): IRNode {
+            newBlocks[label] = block.transform(object : SimpleIRTransformer() {
+                override fun transformNodeSimple(node: IRNode): IRNode {
                     if (node !is IRPhi) return node
                     val newSources = node.sources.map { (blockLabel, index) ->
                         IRSource(blockToChainRoot[blockLabel] ?: blockLabel, index)

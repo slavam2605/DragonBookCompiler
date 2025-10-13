@@ -1,7 +1,6 @@
 package ir
 
 import compiler.frontend.FrontendCompilationFlow
-import compiler.frontend.FrontendConstantValue
 import compiler.frontend.FrontendFunctions
 import compiler.ir.IRPhi
 import compiler.ir.IRProtoNode
@@ -35,25 +34,16 @@ object TestCompilationFlow {
         }
     }
 
-    fun compileToOptimizedSSA(input: String): FrontendFunctions<FrontendCompilationFlow.OptimizedResult> {
+    fun compileToOptimizedSSA(input: String): FrontendFunctions<SSAControlFlowGraph> {
         val ssa = compileToSSA(input)
         return FrontendCompilationFlow.optimizeSSA(ssa)
     }
 
-    fun compileToOptimizedCFG(input: String): FrontendFunctions<CFGWithStaticValues> {
+    fun compileToOptimizedCFG(input: String): FrontendFunctions<ControlFlowGraph> {
         val optimizedSSA = compileToOptimizedSSA(input)
-        val ssaOnly = optimizedSSA.map { it.value.optimizedSSA }
-        return FrontendCompilationFlow.convertFromSSA(ssaOnly).map {
-            val ffWithValues = optimizedSSA[it.name]!!.value
-            CFGWithStaticValues(it.value, ffWithValues.cpValues, ffWithValues.equalities)
-        }
+        val ssaOnly = optimizedSSA.map { it.value }
+        return FrontendCompilationFlow.convertFromSSA(ssaOnly)
     }
-
-    data class CFGWithStaticValues(
-        val cfg: ControlFlowGraph,
-        val cpValues: Map<IRVar, FrontendConstantValue>,
-        val equalities: Map<IRVar, IRVar>
-    )
 
     // -------- compilation consistency checks --------
 

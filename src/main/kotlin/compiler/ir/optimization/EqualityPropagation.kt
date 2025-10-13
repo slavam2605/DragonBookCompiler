@@ -11,9 +11,6 @@ import compiler.ir.cfg.ssa.SSAControlFlowGraph
 class EqualityPropagation(private val cfg: SSAControlFlowGraph) {
     private val assignMap = mutableMapOf<IRVar, IRVar>()
 
-    val equalities: Map<IRVar, IRVar>
-        get() = assignMap.toMap()
-
     fun invoke(): SSAControlFlowGraph {
         cfg.blocks.forEach { (_, block) ->
             block.irNodes.forEach { node ->

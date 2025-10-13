@@ -15,7 +15,7 @@ object CompilationFlow {
             val cfg = FrontendCompilationFlow.buildCFG(ir, sourceMap)
             val ssa = FrontendCompilationFlow.buildSSA(cfg)
             val optimizedSSA = if (optimize) {
-                FrontendCompilationFlow.optimizeSSA(ssa).map { it.value.optimizedSSA }
+                FrontendCompilationFlow.optimizeSSA(ssa).map { it.value }
             } else ssa
             val nonSSA = FrontendCompilationFlow.convertFromSSA(optimizedSSA)
             val preNative = nonSSA.map { PrepareForNativeCompilation.run(it.value, it.parameters) }

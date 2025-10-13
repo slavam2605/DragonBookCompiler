@@ -59,21 +59,19 @@ abstract class CompileToIRTestBase {
             }
             TestMode.OPTIMIZED_SSA -> {
                 val ffs = compileToOptimizedSSA(input).also { ffs ->
-                    if (PRINT_DEBUG_INFO) ffs.print { (_, ssa) -> ssa.print() }
+                    if (PRINT_DEBUG_INFO) ffs.print { it.print() }
                 }
                 ffs.values.forEach { function ->
-                    val (unoptimizedSSA, optimizedSSA, cpValues, _) = function.value
-                    checkStaticallyEvaluatedValues(unoptimizedSSA, optimizedSSA, cpValues)
+                    val optimizedSSA = function.value
+                    checkStaticallyEvaluatedValues(optimizedSSA)
                 }
 
-                val mainFunction = ffs["test_main"]!!.value
                 if (ignoreInterpretedValues) {
-                    return mainFunction.cpValues
+                    return emptyMap()
                 }
 
-                val optimizedFfs = ffs.map { it.value.optimizedSSA }
+                val optimizedFfs = ffs.map { it.value }
                 return CFGInterpreter(MAIN, emptyList(), optimizedFfs, TestFunctionHandler).eval()
-                    .withValues(mainFunction.cpValues, mainFunction.equalities)
             }
             TestMode.OPTIMIZED_NON_SSA -> {
                 check(!ignoreInterpretedValues) {
@@ -81,17 +79,14 @@ abstract class CompileToIRTestBase {
                             "because it returns the same values as for optimized SSA mode"
                 }
 
-                val nonSsaFfsWithValues = compileToOptimizedCFG(input)
-                val nonSsaFfs = nonSsaFfsWithValues.map { it.value.cfg }
+                val nonSsaFfs = compileToOptimizedCFG(input)
                 if (PRINT_DEBUG_INFO) nonSsaFfs.print { it.print() }
 
-                val (_, mainCpValues, mainEqualities) = nonSsaFfsWithValues["test_main"]!!.value
                 return CFGInterpreter(MAIN, emptyList(), nonSsaFfs, TestFunctionHandler).eval()
-                    .withValues(mainCpValues, mainEqualities)
             }
             TestMode.NATIVE_ARM64 -> {
                 val ffs = compileToOptimizedCFG(input).map {
-                    PrepareForNativeCompilation.run(it.value.cfg, it.parameters)
+                    PrepareForNativeCompilation.run(it.value, it.parameters)
                 }
                 val output = NativeArm64TestCompilationFlow.compileAndRun(ffs, nativeTestOptions)
 
@@ -114,22 +109,6 @@ abstract class CompileToIRTestBase {
             }
         }
     }
-
-    private fun Map<IRVar, FrontendConstantValue>.withValues(extraValues: Map<IRVar, FrontendConstantValue>, equalities: Map<IRVar, IRVar>): Map<IRVar, FrontendConstantValue> {
-        val result = toMutableMap()
-        extraValues.forEach { (irVar, value) ->
-            assertTrue(irVar !in this, "Constant propagation didn't remove variable $irVar with value $value")
-            result[irVar] = value
-        }
-        equalities.forEach { (irVar, otherVar) ->
-            check(irVar !in result || result[irVar] == result[otherVar])
-            result[irVar] = result[otherVar] ?: return@forEach
-        }
-        return result.toMap()
-    }
-
-    protected fun Map<IRVar, Long>.getVariable(varName: String) =
-        entries.singleOrNull { "x${varName}_[0-9]+\$".toRegex().matches(it.key.name) }?.value
 
     protected fun compileAndGetResult(mode: TestMode, input: String): FrontendConstantValue? =
         compileAndRun(mode, input)[IntReturnValue]
@@ -198,11 +177,7 @@ abstract class CompileToIRTestBase {
             FrontendConstantValue.IntValue(0) // default return value
         }
 
-        private fun checkStaticallyEvaluatedValues(
-            unoptimized: SSAControlFlowGraph,
-            optimized: SSAControlFlowGraph,
-            cpValues: Map<IRVar, FrontendConstantValue>
-        ) {
+        private fun checkStaticallyEvaluatedValues(optimized: SSAControlFlowGraph) {
             // Statically check equality after optimization
             optimized.blocks.forEach { (_, block) ->
                 block.irNodes.filterIsInstance<IRFunctionCall>().forEach { node ->
@@ -237,17 +212,6 @@ abstract class CompileToIRTestBase {
                     }
                 }
             }
-
-            // TODO fix
-//            val expected = CFGInterpreter(
-//                cfg = unoptimized,
-//                exitAfterMaxSteps = true,
-//                functionHandler = { _, _ -> 0L /* ignore assertions, they are checked statically */ }
-//            ).eval()
-//            (cpValues.keys.intersect(expected.keys)).forEach {
-//                assertEquals(expected[it], cpValues[it],
-//                    "Expected ${it.printToString()} to be ${expected[it]}, but was ${cpValues[it]}")
-//            }
         }
     }
 }

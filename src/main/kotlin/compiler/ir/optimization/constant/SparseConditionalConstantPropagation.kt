@@ -19,9 +19,6 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph,
     private fun defValue(irVar: IRVar) = defValue[irVar] ?: SSCPValue.Top
     private fun useValue(irUse: IRUse) = useValue[irUse] ?: SSCPValue.Top
 
-    val staticValues: Map<IRVar, SSCPValue>
-        get() = defValue.toMap()
-
     fun run(): SSAControlFlowGraph {
         functionParameters.forEach {
             defValue[it] = SSCPValue.Bottom

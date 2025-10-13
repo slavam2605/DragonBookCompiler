@@ -8,7 +8,7 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun ackermannTest() = runPerformanceTest(
         sourceFile = "performance_tests/ackermann/ackermann.txt",
         nativeRunner = "performance_tests/ackermann/runner.cpp",
-        expectedPerformance = 0.75
+        expectedPerformance = 0.78
     )
 
     @TestFactory

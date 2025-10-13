@@ -5,6 +5,7 @@ import compiler.backend.arm64.IntRegister.Companion.X30
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
+import compiler.backend.arm64.instructions.AddImm
 import compiler.backend.arm64.instructions.CustomText
 import compiler.backend.arm64.instructions.Instruction
 import compiler.backend.arm64.instructions.Label
@@ -20,6 +21,7 @@ import compiler.backend.arm64.ops.utils.local
 import compiler.backend.arm64.registerAllocation.CompositeRegisterAllocator
 import compiler.frontend.FrontendFunction
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.utils.hasFunctionCalls
 
 class Arm64AssemblyCompiler(
     private val function: FrontendFunction<ControlFlowGraph>,
@@ -45,12 +47,18 @@ class Arm64AssemblyCompiler(
 
     fun buildFunction() {
         val cfg = function.value
+        val isLeaf = !cfg.hasFunctionCalls()
+
         ops.add(Label("_${function.name}"))
 
         // Prologue
-        ops.add(Stp(X29, X30, SP, -16, StpMode.PRE_INDEXED))
+        if (!isLeaf) {
+            ops.add(Stp(X29, X30, SP, -16, StpMode.PRE_INDEXED))
+        }
         ops.add(PushRegsStub) // Push used callee-saved registers
-        ops.add(Mov(X29, SP))
+        if (!isLeaf) {
+            ops.add(Mov(X29, SP))
+        }
         ops.add(SPAllocStub) // Allocate stack space for locals
 
         context.orderedBlocks.forEachIndexed { blockIndex, label ->
@@ -67,9 +75,16 @@ class Arm64AssemblyCompiler(
 
         // Epilogue
         ops.add(context.returnLabel)
-        ops.add(Mov(SP, X29))
+        if (!isLeaf) {
+            ops.add(Mov(SP, X29))
+        } else {
+            // For leaf functions, manually deallocate stack space for locals
+            ops.add(SPDeallocStub)
+        }
         ops.add(PopRegsStub)
-        ops.add(Ldp(X29, X30, SP, 16, StpMode.POST_INDEXED))
+        if (!isLeaf) {
+            ops.add(Ldp(X29, X30, SP, 16, StpMode.POST_INDEXED))
+        }
         ops.add(Ret)
 
         setStackAllocSize()
@@ -95,6 +110,7 @@ class Arm64AssemblyCompiler(
     }
 
     private fun setStackAllocSize() {
+        // Handle allocation stub
         val allocOp = ops.indexOfFirst { it === SPAllocStub }
         check(allocOp >= 0) { "Failed to find stack allocation stub" }
         if (allocator.alignedAllocatedSize == 0) {
@@ -102,10 +118,21 @@ class Arm64AssemblyCompiler(
         } else {
             ops[allocOp] = SubImm(SP, SP, allocator.alignedAllocatedSize)
         }
+
+        // Handle deallocation stub (for leaf functions only)
+        val deallocOp = ops.indexOfFirst { it === SPDeallocStub }
+        if (deallocOp >= 0) {
+            if (allocator.alignedAllocatedSize == 0) {
+                ops.removeAt(deallocOp)
+            } else {
+                ops[deallocOp] = AddImm(SP, SP, allocator.alignedAllocatedSize)
+            }
+        }
     }
 
     companion object {
         private val SPAllocStub = CustomText("<sp allocation of locals>")
+        private val SPDeallocStub = CustomText("<sp deallocation of locals>")
         private val PushRegsStub = CustomText("<save callee-saved registers>")
         private val PopRegsStub = CustomText("<restore callee-saved registers>")
     }

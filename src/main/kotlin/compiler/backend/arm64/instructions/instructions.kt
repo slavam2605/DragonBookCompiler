@@ -26,6 +26,9 @@ class Sub(dst: IntRegister, left: IntRegister, right: IntRegister, shiftKind: Sh
 class SubImm(dst: IntRegister, left: IntRegister, imm12: Int)
     : IntTwoRegImmInstruction("sub", dst, left, imm12.toLong(), ImmKind.IMM12)
 
+class AddImm(dst: IntRegister, left: IntRegister, imm12: Int)
+    : IntTwoRegImmInstruction("add", dst, left, imm12.toLong(), ImmKind.IMM12)
+
 class Mul(dst: X, left: X, right: X)
     : IntRegInstruction("mul", dst, left, right)
 

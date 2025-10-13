@@ -1,21 +1,21 @@
 package compiler.backend.arm64.ops.utils
 
-import compiler.backend.arm64.Adrp
-import compiler.backend.arm64.FMov
-import compiler.backend.arm64.FMovImm
-import compiler.backend.arm64.Instruction
-import compiler.backend.arm64.InstructionUtils
+import compiler.backend.arm64.instructions.Adrp
+import compiler.backend.arm64.instructions.FMov
+import compiler.backend.arm64.instructions.FMovImm
+import compiler.backend.arm64.instructions.Instruction
+import compiler.backend.arm64.instructions.InstructionUtils
 import compiler.backend.arm64.IntRegister
 import compiler.backend.arm64.IntRegister.X
-import compiler.backend.arm64.Ldr
-import compiler.backend.arm64.Mov
-import compiler.backend.arm64.MovBitPattern
-import compiler.backend.arm64.MovK
-import compiler.backend.arm64.MovN
-import compiler.backend.arm64.MovZ
+import compiler.backend.arm64.instructions.Ldr
+import compiler.backend.arm64.instructions.Mov
+import compiler.backend.arm64.instructions.MovBitPattern
+import compiler.backend.arm64.instructions.MovK
+import compiler.backend.arm64.instructions.MovN
+import compiler.backend.arm64.instructions.MovZ
 import compiler.backend.arm64.NativeCompilerContext
 import compiler.backend.arm64.Register.D
-import compiler.backend.arm64.StpMode
+import compiler.backend.arm64.instructions.StpMode
 import java.lang.Double.doubleToLongBits
 import kotlin.ranges.contains
 
@@ -33,7 +33,7 @@ object NumberUtils {
             return ops
         }
         if (value == -1L) {
-            ops.add(MovN(targetReg, 0L, 0))
+            ops.add(MovN(targetReg, 0, 0))
             return ops
         }
 
@@ -55,7 +55,7 @@ object NumberUtils {
             val common4 = longFromSamePart(common)
             if (InstructionUtils.isBitPattern(common4)) {
                 ops.add(MovBitPattern(targetReg, common4))
-                ops.add(MovK(targetReg, parts[diffIndex], 16 * diffIndex))
+                ops.add(MovK(targetReg, parts[diffIndex].toInt(), 16 * diffIndex))
                 return ops
             }
         }
@@ -68,7 +68,7 @@ object NumberUtils {
             if (InstructionUtils.isBitPattern(common4)) {
                 ops.add(MovBitPattern(targetReg, common4))
                 diffIndices.forEach { diffIndex ->
-                    ops.add(MovK(targetReg, parts[diffIndex], 16 * diffIndex))
+                    ops.add(MovK(targetReg, parts[diffIndex].toInt(), 16 * diffIndex))
                 }
                 return ops
             }
@@ -85,7 +85,7 @@ object NumberUtils {
                 else -> ::MovK
             }
             val part = if (useNeg && !isFirstOp) parts[index] else part
-            ops.add(opCtr(targetReg, part, 16 * index))
+            ops.add(opCtr(targetReg, part.toInt(), 16 * index))
             isFirstOp = false
         }
         check(!isFirstOp)

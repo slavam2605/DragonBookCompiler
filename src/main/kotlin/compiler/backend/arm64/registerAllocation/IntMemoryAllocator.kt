@@ -1,6 +1,6 @@
 package compiler.backend.arm64.registerAllocation
 
-import compiler.backend.arm64.Instruction
+import compiler.backend.arm64.instructions.Instruction
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.NativeCompilerContext
 import compiler.frontend.FrontendFunction

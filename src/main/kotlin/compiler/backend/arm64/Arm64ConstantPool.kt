@@ -1,5 +1,8 @@
 package compiler.backend.arm64
 
+import compiler.backend.arm64.instructions.CustomText
+import compiler.backend.arm64.instructions.Instruction
+import compiler.backend.arm64.instructions.Label
 import compiler.utils.NameAllocator
 import statistics.StatsData
 import java.lang.Double.doubleToLongBits

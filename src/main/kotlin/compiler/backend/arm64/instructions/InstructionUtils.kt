@@ -1,4 +1,6 @@
-package compiler.backend.arm64
+package compiler.backend.arm64.instructions
+
+import compiler.backend.arm64.IntRegister
 
 internal object InstructionUtils {
     private val AllowedShiftValues = setOf(0, 16, 32, 48)
@@ -8,11 +10,11 @@ internal object InstructionUtils {
         require(name.matches(LabelNameRegex)) { "Invalid label name: $name" }
     }
 
-    fun checkImm12Value(value: Int) {
+    fun checkImm12Value(value: Long) {
         require(value in 0..4095) { "Invalid value: $value, must be in range 0..4095" }
     }
 
-    fun checkUShortValue(value: Long) {
+    fun checkUShortValue(value: Int) {
         require(value in 0..0xFFFF) { "Invalid value: $value" }
     }
 

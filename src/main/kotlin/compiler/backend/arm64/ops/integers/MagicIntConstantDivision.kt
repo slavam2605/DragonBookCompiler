@@ -1,13 +1,13 @@
 package compiler.backend.arm64.ops.integers
 
-import compiler.backend.arm64.Add
-import compiler.backend.arm64.AsrImm
+import compiler.backend.arm64.instructions.Add
+import compiler.backend.arm64.instructions.AsrImm
 import compiler.backend.arm64.IntRegister
-import compiler.backend.arm64.MSub
+import compiler.backend.arm64.instructions.MSub
 import compiler.backend.arm64.NativeCompilerContext
-import compiler.backend.arm64.SMulh
-import compiler.backend.arm64.ShiftKind
-import compiler.backend.arm64.Sub
+import compiler.backend.arm64.instructions.SMulh
+import compiler.backend.arm64.instructions.ShiftKind
+import compiler.backend.arm64.instructions.Sub
 import compiler.backend.arm64.ops.utils.NumberUtils
 import utils.absIsPowerOfTwo
 import kotlin.math.absoluteValue

@@ -1,6 +1,9 @@
 package compiler.backend.arm64
 
 import compiler.backend.PrepareForNativeCompilation
+import compiler.backend.arm64.instructions.CustomText
+import compiler.backend.arm64.instructions.Instruction
+import compiler.backend.arm64.instructions.Label
 import compiler.frontend.FrontendFunctions
 import compiler.ir.cfg.ControlFlowGraph
 import java.io.File

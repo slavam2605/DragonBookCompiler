@@ -1,6 +1,6 @@
 package compiler.backend.arm64.ops.floats
 
-import compiler.backend.arm64.FMul
+import compiler.backend.arm64.instructions.FMul
 import compiler.backend.arm64.NativeCompilerContext
 import compiler.backend.arm64.Register
 import compiler.backend.arm64.ops.utils.NumberUtils

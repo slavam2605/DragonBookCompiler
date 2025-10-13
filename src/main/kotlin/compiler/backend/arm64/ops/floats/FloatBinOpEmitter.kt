@@ -1,10 +1,10 @@
 package compiler.backend.arm64.ops.floats
 
-import compiler.backend.arm64.FAdd
-import compiler.backend.arm64.FCmp
-import compiler.backend.arm64.FDiv
-import compiler.backend.arm64.FMul
-import compiler.backend.arm64.FSub
+import compiler.backend.arm64.instructions.FAdd
+import compiler.backend.arm64.instructions.FCmp
+import compiler.backend.arm64.instructions.FDiv
+import compiler.backend.arm64.instructions.FMul
+import compiler.backend.arm64.instructions.FSub
 import compiler.backend.arm64.IRPeepholeWindow
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.NativeCompilerContext

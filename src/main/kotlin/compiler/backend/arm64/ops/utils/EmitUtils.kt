@@ -2,6 +2,10 @@ package compiler.backend.arm64.ops.utils
 
 import compiler.backend.arm64.*
 import compiler.backend.arm64.IntRegister.X
+import compiler.backend.arm64.instructions.B
+import compiler.backend.arm64.instructions.BCond
+import compiler.backend.arm64.instructions.CSet
+import compiler.backend.arm64.instructions.ConditionFlag
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind
 import compiler.ir.IRJumpIfTrue

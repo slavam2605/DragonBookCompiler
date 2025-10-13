@@ -1,14 +1,14 @@
 package compiler.backend.arm64.ops.integers
 
-import compiler.backend.arm64.Add
-import compiler.backend.arm64.Cmp
+import compiler.backend.arm64.instructions.Add
+import compiler.backend.arm64.instructions.Cmp
 import compiler.backend.arm64.IRPeepholeWindow
 import compiler.backend.arm64.IntRegister.X
-import compiler.backend.arm64.MSub
-import compiler.backend.arm64.Mul
+import compiler.backend.arm64.instructions.MSub
+import compiler.backend.arm64.instructions.Mul
 import compiler.backend.arm64.NativeCompilerContext
-import compiler.backend.arm64.SDiv
-import compiler.backend.arm64.Sub
+import compiler.backend.arm64.instructions.SDiv
+import compiler.backend.arm64.instructions.Sub
 import compiler.backend.arm64.ops.utils.EmitUtils
 import compiler.ir.IRBinOp
 import compiler.ir.IRBinOpKind

@@ -5,6 +5,15 @@ import compiler.backend.arm64.IntRegister.Companion.X30
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
+import compiler.backend.arm64.instructions.CustomText
+import compiler.backend.arm64.instructions.Instruction
+import compiler.backend.arm64.instructions.Label
+import compiler.backend.arm64.instructions.Ldp
+import compiler.backend.arm64.instructions.Mov
+import compiler.backend.arm64.instructions.Ret
+import compiler.backend.arm64.instructions.Stp
+import compiler.backend.arm64.instructions.StpMode
+import compiler.backend.arm64.instructions.SubImm
 import compiler.backend.arm64.ops.OpsEmitter
 import compiler.backend.arm64.ops.utils.PushPopUtils
 import compiler.backend.arm64.ops.utils.local

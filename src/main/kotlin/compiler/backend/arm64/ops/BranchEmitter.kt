@@ -1,8 +1,8 @@
 package compiler.backend.arm64.ops
 
-import compiler.backend.arm64.B
-import compiler.backend.arm64.CmpImm
-import compiler.backend.arm64.ConditionFlag
+import compiler.backend.arm64.instructions.B
+import compiler.backend.arm64.instructions.CmpImm
+import compiler.backend.arm64.instructions.ConditionFlag
 import compiler.backend.arm64.IntRegister.Companion.D0
 import compiler.backend.arm64.IntRegister.Companion.X0
 import compiler.backend.arm64.IntRegister.X

@@ -1,6 +1,7 @@
 package compiler.backend.arm64.registerAllocation
 
 import compiler.backend.arm64.*
+import compiler.backend.arm64.instructions.Instruction
 import compiler.frontend.FrontendFunction
 import compiler.ir.IRType
 import compiler.ir.IRValue

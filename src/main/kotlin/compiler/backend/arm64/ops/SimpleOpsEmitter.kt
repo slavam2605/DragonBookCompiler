@@ -1,13 +1,13 @@
 package compiler.backend.arm64.ops
 
-import compiler.backend.arm64.CSet
-import compiler.backend.arm64.CmpImm
-import compiler.backend.arm64.ConditionFlag
-import compiler.backend.arm64.Fcvtzs
+import compiler.backend.arm64.instructions.CSet
+import compiler.backend.arm64.instructions.CmpImm
+import compiler.backend.arm64.instructions.ConditionFlag
+import compiler.backend.arm64.instructions.Fcvtzs
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.NativeCompilerContext
 import compiler.backend.arm64.Register.D
-import compiler.backend.arm64.Scvtf
+import compiler.backend.arm64.instructions.Scvtf
 import compiler.backend.arm64.ops.utils.CopyUtils
 import compiler.ir.IRAssign
 import compiler.ir.IRConvert

@@ -4,6 +4,12 @@ import compiler.backend.arm64.*
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
+import compiler.backend.arm64.instructions.Instruction
+import compiler.backend.arm64.instructions.Ldp
+import compiler.backend.arm64.instructions.Ldr
+import compiler.backend.arm64.instructions.Stp
+import compiler.backend.arm64.instructions.StpMode
+import compiler.backend.arm64.instructions.Str
 
 object PushPopUtils {
     fun fillPairs(

@@ -5,16 +5,7 @@ import compiler.backend.arm64.IntRegister.Companion.X30
 import compiler.backend.arm64.IntRegister.SP
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.Register.D
-import compiler.backend.arm64.instructions.AddImm
-import compiler.backend.arm64.instructions.CustomText
-import compiler.backend.arm64.instructions.Instruction
-import compiler.backend.arm64.instructions.Label
-import compiler.backend.arm64.instructions.Ldp
-import compiler.backend.arm64.instructions.Mov
-import compiler.backend.arm64.instructions.Ret
-import compiler.backend.arm64.instructions.Stp
-import compiler.backend.arm64.instructions.StpMode
-import compiler.backend.arm64.instructions.SubImm
+import compiler.backend.arm64.instructions.*
 import compiler.backend.arm64.ops.OpsEmitter
 import compiler.backend.arm64.ops.utils.PushPopUtils
 import compiler.backend.arm64.ops.utils.local
@@ -52,10 +43,7 @@ class Arm64AssemblyCompiler(
         ops.add(Label("_${function.name}"))
 
         // Prologue
-        if (!isLeaf) {
-            ops.add(Stp(X29, X30, SP, -16, StpMode.PRE_INDEXED))
-        }
-        ops.add(PushRegsStub) // Push used callee-saved registers
+        ops.add(PushRegsStub) // Push used callee-saved registers (includes x29/x30 for non-leaf)
         if (!isLeaf) {
             ops.add(Mov(X29, SP))
         }
@@ -81,18 +69,21 @@ class Arm64AssemblyCompiler(
             // For leaf functions, manually deallocate stack space for locals
             ops.add(SPDeallocStub)
         }
-        ops.add(PopRegsStub)
-        if (!isLeaf) {
-            ops.add(Ldp(X29, X30, SP, 16, StpMode.POST_INDEXED))
-        }
+        ops.add(PopRegsStub) // Pop callee-saved registers (includes x29/x30 for non-leaf)
         ops.add(Ret)
 
         setStackAllocSize()
-        setPushPopRegs()
+        setPushPopRegs(isLeaf)
     }
 
-    private fun setPushPopRegs() {
+    private fun setPushPopRegs(isLeaf: Boolean) {
         val regPairs = mutableListOf<Pair<Register, Register?>>()
+
+        // For non-leaf functions, x29/x30 must be saved first
+        if (!isLeaf) {
+            regPairs.add(X29 to X30)
+        }
+
         PushPopUtils.fillPairs(regPairs, allocator.usedRegisters(X::class.java), X.CalleeSaved)
         PushPopUtils.fillPairs(regPairs, allocator.usedRegisters(D::class.java), D.CalleeSaved)
 

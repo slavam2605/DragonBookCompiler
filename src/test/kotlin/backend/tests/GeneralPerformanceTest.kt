@@ -8,21 +8,21 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun ackermannTest() = runPerformanceTest(
         sourceFile = "performance_tests/ackermann/ackermann.txt",
         nativeRunner = "performance_tests/ackermann/runner.cpp",
-        expectedPerformance = 0.78
+        expectedPerformance = 0.81
     )
 
     @TestFactory
     fun countPrimesTest() = runPerformanceTest(
         sourceFile = "performance_tests/count_primes/count_primes.txt",
         nativeRunner = "performance_tests/count_primes/runner.cpp",
-        expectedPerformance = 0.82
+        expectedPerformance = 0.84
     )
 
     @TestFactory
     fun monteCarloTest() = runPerformanceTest(
         sourceFile = "performance_tests/monte_carlo_pi/monte_carlo_pi.txt",
         nativeRunner = "performance_tests/monte_carlo_pi/runner.cpp",
-        expectedPerformance = 0.59
+        expectedPerformance = 0.60
     )
 
     @TestFactory

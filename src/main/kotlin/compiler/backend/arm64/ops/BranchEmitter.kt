@@ -29,7 +29,7 @@ class BranchEmitter(private val context: NativeCompilerContext) {
             return
         }
 
-        context.ops.add(B(node.target.local()))
+        context.ops.add(B(node.target.local(context.function.name)))
     }
 
     fun emitRet(node: IRReturn) {

@@ -24,9 +24,10 @@ object EmitUtils {
     }
 
     fun insertBranches(context: NativeCompilerContext, flag: ConditionFlag, trueTarget: IRLabel, falseTarget: IRLabel) {
-        val nextLabel = context.orderedBlocks.getOrNull(context.currentBlockIndex + 1)?.local() ?: context.returnLabel.name
-        val trueLabel = trueTarget.local()
-        val falseLabel = falseTarget.local()
+        val functionName = context.function.name
+        val nextLabel = context.orderedBlocks.getOrNull(context.currentBlockIndex + 1)?.local(functionName) ?: context.returnLabel.name
+        val trueLabel = trueTarget.local(functionName)
+        val falseLabel = falseTarget.local(functionName)
 
         when (nextLabel) {
             trueLabel -> {
@@ -55,4 +56,4 @@ fun IRBinOpKind.toConditionFlag(): ConditionFlag {
     }
 }
 
-fun IRLabel.local() = ".$name"
+fun IRLabel.local(functionName: String) = ".${functionName}_$name"

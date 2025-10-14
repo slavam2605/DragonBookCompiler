@@ -3,10 +3,12 @@ package compiler.backend.arm64
 import compiler.backend.arm64.instructions.Instruction
 import compiler.backend.arm64.instructions.Label
 import compiler.backend.arm64.registerAllocation.CompositeRegisterAllocator
+import compiler.frontend.FrontendFunction
 import compiler.ir.IRLabel
 import compiler.ir.cfg.ControlFlowGraph
 
 class NativeCompilerContext(
+    val function: FrontendFunction<*>,
     val cfg: ControlFlowGraph,
     val ops: MutableList<Instruction>,
     val constPool: Arm64ConstantPool,

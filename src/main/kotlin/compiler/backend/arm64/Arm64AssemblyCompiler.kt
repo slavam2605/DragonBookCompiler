@@ -20,6 +20,7 @@ class Arm64AssemblyCompiler(
     private val ops: MutableList<Instruction>
 ) {
     private val context = NativeCompilerContext(
+        function = function,
         cfg = function.value,
         ops = ops,
         constPool = constPool,
@@ -51,7 +52,7 @@ class Arm64AssemblyCompiler(
 
         context.orderedBlocks.forEachIndexed { blockIndex, label ->
             if (label != cfg.root) {
-                ops.add(Label(label.local()))
+                ops.add(Label(label.local(function.name)))
             }
 
             context.currentBlockIndex = blockIndex

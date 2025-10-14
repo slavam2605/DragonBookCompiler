@@ -10,6 +10,7 @@ import compiler.ir.IRSource
 import compiler.ir.IRVar
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.utils.advanceAfterAllLabels
 import compiler.utils.NameAllocator
 
 class ConvertFromSSA(private val ssa: SSAControlFlowGraph) {
@@ -197,10 +198,8 @@ class ConvertFromSSA(private val ssa: SSAControlFlowGraph) {
     }
 
     private fun uniqueLabelAllocator(cfg: ControlFlowGraph): NameAllocator {
-        val allocator = NameAllocator("L")
-        cfg.blocks.keys.forEach {
-            allocator.advanceAfter(it.name)
+        return NameAllocator("L").also {
+            it.advanceAfterAllLabels(cfg)
         }
-        return allocator
     }
 }

@@ -3,6 +3,7 @@ package compiler.backend
 import compiler.ir.*
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.utils.advanceAfterAllVars
 import compiler.utils.NameAllocator
 
 /**
@@ -34,11 +35,7 @@ private class InsertExplicitCopiesForReturnValues(private val cfg: ControlFlowGr
 
     init {
         // Initialize allocator to avoid name conflicts
-        cfg.blocks.values.forEach { block ->
-            block.irNodes.forEach { node ->
-                node.lvalue?.let { varAllocator.advanceAfter(it.name) }
-            }
-        }
+        varAllocator.advanceAfterAllVars(cfg)
     }
 
     fun run(): ControlFlowGraph {

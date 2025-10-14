@@ -56,7 +56,10 @@ open class ControlFlowGraph(
     }
 
     fun transform(transformer: IRTransformer): ControlFlowGraph {
-        return new(root, blocks.mapValues { (_, block) -> block.transform(transformer) })
+        return new(root, blocks.mapValues { (label, block) ->
+            transformer.startBlock(label)
+            block.transform(transformer)
+        })
     }
 
     override fun equals(other: Any?): Boolean {

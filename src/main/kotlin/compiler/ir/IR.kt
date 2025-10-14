@@ -70,7 +70,12 @@ data class IRPhi(val result: IRVar, val sources: List<IRSource>) : IRNode {
     override fun rvalues() = sources.map { it.value }
     override fun transform(transformer: IRTransformer) = IRPhi(
         transformer.transformLValue(result),
-        sources.mapIndexed { index, (from, value) -> IRSource(from, transformer.transformRValue(this, index, value)) }
+        sources.mapIndexed { index, (from, value) ->
+            IRSource(
+                if (transformer.transformPhiSourceLabels) transformer.transformLabel(from) else from,
+                transformer.transformRValue(this, index, value)
+            )
+        }
     )
 
     fun getSourceValue(from: IRLabel): IRValue {

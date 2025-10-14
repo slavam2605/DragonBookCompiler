@@ -14,14 +14,12 @@ class CFGBlock(val irNodes: List<IRNode>) {
      */
     fun transform(transformer: IRTransformer, sourceMap: SourceLocationMap? = null) =
         CFGBlock(irNodes.flatMap { oldNode ->
-            val transformNode = transformer.transformNode(oldNode)
-            transformNode.map {
-                it.transform(transformer).also { newNode ->
-                    if (sourceMap != null) {
-                        sourceMap[oldNode]?.let { sourceMap[newNode] = it }
-                    }
+            val newNode = oldNode.transform(transformer).also { newNode ->
+                if (sourceMap != null) {
+                    sourceMap[oldNode]?.let { sourceMap[newNode] = it }
                 }
             }
+            transformer.transformNode(newNode)
         })
 
     override fun equals(other: Any?): Boolean {

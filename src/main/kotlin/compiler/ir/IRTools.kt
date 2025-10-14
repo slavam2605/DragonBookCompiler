@@ -1,6 +1,10 @@
 package compiler.ir
 
 interface IRTransformer {
+    val transformPhiSourceLabels: Boolean
+
+    fun startBlock(label: IRLabel)
+
     fun transformNode(node: IRNode): List<IRNode>
 
     fun transformLValue(value: IRVar): IRVar
@@ -11,6 +15,10 @@ interface IRTransformer {
 }
 
 abstract class BaseIRTransformer : IRTransformer {
+    override val transformPhiSourceLabels: Boolean = false
+
+    override fun startBlock(label: IRLabel) {}
+
     override fun transformNode(node: IRNode): List<IRNode> = listOf(node)
 
     override fun transformLValue(value: IRVar): IRVar = value

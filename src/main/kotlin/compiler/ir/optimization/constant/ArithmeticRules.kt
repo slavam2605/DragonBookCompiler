@@ -20,6 +20,8 @@ object ArithmeticRules {
 
     private fun IRValue.isOne() = asInt() == 1L || asFloat() == 1.0
 
+    private fun IRValue.isTwo() = asInt() == 2L || asFloat() == 2.0
+
     private fun IRValue.typedZero() = when (type) {
         IRType.INT64 -> IRInt(0L)
         IRType.FLOAT64 -> IRFloat(0.0)
@@ -52,9 +54,8 @@ object ArithmeticRules {
                     node.left.isZero() || node.right.isZero() -> node.toAssign(node.left.typedZero())
                     node.left.isOne() -> node.toAssignCast(node.right)
                     node.right.isOne() -> node.toAssignCast(node.left)
-                    // TODO maybe should be replaced by strength reduction
-                    node.left.asInt() == 2L -> IRBinOp(IRBinOpKind.ADD, node.result, node.right, node.right)
-                    node.right.asInt() == 2L -> IRBinOp(IRBinOpKind.ADD, node.result, node.left, node.left)
+                    node.left.isTwo() -> IRBinOp(IRBinOpKind.ADD, node.result, node.right, node.right)
+                    node.right.isTwo() -> IRBinOp(IRBinOpKind.ADD, node.result, node.left, node.left)
                     else -> null
                 }
                 IRBinOpKind.DIV -> when {

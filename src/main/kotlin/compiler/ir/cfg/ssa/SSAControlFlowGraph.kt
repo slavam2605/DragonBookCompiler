@@ -15,7 +15,7 @@ import compiler.ir.cfg.utils.reachableFrom
  * Special marker implementation of [compiler.ir.cfg.ControlFlowGraph] that guarantees that it is in SSA form.
  */
 class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : ControlFlowGraph(root, blocks) {
-    override fun new(root: IRLabel, blocks: Map<IRLabel, CFGBlock>): ControlFlowGraph {
+    override fun new(root: IRLabel, blocks: Map<IRLabel, CFGBlock>): SSAControlFlowGraph {
         return SSAControlFlowGraph(root, blocks)
     }
 

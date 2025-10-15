@@ -57,3 +57,4 @@ fun IRBinOpKind.toConditionFlag(): ConditionFlag {
 }
 
 fun IRLabel.local(functionName: String) = ".${functionName}_$name"
+    .replace("[^a-zA-Z0-9_.]".toRegex(), "_")

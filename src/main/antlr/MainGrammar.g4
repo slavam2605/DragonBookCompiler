@@ -11,7 +11,15 @@ program
     ;
 
 function
-    : FUN ID LPAR functionParameters? RPAR (ARROW type)? block
+    : annotations? FUN ID LPAR functionParameters? RPAR (ARROW type)? block
+    ;
+
+annotations
+    : HASH LBRACKET annotationList? RBRACKET
+    ;
+
+annotationList
+    : ID (COMMA ID)*
     ;
 
 functionParameters

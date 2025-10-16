@@ -35,6 +35,9 @@ LPAR : '(' ;
 RPAR : ')' ;
 LBRACE : '{' ;
 RBRACE : '}' ;
+LBRACKET : '[' ;
+RBRACKET : ']' ;
+HASH : '#' ;
 
 // Comparison operators
 EQUAL : '==' ;

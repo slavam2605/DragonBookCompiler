@@ -54,11 +54,16 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
 
             check(resultIR.isEmpty())
             visit(ctx.block())
+
+            // Parse annotations
+            val annotations = ctx.annotations()?.annotationList()?.ID()?.map { it.text }?.toSet() ?: emptySet()
+
             result.addFunction(FrontendFunction(
                 name = ctx.ID().text,
                 parameters = parameters,
                 hasReturnType = ctx.type() != null,
                 endLocation = ctx.block().RBRACE().asLocation(),
+                annotations = annotations,
                 value = resultIR.toList()
             ))
             resultIR.clear()

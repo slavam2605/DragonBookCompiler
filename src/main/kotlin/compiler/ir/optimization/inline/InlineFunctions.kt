@@ -24,6 +24,12 @@ class InlineFunctions(private val ffs: FrontendFunctions<SSAControlFlowGraph>) {
     }
 
     private fun isFunctionInlinable(fn: FrontendFunction<SSAControlFlowGraph>): Boolean {
+        // Respect noinline annotation
+        if (fn.hasAnnotation("noinline")) {
+            return false
+        }
+
+        // Check size heuristic
         return fn.value.irNodesCount() <= 20
     }
 }

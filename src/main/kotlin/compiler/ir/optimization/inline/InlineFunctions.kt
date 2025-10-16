@@ -2,6 +2,7 @@ package compiler.ir.optimization.inline
 
 import compiler.frontend.FrontendFunction
 import compiler.frontend.FrontendFunctions
+import compiler.frontend.FrontendFunctions.Companion.callGraph
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.cfg.utils.hasFunctionCalls
 import compiler.ir.cfg.utils.irNodesCount
@@ -9,10 +10,23 @@ import compiler.ir.cfg.utils.irNodesCount
 class InlineFunctions(private val ffs: FrontendFunctions<SSAControlFlowGraph>) {
     private val inlinableFunctions = ffs.values
         .filter { isFunctionInlinable(it) }
-        .associateBy { it.name }
+        .associateByTo(mutableMapOf()) { it.name }
 
     fun run(): FrontendFunctions<SSAControlFlowGraph> {
-        return ffs.map { inlineFunctionCalls(it.value) }
+        val processedFunctions = mutableMapOf<String, SSAControlFlowGraph>()
+
+        val order = ffs.callGraph().getSCCsInTopologicalOrder()
+        for (scc in order) {
+            for (fnName in scc) {
+                val cfg = processedFunctions[fnName] ?: ffs[fnName]!!.value
+                val inlinedCfg = inlineFunctionCalls(cfg)
+                processedFunctions[fnName] = inlinedCfg
+                if (fnName in inlinableFunctions) {
+                    inlinableFunctions[fnName] = inlinableFunctions[fnName]!!.map { inlinedCfg }
+                }
+            }
+        }
+        return ffs.map { processedFunctions[it.name]!! }
     }
 
     private fun inlineFunctionCalls(cfg: SSAControlFlowGraph): SSAControlFlowGraph {

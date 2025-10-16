@@ -1,9 +1,11 @@
 package compiler.frontend
 
 import compiler.ir.IRVar
+import compiler.ir.cfg.ControlFlowGraph
 
 class FrontendFunctions<T> {
     private val functions = mutableMapOf<String, FrontendFunction<T>>()
+    private var callGraph: CallGraph<T>? = null
 
     val values: List<FrontendFunction<T>>
         get() = functions.values.toList()
@@ -18,17 +20,8 @@ class FrontendFunctions<T> {
 
     fun <R> map(transform: (FrontendFunction<T>) -> R): FrontendFunctions<R> {
         return FrontendFunctions<R>().also { newFunctions ->
-            functions.forEach { (name, function) ->
-                newFunctions.addFunction(
-                    FrontendFunction(
-                        name = name,
-                        parameters = function.parameters,
-                        hasReturnType = function.hasReturnType,
-                        endLocation = function.endLocation,
-                        annotations = function.annotations,
-                        value = transform(function)
-                    )
-                )
+            functions.forEach { (_, function) ->
+                newFunctions.addFunction(function.map(transform))
             }
         }
     }
@@ -44,6 +37,17 @@ class FrontendFunctions<T> {
             println()
         }
     }
+
+    companion object {
+        fun <T> FrontendFunctions<T>.callGraph(cfgGetter: (T) -> ControlFlowGraph): CallGraph<T> {
+            if (callGraph != null) return callGraph!!
+            return CallGraph(this, cfgGetter).also {
+                callGraph = it
+            }
+        }
+
+        fun <T : ControlFlowGraph> FrontendFunctions<T>.callGraph(): CallGraph<T> = callGraph { it }
+    }
 }
 
 class FrontendFunction<T>(
@@ -55,4 +59,13 @@ class FrontendFunction<T>(
     val value: T
 ) {
     fun hasAnnotation(annotation: String): Boolean = annotation in annotations
+
+    fun <R> map(transformer: (FrontendFunction<T>) -> R): FrontendFunction<R> = FrontendFunction(
+        name = name,
+        parameters = parameters,
+        hasReturnType = hasReturnType,
+        endLocation = endLocation,
+        annotations = annotations,
+        value = transformer(this)
+    )
 }

@@ -12,6 +12,7 @@ import compiler.ir.optimization.EqualityPropagation
 import compiler.ir.optimization.clean.CleanCFG
 import compiler.ir.optimization.constant.ConditionalJumpValues
 import compiler.ir.optimization.constant.SparseConditionalConstantPropagation
+import compiler.ir.optimization.inline.InlineFunctions
 import compiler.ir.optimization.valueNumbering.GlobalValueNumbering
 
 object FrontendCompilationFlow {
@@ -36,10 +37,17 @@ object FrontendCompilationFlow {
     }
 
     fun optimizeSSA(ssaFunctions: FrontendFunctions<SSAControlFlowGraph>): FrontendFunctions<SSAControlFlowGraph> {
-        return ssaFunctions.map { function ->
-            val cpList = mutableListOf<SparseConditionalConstantPropagation>()
-            val equalityList = mutableListOf<EqualityPropagation>()
+        val step1 = ssaFunctions.optimizeEachFunction()
+        val step2 = InlineFunctions(step1).run()
+        return step2.optimizeEachFunction()
+    }
 
+    fun convertFromSSA(ssaFunctions: FrontendFunctions<SSAControlFlowGraph>): FrontendFunctions<ControlFlowGraph> {
+        return ssaFunctions.map { ConvertFromSSA(it.value).run() }
+    }
+
+    private fun FrontendFunctions<SSAControlFlowGraph>.optimizeEachFunction(): FrontendFunctions<SSAControlFlowGraph> {
+        return map { function ->
             // Initial clean pass to remove unreachable blocks
             var currentStep = CleanCFG.invoke(function.value) as SSAControlFlowGraph
             var changed = true
@@ -48,16 +56,10 @@ object FrontendCompilationFlow {
                 stepIndex++
                 val initialStep = currentStep
 
-                currentStep = SparseConditionalConstantPropagation(currentStep, function.parameters).let {
-                    cpList.add(it)
-                    it.run()
-                }
+                currentStep = SparseConditionalConstantPropagation(currentStep, function.parameters).run()
                 currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
                 currentStep = GlobalValueNumbering(currentStep).run()
-                currentStep = EqualityPropagation(currentStep).let {
-                    equalityList.add(it)
-                    it.invoke()
-                }
+                currentStep = EqualityPropagation(currentStep).invoke()
                 currentStep = ConditionalJumpValues(currentStep).run()
 
                 changed = initialStep !== currentStep
@@ -65,9 +67,5 @@ object FrontendCompilationFlow {
 
             currentStep
         }
-    }
-
-    fun convertFromSSA(ssaFunctions: FrontendFunctions<SSAControlFlowGraph>): FrontendFunctions<ControlFlowGraph> {
-        return ssaFunctions.map { ConvertFromSSA(it.value).run() }
     }
 }

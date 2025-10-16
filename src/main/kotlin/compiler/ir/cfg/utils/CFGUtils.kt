@@ -3,6 +3,7 @@ package compiler.ir.cfg.utils
 import compiler.ir.IRFunctionCall
 import compiler.ir.IRLabel
 import compiler.ir.IRPhi
+import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.utils.NameAllocator
 
@@ -29,9 +30,15 @@ fun ControlFlowGraph.reachableFrom(start: IRLabel): Set<IRLabel> {
     return visited
 }
 
-fun ControlFlowGraph.hasFunctionCalls(): Boolean {
+fun ControlFlowGraph.hasFunctionCalls(filter: (IRFunctionCall) -> Boolean = { true }): Boolean {
     return blocks.values.any { block ->
-        block.irNodes.any { it is IRFunctionCall }
+        block.irNodes.any { it is IRFunctionCall && filter(it) }
+    }
+}
+
+fun ControlFlowGraph.irNodesCount(): Int {
+    return blocks.values.sumOf { it.irNodes.size }
+}
 
 fun NameAllocator.advanceAfterAllLabels(cfg: ControlFlowGraph) {
     cfg.blocks.keys.forEach {
@@ -43,6 +50,9 @@ fun NameAllocator.advanceAfterAllVars(cfg: ControlFlowGraph) {
     cfg.blocks.values.forEach { block ->
         block.irNodes.forEach { node ->
             node.lvalue?.let { advanceAfter(it.name) }
+            node.rvalues().filterIsInstance<IRVar>().forEach {
+                advanceAfter(it.name)
+            }
         }
     }
 }

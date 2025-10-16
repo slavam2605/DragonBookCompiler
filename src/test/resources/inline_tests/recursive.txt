@@ -1,0 +1,22 @@
+// Test that recursive functions are not inlined many times
+fun factorial(int n) -> int {
+    if (n <= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+
+fun helper(int x) -> int {
+    return x + 1
+}
+
+fun test_main() {
+    // Recursive function should NOT be inlined 5 times
+    int a = factorial(5)
+    assertEquals(a, 120)
+    assertStaticUnknown(a)
+
+    // Non-recursive helper should be inlined
+    int b = helper(10)
+    assertStaticEquals(b, 11)
+}

@@ -1,0 +1,18 @@
+// Test function with multiple return paths creating phi-nodes
+fun max(int a, int b) -> int {
+    if (a > b) {
+        return a
+    }
+    return b
+}
+
+fun test_main() {
+    int x = max(10, 20)
+    assertStaticEquals(x, 20)
+
+    int y = max(30, 15)
+    assertStaticEquals(y, 30)
+
+    int z = max(5, 5)
+    assertStaticEquals(z, 5)
+}

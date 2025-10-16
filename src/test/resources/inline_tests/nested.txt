@@ -1,0 +1,20 @@
+// Test nested inlining: A calls B, B calls C
+fun innermost(int x) -> int {
+    return x + 1
+}
+
+fun middle(int x) -> int {
+    return innermost(x) * 2
+}
+
+fun outer(int x) -> int {
+    return middle(x) + 10
+}
+
+fun test_main() {
+    int result = outer(5)
+    // outer(5) = middle(5) + 10
+    // middle(5) = innermost(5) * 2 = 6 * 2 = 12
+    // result = 12 + 10 = 22
+    assertStaticEquals(result, 22)
+}

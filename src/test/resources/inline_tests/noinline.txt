@@ -1,0 +1,20 @@
+// Test that #[noinline] annotation prevents inlining
+#[noinline]
+fun noInlineFunc(int x) -> int {
+    return x * 2
+}
+
+fun inlineFunc(int x) -> int {
+    return x * 3
+}
+
+fun test_main() {
+    // This should NOT be inlined due to annotation
+    int a = noInlineFunc(10)
+    assertEquals(a, 20)
+    assertStaticUnknown(a)
+
+    // This should be inlined and optimized
+    int b = inlineFunc(10)
+    assertStaticEquals(b, 30)
+}

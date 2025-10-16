@@ -1,0 +1,19 @@
+// Test that updatePhiSources is implemented correctly for inlining
+fun abs(int x) -> int {
+    if (x < 0) {
+        return -x
+    }
+    return x
+}
+
+fun test_main() {
+    int x
+    if (undef(true)) {
+        abs(undef(1))
+        x = abs(undef(1))
+    } else {
+        abs(undef(-1))
+        x = abs(undef(-1))
+    }
+    assertEquals(x, 1)
+}

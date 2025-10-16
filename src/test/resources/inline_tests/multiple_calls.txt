@@ -1,0 +1,18 @@
+// Test multiple calls to same function in sequence
+fun square(int x) -> int {
+    return x * x
+}
+
+fun test_main() {
+    int a = square(3)
+    int b = square(4)
+    int c = square(5)
+
+    assertStaticEquals(a, 9)
+    assertStaticEquals(b, 16)
+    assertStaticEquals(c, 25)
+
+    // Also test in expressions
+    int sum = square(2) + square(3)
+    assertStaticEquals(sum, 13)
+}

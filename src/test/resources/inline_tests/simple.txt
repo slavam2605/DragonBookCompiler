@@ -1,0 +1,12 @@
+// Test simple function inlining with return value
+fun add(int a, int b) -> int {
+    return a + b
+}
+
+fun test_main() {
+    int x = add(10, 20)
+    assertStaticEquals(x, 30)
+
+    int y = add(5, 15)
+    assertStaticEquals(y, 20)
+}

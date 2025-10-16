@@ -1,0 +1,31 @@
+// Test parameter passing and variable renaming during inlining
+fun compute(int a, int b, int c) -> int {
+    int temp = a + b
+    int result = temp * c
+    return result
+}
+
+fun swap_params(int x, int y) -> int {
+    // Tests that parameter order matters
+    return x - y
+}
+
+fun test_main() {
+    // Test with constants - should be fully optimized
+    int r1 = compute(2, 3, 4)
+    assertStaticEquals(r1, 20)  // (2 + 3) * 4 = 20
+
+    // Test parameter order
+    int r2 = swap_params(10, 3)
+    assertStaticEquals(r2, 7)
+
+    int r3 = swap_params(3, 10)
+    assertStaticEquals(r3, -7)
+
+    // Test that variable names don't conflict
+    int a = 5
+    int b = 6
+    int c = 2
+    int r4 = compute(a, b, c)
+    assertStaticEquals(r4, 22)  // (5 + 6) * 2 = 22
+}

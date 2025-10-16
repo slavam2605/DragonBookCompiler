@@ -137,7 +137,7 @@ abstract class BaseInterpreter<T>(
          * Maximum number of steps to execute before stopping interpretation of the program.
          * Used to prevent infinite loops in the program.
          */
-        private const val MAX_STEPS = 1_000_000
+        private const val MAX_STEPS = 100_000_000
 
         @JvmStatic
         protected val DEFAULT_FUNCTION_HANDLER: (String, List<FrontendConstantValue>) -> FrontendConstantValue = { name, _ ->

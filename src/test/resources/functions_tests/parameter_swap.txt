@@ -1,15 +1,19 @@
+#[noinline]
 fun first(int a, int b) -> int {
     return a;
 }
 
+#[noinline]
 fun second(int a, int b) -> int {
     return b;
 }
 
+#[noinline]
 fun swap_first(int a, int b) -> int {
     return first(b, a);
 }
 
+#[noinline]
 fun swap_second(int a, int b) -> int {
     return second(b, a);
 }

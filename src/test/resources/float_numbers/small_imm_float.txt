@@ -1,5 +1,6 @@
 // constant_pool_size: 0
 
+#[noinline]
 fun foo(float x) {}
 
 fun test_main() {

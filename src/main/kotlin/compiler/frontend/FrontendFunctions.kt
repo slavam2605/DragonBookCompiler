@@ -25,6 +25,7 @@ class FrontendFunctions<T> {
                         parameters = function.parameters,
                         hasReturnType = function.hasReturnType,
                         endLocation = function.endLocation,
+                        annotations = function.annotations,
                         value = transform(function)
                     )
                 )
@@ -50,5 +51,8 @@ class FrontendFunction<T>(
     val parameters: List<IRVar>,
     val hasReturnType: Boolean,
     val endLocation: SourceLocation,
+    val annotations: Set<String>,
     val value: T
-)
+) {
+    fun hasAnnotation(annotation: String): Boolean = annotation in annotations
+}

@@ -1,3 +1,4 @@
+#[noinline]
 fun foo() -> float {
     return 1.2;
 }

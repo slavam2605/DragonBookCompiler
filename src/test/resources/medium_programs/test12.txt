@@ -43,4 +43,5 @@ fun test_main() {
     }
 }
 
+#[noinline]
 fun foo(int a, int b) {}

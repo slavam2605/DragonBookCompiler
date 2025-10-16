@@ -8,7 +8,7 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun ackermannTest() = runPerformanceTest(
         sourceFile = "performance_tests/ackermann/ackermann.txt",
         nativeRunner = "performance_tests/ackermann/runner.cpp",
-        expectedPerformance = 0.81
+        expectedPerformance = 1.5
     )
 
     @TestFactory
@@ -29,7 +29,7 @@ class GeneralPerformanceTest : PerformanceTestBase() {
     fun newtonSqrtTest() = runPerformanceTest(
         sourceFile = "performance_tests/newton_sqrt/newton_sqrt.txt",
         nativeRunner = "performance_tests/newton_sqrt/runner.cpp",
-        expectedPerformance = 0.77
+        expectedPerformance = 0.92
     )
 
     @TestFactory

@@ -3,6 +3,7 @@ package compiler.ir.optimization.inline
 import compiler.frontend.FrontendFunction
 import compiler.frontend.FrontendFunctions
 import compiler.frontend.FrontendFunctions.Companion.callGraph
+import compiler.frontend.isNoInline
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.cfg.utils.hasFunctionCalls
 import compiler.ir.cfg.utils.irNodesCount
@@ -39,7 +40,7 @@ class InlineFunctions(private val ffs: FrontendFunctions<SSAControlFlowGraph>) {
 
     private fun isFunctionInlinable(fn: FrontendFunction<SSAControlFlowGraph>): Boolean {
         // Respect noinline annotation
-        if (fn.hasAnnotation("noinline")) {
+        if (fn.isNoInline()) {
             return false
         }
 

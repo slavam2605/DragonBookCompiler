@@ -49,7 +49,7 @@ object FrontendCompilationFlow {
     private fun FrontendFunctions<SSAControlFlowGraph>.optimizeEachFunction(): FrontendFunctions<SSAControlFlowGraph> {
         return map { function ->
             // Initial clean pass to remove unreachable blocks
-            var currentStep = CleanCFG.invoke(function.value) as SSAControlFlowGraph
+            var currentStep = CleanCFG.invoke(function.value, this) as SSAControlFlowGraph
             var changed = true
             var stepIndex = 0
             while (changed) {
@@ -57,7 +57,7 @@ object FrontendCompilationFlow {
                 val initialStep = currentStep
 
                 currentStep = SparseConditionalConstantPropagation(currentStep, function.parameters).run()
-                currentStep = CleanCFG.invoke(currentStep) as SSAControlFlowGraph
+                currentStep = CleanCFG.invoke(currentStep, this) as SSAControlFlowGraph
                 currentStep = GlobalValueNumbering(currentStep).run()
                 currentStep = EqualityPropagation(currentStep).invoke()
                 currentStep = ConditionalJumpValues(currentStep).run()

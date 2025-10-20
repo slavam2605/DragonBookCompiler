@@ -67,3 +67,5 @@ fun test_main() {
     assertEquals(calculate_div(9223372036854775807), 9009331306168050958);
     assertEquals(calculate_div(-9223372036854775808), -9009331306168050974);
 }
+
+// external_calls: 42

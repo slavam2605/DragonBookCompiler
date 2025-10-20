@@ -56,3 +56,5 @@ fun test_main() {
     testCase(-100.0, 100.0);
     testCase(400.0, 1000.0);
 }
+
+// external_calls: 30

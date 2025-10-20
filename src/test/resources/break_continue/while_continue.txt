@@ -11,3 +11,5 @@ fun test_main() {
     int result = sum
     assertEquals(result, 9)
 }
+
+// external_calls: 1

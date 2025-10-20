@@ -30,3 +30,5 @@ fun test_main() {
     assertFloatEquals(factorial(19.0), 1.21645100408832e17)
     assertFloatEquals(factorial(20.0), 2.43290200817664e18)
 }
+
+// external_calls: 21

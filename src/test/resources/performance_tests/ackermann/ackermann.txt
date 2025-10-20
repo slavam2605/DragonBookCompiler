@@ -44,3 +44,6 @@ fun test_main() {
     int sum = compute_ackermann_sum(3, 8);
     assertEquals(sum, 4259);
 }
+
+
+// external_calls: 12

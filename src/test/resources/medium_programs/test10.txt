@@ -39,3 +39,5 @@ fun test_main() {
     }
     assertEquals(odd, 1 + 3 + 5);
 }
+
+// external_calls: 5

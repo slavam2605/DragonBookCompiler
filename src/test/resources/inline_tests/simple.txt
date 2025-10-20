@@ -10,3 +10,5 @@ fun test_main() {
     int y = add(5, 15)
     assertStaticEquals(y, 20)
 }
+
+// external_calls: 2

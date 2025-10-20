@@ -29,12 +29,15 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
             val expectedErrors = parseExpectedErrors(testProgram)
             val expectedMemoryAllocations = parseExpectedMemoryAllocation(testProgram)
             val expectedConstantPoolStats = parseExpectedConstantPoolStats(testProgram)
+            val expectedExternalCalls = parseExpectedExternalCalls(testProgram)
 
             val visitedErrors = mutableSetOf<ExpectedError>()
             try {
+                resetExternalCallCount()
                 val result = compileAndRun(mode, testProgram)
                 assertMemoryAllocation(mode, expectedMemoryAllocations)
                 assertConstantPoolSize(mode, expectedConstantPoolStats)
+                assertExternalCallsCount(mode, expectedExternalCalls)
                 if (PRINT_DEBUG_INFO) {
                     println("\nResults:")
                     result.forEach { (varName, value) ->
@@ -70,6 +73,12 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
         if (msg == null) return null
         return msg
             .replace("expecting \\{.*}".toRegex(), "expecting {...}")
+    }
+
+    private fun assertExternalCallsCount(mode: TestMode, expectedExternalCalls: Int?) {
+        if (mode == TestMode.NATIVE_ARM64) return
+        if (expectedExternalCalls == null) return
+        assertEquals(expectedExternalCalls, externalCallCount)
     }
 
     private fun assertConstantPoolSize(mode: TestMode, expectedConstantPoolStats: Int?) {
@@ -114,6 +123,13 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
 
     private fun parseExpectedConstantPoolStats(testProgram: String): Int? {
         val regex = "// *constant_pool_size: *([0-9]+)".toRegex()
+        return regex.find(testProgram)?.let {
+            it.groupValues[1].toInt()
+        }
+    }
+
+    private fun parseExpectedExternalCalls(testProgram: String): Int? {
+        val regex = "// *external_calls: *([0-9]+)".toRegex()
         return regex.find(testProgram)?.let {
             it.groupValues[1].toInt()
         }

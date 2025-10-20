@@ -18,3 +18,5 @@ fun test_main() {
     // result = 12 + 10 = 22
     assertStaticEquals(result, 22)
 }
+
+// external_calls: 1

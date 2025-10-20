@@ -17,3 +17,5 @@ fun test_main() {
     float result = f(x, y, z, w);
     assertFloatEquals(result, 7736918.0);
 }
+
+// external_calls: 1

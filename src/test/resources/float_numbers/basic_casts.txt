@@ -38,3 +38,5 @@ fun test_main() {
     int truncated = pi as int;
     assertStaticEquals(truncated, 3);
 }
+
+// external_calls: 8

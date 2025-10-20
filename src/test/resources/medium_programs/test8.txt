@@ -38,3 +38,5 @@ fun test_main() {
     bool t = !false;
     assertStaticEquals(t, true);
 }
+
+// external_calls: 4

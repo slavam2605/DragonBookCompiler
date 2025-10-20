@@ -16,3 +16,5 @@ fun test_main() {
     int sum = square(2) + square(3)
     assertStaticEquals(sum, 13)
 }
+
+// external_calls: 4

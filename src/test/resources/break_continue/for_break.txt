@@ -14,3 +14,5 @@ fun test_main() {
     int result = foo(5)
     assertEquals(result, 10)
 }
+
+// external_calls: 1

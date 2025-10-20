@@ -11,3 +11,5 @@ fun test_main() {
     assertEquals(x, 9)
     assertEquals(y, 10)
 }
+
+// external_calls: 2

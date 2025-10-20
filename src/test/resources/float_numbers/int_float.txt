@@ -9,3 +9,5 @@ fun test_main() {
     assertFloatEquals(c, 8.5);
     assertFloatEquals(d, 4.0);
 }
+
+// external_calls: 4

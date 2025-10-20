@@ -20,3 +20,5 @@ fun test_main() {
     int b = helper(10)
     assertStaticEquals(b, 11)
 }
+
+// external_calls: 3

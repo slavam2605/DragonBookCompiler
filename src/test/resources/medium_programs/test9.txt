@@ -33,3 +33,5 @@ fun test_main() {
     if (false) { keep = 0; }
     assertStaticEquals(keep, 7);
 }
+
+// external_calls: 4

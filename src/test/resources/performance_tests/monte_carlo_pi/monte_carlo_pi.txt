@@ -50,7 +50,7 @@ fun performance_target(int n) -> int {
     // Run trials with n iterations each
     int num_trials = n / 200;
     float avg_pi = run_monte_carlo_trials(n, num_trials);
-    return 0;
+    return avg_pi as int;
 }
 
 fun test_main() {
@@ -77,3 +77,5 @@ fun test_main() {
     float pi_avg = run_monte_carlo_trials(1000, 10);
     assertEquals(pi_avg > 3.14 && pi_avg < 3.15, true);
 }
+
+// external_calls: 6

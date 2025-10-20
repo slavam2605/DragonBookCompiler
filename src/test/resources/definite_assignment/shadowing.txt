@@ -7,3 +7,5 @@ fun test_main() {
     }
     assertEquals(result, 2)
 }
+
+// external_calls: 1

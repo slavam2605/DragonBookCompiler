@@ -61,3 +61,5 @@ fun test_main() {
     to_zero %= 25
     assertStaticEquals(to_zero, 0)
 }
+
+// external_calls: 18

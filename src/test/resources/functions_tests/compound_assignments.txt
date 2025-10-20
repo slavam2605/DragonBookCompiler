@@ -30,3 +30,5 @@ fun test_main() {
     f /= 4
     assertStaticFloatEquals(f, 1.5)
 }
+
+// external_calls: 9

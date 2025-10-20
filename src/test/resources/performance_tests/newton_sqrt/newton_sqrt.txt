@@ -35,8 +35,7 @@ fun compute_sqrt_sum(int n) -> float {
 }
 
 fun performance_target(int n) -> int {
-    float result = compute_sqrt_sum(n);
-    return 0;
+    return compute_sqrt_sum(n) as int;
 }
 
 fun test_main() {
@@ -52,3 +51,5 @@ fun test_main() {
     float sum = compute_sqrt_sum(100);
     assertEquals(sum > 671.0 && sum < 672.0, true);
 }
+
+// external_calls: 4

@@ -16,3 +16,5 @@ fun test_main() {
     int z = max(5, 5)
     assertStaticEquals(z, 5)
 }
+
+// external_calls: 3

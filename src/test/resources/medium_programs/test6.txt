@@ -34,3 +34,5 @@ fun test_main() {
     while (false) { keep = 0; }
     assertStaticEquals(keep, 9);
 }
+
+// external_calls: 4

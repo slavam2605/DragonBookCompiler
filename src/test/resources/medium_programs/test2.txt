@@ -27,3 +27,5 @@ fun test_main() {
     bool unk = !undef(false);
     assertStaticUnknown(unk);
 }
+
+// external_calls: 5

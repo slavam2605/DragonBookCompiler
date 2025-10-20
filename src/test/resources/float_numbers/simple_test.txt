@@ -34,3 +34,5 @@ fun test_main() {
 
     assertStaticFloatEquals(a + b + c + d + e + f + g + h + i + j + k + l + x1 + x2 + x3 + x4, 4.938271599506174e46)
 }
+
+// external_calls: 2

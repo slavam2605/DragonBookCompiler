@@ -22,3 +22,5 @@ fun test_main() {
     assertEquals(swap_first(1, 2), 2);
     assertEquals(swap_second(1, 2), 1);
 }
+
+// external_calls: 2

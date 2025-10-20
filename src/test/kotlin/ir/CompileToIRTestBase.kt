@@ -155,10 +155,15 @@ abstract class CompileToIRTestBase {
         }
     }
 
+    protected fun resetExternalCallCount() {
+        externalCallCount = 0
+    }
+
     companion object {
         const val PRINT_DEBUG_INFO = false
         private const val MAIN = "test_main"
         private val ignoredExtensions = setOf("c", "cpp", "o")
+        internal var externalCallCount: Int = 0
 
         @JvmStatic
         protected val TestFunctionHandler = handler@ { name: String, args: List<FrontendConstantValue> ->
@@ -174,6 +179,7 @@ abstract class CompileToIRTestBase {
                 }
                 else -> error("Unknown function: $name")
             }
+            externalCallCount++
             FrontendConstantValue.IntValue(0) // default return value
         }
 

@@ -18,3 +18,5 @@ fun test_main() {
     int b = inlineFunc(10)
     assertStaticEquals(b, 30)
 }
+
+// external_calls: 3

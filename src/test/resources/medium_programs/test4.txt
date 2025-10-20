@@ -30,3 +30,5 @@ fun test_main() {
     }
     assertEquals(k, 3);
 }
+
+// external_calls: 5

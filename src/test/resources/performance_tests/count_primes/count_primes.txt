@@ -27,3 +27,5 @@ fun performance_target(int n) -> int {
 fun test_main() {
     assertEquals(count_primes(0, 10000), 1229);
 }
+
+// external_calls: 1

@@ -1,0 +1,53 @@
+// Test that mutually recursive functions are not inlined many times
+#[noinline_isMod3_2, noinline_isMod3_0]
+fun isMod3_1(int x) -> bool {
+    if (x == 0) {
+        return false
+    }
+    return isMod3_0(x - 1)
+}
+
+#[noinline_isMod3_1, noinline_isMod3_0]
+fun isMod3_2(int x) -> bool {
+    if (x == 0) {
+        return false
+    }
+    return isMod3_1(x - 1)
+}
+
+#[noinline_isMod3_2, noinline_isMod3_1]
+fun isMod3_0(int x) -> bool {
+    if (x == 0) {
+        return true
+    }
+    return isMod3_2(x - 1)
+}
+
+fun test_main() {
+    // Check that purity check for unused assignments does not fail
+    isMod3_1(10)
+    isMod3_2(10)
+    isMod3_0(10)
+
+    // Check that the mutually recursive functions are not inlined many times
+    bool a = isMod3_1(10)
+    bool b = isMod3_2(10)
+    bool c = isMod3_0(10)
+
+    assertEquals(a, true)
+    assertEquals(b, false)
+    assertEquals(c, false)
+    assertStaticUnknown(a)
+    assertStaticUnknown(b)
+    assertStaticUnknown(c)
+
+    // Check that they are inlined at least once
+    bool d = isMod3_1(0)
+    bool e = isMod3_2(0)
+    bool f = isMod3_0(0)
+    assertStaticEquals(d, false)
+    assertStaticEquals(e, false)
+    assertStaticEquals(f, true)
+}
+
+// external_calls: 9

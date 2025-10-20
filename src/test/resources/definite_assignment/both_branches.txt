@@ -8,3 +8,5 @@ fun test_main() {
     int b = a + 1
     assertEquals(b, 2)
 }
+
+// external_calls: 1

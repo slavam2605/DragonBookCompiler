@@ -31,3 +31,5 @@ fun test_main() {
     int result = double(3) + triple(2) + increment(1)
     assertStaticEquals(result, 14)  // 6 + 6 + 2 = 14
 }
+
+// external_calls: 5

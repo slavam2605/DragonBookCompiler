@@ -6,3 +6,5 @@ fun test_main() {
     int result = a
     assertEquals(result, 10)
 }
+
+// external_calls: 1

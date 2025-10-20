@@ -16,3 +16,5 @@ fun test_main() {
     int y = x + 1
     assertEquals(y, 5)
 }
+
+// external_calls: 1

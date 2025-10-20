@@ -44,3 +44,5 @@ fun test_main() {
     }
     assertEquals(acc, 2);
 }
+
+// external_calls: 6

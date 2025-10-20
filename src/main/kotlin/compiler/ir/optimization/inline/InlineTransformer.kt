@@ -10,7 +10,8 @@ import compiler.utils.NameAllocator
 
 internal class InlineTransformer(
     private val inlinableFunctions: Map<String, FrontendFunction<SSAControlFlowGraph>>,
-    private val cfg: SSAControlFlowGraph
+    private val cfg: SSAControlFlowGraph,
+    private val functionName: String
 ) {
     private val varAllocator = NameAllocator("x")
     private val labelAllocator = NameAllocator("L")
@@ -45,6 +46,12 @@ internal class InlineTransformer(
             }
 
             val fn = inlinableFunctions[originalNode.name] ?: run {
+                currentBlock.add(originalNode)
+                return@forEach
+            }
+
+            // Internal annotation for tests: do not inline `fn` to `functionName`
+            if (fn.hasAnnotation("noinline_$functionName")) {
                 currentBlock.add(originalNode)
                 return@forEach
             }

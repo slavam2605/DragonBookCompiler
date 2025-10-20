@@ -20,7 +20,7 @@ class InlineFunctions(private val ffs: FrontendFunctions<SSAControlFlowGraph>) {
         for (scc in order) {
             for (fnName in scc) {
                 val cfg = processedFunctions[fnName] ?: ffs[fnName]!!.value
-                val inlinedCfg = inlineFunctionCalls(cfg)
+                val inlinedCfg = inlineFunctionCalls(fnName, cfg)
                 processedFunctions[fnName] = inlinedCfg
                 if (fnName in inlinableFunctions) {
                     inlinableFunctions[fnName] = inlinableFunctions[fnName]!!.map { inlinedCfg }
@@ -30,12 +30,12 @@ class InlineFunctions(private val ffs: FrontendFunctions<SSAControlFlowGraph>) {
         return ffs.map { processedFunctions[it.name]!! }
     }
 
-    private fun inlineFunctionCalls(cfg: SSAControlFlowGraph): SSAControlFlowGraph {
+    private fun inlineFunctionCalls(functionName: String, cfg: SSAControlFlowGraph): SSAControlFlowGraph {
         if (!cfg.hasFunctionCalls { it.name in inlinableFunctions }) {
             return cfg
         }
 
-        return InlineTransformer(inlinableFunctions, cfg).transform()
+        return InlineTransformer(inlinableFunctions, cfg, functionName).transform()
     }
 
     private fun isFunctionInlinable(fn: FrontendFunction<SSAControlFlowGraph>): Boolean {

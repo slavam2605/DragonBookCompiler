@@ -36,10 +36,10 @@ internal object MagicIntConstantDivision {
                 context.ops.add(Add(dst, temp, temp, ShiftKind.LSR, 63))
             } else {
                 context.ops.add(Add(temp, temp, temp, ShiftKind.LSR, 63))
-                // TODO optimize multiply by constant here (like n * 15 => (n << 4) - n)
                 context.allocator.tempIntReg { temp2 ->
-                    NumberUtils.emitAssignConstantInt64(context, temp2, divisor)
-                    context.ops.add(MSub(dst, temp, temp2, dividend))
+                    val tReg = if (dst == dividend) temp2 else dst
+                    NumberUtils.emitAssignConstantInt64(context, tReg, divisor)
+                    context.ops.add(MSub(dst, temp, tReg, dividend))
                 }
             }
         }

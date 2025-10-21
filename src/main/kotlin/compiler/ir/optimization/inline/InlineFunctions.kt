@@ -23,7 +23,11 @@ class InlineFunctions(private val ffs: FrontendFunctions<SSAControlFlowGraph>) {
                 val inlinedCfg = inlineFunctionCalls(fnName, cfg)
                 processedFunctions[fnName] = inlinedCfg
                 if (fnName in inlinableFunctions) {
-                    inlinableFunctions[fnName] = inlinableFunctions[fnName]!!.map { inlinedCfg }
+                    val newFunction = inlinableFunctions[fnName]!!.map { inlinedCfg }
+                    if (isFunctionInlinable(newFunction)) {
+                        // Update inlinable functions map only if the new function is still inlinable
+                        inlinableFunctions[fnName] = newFunction
+                    }
                 }
             }
         }

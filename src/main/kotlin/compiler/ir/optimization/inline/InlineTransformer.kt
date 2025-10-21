@@ -71,6 +71,7 @@ internal class InlineTransformer(
             // Rename blocks themselves
             renamedFn.blocks.forEach { (label, block) ->
                 val newLabel = namesCollector.getNewIRLabel(label)
+                check(newLabel !in newBlocks) { "Block $newLabel already exists" }
                 newBlocks[newLabel] = block
             }
 

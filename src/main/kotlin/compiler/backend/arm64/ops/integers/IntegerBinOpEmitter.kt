@@ -26,8 +26,14 @@ class IntegerBinOpEmitter(private val context: NativeCompilerContext) {
                     IRBinOpKind.SUB -> context.allocator.readReg(node.right) { right ->
                         context.ops.add(Sub(dst, left, right as X))
                     }
-                    IRBinOpKind.MUL -> context.allocator.readReg(node.right) { right ->
-                        context.ops.add(Mul(dst, left, right as X))
+                    IRBinOpKind.MUL -> {
+                        if (node.right is IRInt) {
+                            IntConstantMultiplication.emitMultiply(context, dst, left, node.right.value)
+                            return@readReg
+                        }
+                        context.allocator.readReg(node.right) { right ->
+                            context.ops.add(Mul(dst, left, right as X))
+                        }
                     }
                     IRBinOpKind.DIV -> {
                         if (node.right is IRInt) {

@@ -8,7 +8,7 @@ import compiler.ir.IRVar
 import compiler.ir.SimpleIRTransformer
 import compiler.ir.cfg.ControlFlowGraph
 
-class RemoveUnusedAssignments(
+class RemoveUnusedNodes(
     private val cfg: ControlFlowGraph,
     private val ffs: FrontendFunctions<out ControlFlowGraph>
 ) {
@@ -23,15 +23,22 @@ class RemoveUnusedAssignments(
             }
         }
 
-        if (usedLVars.all { it in usedRVars }) {
-            // All variables are used, return the original CFG
-            return cfg
-        }
-
-        return cfg.transform(object : SimpleIRTransformer() {
+        var changed = false
+        val transformedCfg = cfg.transform(object : SimpleIRTransformer() {
             override fun transformNodeSimple(node: IRNode): IRNode? {
-                val lVar = node.lvalue ?: return node
+                val lVar = node.lvalue
+                if (lVar == null) {
+                    if (node is IRFunctionCall && ffs.isPure(node.name)) {
+                        // Remove pure function calls
+                        changed = true
+                        return null
+                    }
+                    return node
+                }
+
                 if (lVar in usedRVars) return node
+                changed = true
+
                 if (node is IRFunctionCall && !ffs.isPure(node.name)) {
                     // Don't remove a non-pure function call, just remove an unused assignment
                     return IRFunctionCall(node.name, null, node.arguments)
@@ -41,5 +48,6 @@ class RemoveUnusedAssignments(
                 return null
             }
         })
+        return if (changed) transformedCfg else cfg
     }
 }

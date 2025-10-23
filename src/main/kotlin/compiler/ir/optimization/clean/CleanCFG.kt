@@ -15,7 +15,7 @@ object CleanCFG {
             currentStep = RemoveEmptyBlocks(currentStep).invoke()
             currentStep = CombineBlocks(currentStep).invoke()
             currentStep = RemoveUnreachableBlocks(currentStep).invoke()
-            currentStep = RemoveUnusedAssignments(currentStep, ffs).invoke()
+            currentStep = RemoveUnusedNodes(currentStep, ffs).invoke()
             if (currentStep !== initialStep) changed = true
         }
 

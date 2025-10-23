@@ -1,0 +1,17 @@
+#[noinline]
+fun foo(int x) -> int {
+    return x + 1;
+}
+
+#[noinline]
+fun bar(int x, int y) {
+    int z = foo(x) + foo(y);
+}
+
+fun test_main() {
+    int x = undef(1);
+    int y = undef(2);
+    foo(x);
+    foo(y)
+    bar(x, y);
+}

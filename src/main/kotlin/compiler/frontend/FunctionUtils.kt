@@ -6,6 +6,7 @@ import compiler.ir.cfg.ControlFlowGraph
 private object FunctionUtils {
     const val NO_INLINE_ANNOTATION = "noinline"
     const val PURE_ANNOTATION = "pure"
+    const val IMPURE_ANNOTATION = "impure"
 
     fun isPure(ffs: FrontendFunctions<out ControlFlowGraph>, name: String, visited: MutableSet<String>): Boolean {
         // If in cycle => ignore, doesn't change purity
@@ -16,6 +17,9 @@ private object FunctionUtils {
 
         // Explicitly annotated functions are considered pure
         if (function.hasAnnotation(PURE_ANNOTATION)) return true
+
+        // Explicitly annotated functions are considered impure
+        if (function.hasAnnotation(IMPURE_ANNOTATION)) return false
 
         // Mark as visited before recursing to prevent infinite loops
         visited.add(name)

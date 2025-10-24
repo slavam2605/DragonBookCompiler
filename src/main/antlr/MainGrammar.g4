@@ -66,7 +66,12 @@ type
     ;
 
 assignment
-    : ID op=(ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | STAR_ASSIGN | DIV_ASSIGN | MOD_ASSIGN) expression
+    : lvalue op=(ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | STAR_ASSIGN | DIV_ASSIGN | MOD_ASSIGN) expression
+    ;
+
+lvalue
+    : ID                        # IdLValue
+    | STAR expression           # DerefLValue
     ;
 
 ifStatement
@@ -106,6 +111,7 @@ expression
     | MINUS? FLOAT_LITERAL                                      # FloatExpr
     | MINUS expression                                          # NegExpr
     | NOT expression                                            # NotExpr
+    | STAR expression                                           # DerefExpr
     | expression AS type                                        # CastExpr
     | left=expression op=(STAR | DIV | MOD) right=expression    # MulDivExpr
     | left=expression op=(PLUS | MINUS) right=expression        # AddSubExpr

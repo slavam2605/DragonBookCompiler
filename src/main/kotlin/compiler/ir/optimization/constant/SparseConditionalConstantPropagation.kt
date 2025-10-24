@@ -87,7 +87,9 @@ class SparseConditionalConstantPropagation(private val cfg: SSAControlFlowGraph,
             ssaUse.node.lvalue != null -> {
                 evaluateAssign(ssaUse.blockLabel, ssaUse.node)
             }
-            ssaUse.node is IRFunctionCall || ssaUse.node is IRReturn -> { /* do nothing */ }
+            ssaUse.node is IRFunctionCall
+                    || ssaUse.node is IRReturn
+                    || ssaUse.node is IRStore -> { /* do nothing */ }
             else -> error("Unexpected IR node: ${ssaUse.node.printToString()}")
         }
     }

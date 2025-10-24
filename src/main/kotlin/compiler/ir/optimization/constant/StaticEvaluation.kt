@@ -9,9 +9,11 @@ import compiler.ir.IRFunctionCall
 import compiler.ir.IRInt
 import compiler.ir.IRJump
 import compiler.ir.IRJumpIfTrue
+import compiler.ir.IRLoad
 import compiler.ir.IRNode
 import compiler.ir.IRNot
 import compiler.ir.IRPhi
+import compiler.ir.IRStore
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.IRReturn
@@ -120,7 +122,8 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
         }
 
         is IRFunctionCall -> SSCPValue.Bottom
-        is IRJump, is IRJumpIfTrue, is IRReturn -> {
+        is IRLoad -> SSCPValue.Bottom
+        is IRJump, is IRJumpIfTrue, is IRReturn, is IRStore -> {
             error("Cannot evaluate node without lvalues: $this")
         }
     }

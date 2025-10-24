@@ -32,8 +32,12 @@ class TypeChecker(private val errorHolder: SemanticAnalysisVisitor) {
      * @return [result] if not null, or a deduced result type otherwise.
      */
     fun checkNumberBinOpTypes(leftLocation: SourceLocation, rightLocation: SourceLocation,
-                              left: FrontendType, right: FrontendType,
+                              left: FrontendType, right: FrontendType, op: String,
                               result: FrontendType? = null): FrontendType {
+        if (left is FrontendType.Pointer && (op == "+" || op == "-" || op == "+=" || op == "-=")) {
+            return checkPointerBinOpTypes(rightLocation, left, right)
+        }
+
         val leftCheck = checkType(leftLocation, left, FrontendType.Int, FrontendType.Float)
         val rightCheck = checkType(rightLocation, right, FrontendType.Int, FrontendType.Float)
         val deducedType = when {
@@ -46,6 +50,12 @@ class TypeChecker(private val errorHolder: SemanticAnalysisVisitor) {
             return result
         }
         return deducedType
+    }
+
+    fun checkPointerBinOpTypes(rightLocation: SourceLocation, left: FrontendType, right: FrontendType): FrontendType {
+        val rightCheck = checkType(rightLocation, right, FrontendType.Int)
+        if (!rightCheck) return FrontendType.ErrorType
+        return left
     }
 
     fun checkType(location: SourceLocation, type: FrontendType, vararg expected: FrontendType): Boolean {

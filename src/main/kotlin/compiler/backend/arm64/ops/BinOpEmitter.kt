@@ -12,12 +12,13 @@ class BinOpEmitter(context: NativeCompilerContext) {
     private val floatEmitter = FloatBinOpEmitter(context)
 
     fun emitBinOp(node: IRBinOp, window: IRPeepholeWindow) {
-        require(node.left.type == node.right.type) {
-            "IRBinOp requires operands of the same type, got ${node.left.type} and ${node.right.type}"
+        require(node.left.type == node.right.type || node.left.type is IRType.PTR && node.right.type == IRType.INT64) {
+            "IRBinOp requires operands of the same type or a pointer and i64, got ${node.left.type} and ${node.right.type}"
         }
         if (node.left.type == IRType.FLOAT64) {
             floatEmitter.emitFloatBinOp(node, window)
         } else {
+            check(node.left.type == IRType.INT64 || node.left.type is IRType.PTR)
             intEmitter.emitIntBinOp(node, window)
         }
     }

@@ -116,8 +116,8 @@ data class IRAssign(val result: IRVar, val right: IRValue) : IRNode {
 
 data class IRBinOp(val op: IRBinOpKind, val result: IRVar, val left: IRValue, val right: IRValue) : IRNode {
     init {
-        require(left.type == right.type) {
-            "IRBinOp requires operands of the same type, got left: ${left.type} (${left.printToString()}) " +
+        require(left.type == right.type || left.type is IRType.PTR && right.type == IRType.INT64) {
+            "IRBinOp requires operands of the same type or a pointer and i64, got left: ${left.type} (${left.printToString()}) " +
                     "and right: ${right.type} (${right.printToString()})"
         }
     }
@@ -190,5 +190,39 @@ data class IRReturn(val value: IRValue?) : IRJumpNode {
     override fun labels() = emptyList<IRLabel>()
     override fun transform(transformer: IRTransformer): IRNode = IRReturn(
         value?.let { transformer.transformRValue(this, 0, it) }
+    )
+}
+
+data class IRLoad(val result: IRVar, val pointer: IRValue) : IRNode {
+    init {
+        require(pointer.type is IRType.PTR) { "IRLoad requires a pointer type, got ${pointer.type}" }
+        val pointeeType = (pointer.type as IRType.PTR).pointeeType
+        require(result.type == pointeeType) {
+            "IRLoad result type must match pointee type: ${result.type} != $pointeeType"
+        }
+    }
+
+    override val lvalue get() = result
+    override fun rvalues() = listOf(pointer)
+    override fun transform(transformer: IRTransformer) = IRLoad(
+        transformer.transformLValue(result),
+        transformer.transformRValue(this, 0, pointer)
+    )
+}
+
+data class IRStore(val pointer: IRValue, val value: IRValue) : IRNode {
+    init {
+        require(pointer.type is IRType.PTR) { "IRStore requires a pointer type, got ${pointer.type}" }
+        val pointeeType = (pointer.type as IRType.PTR).pointeeType
+        require(value.type == pointeeType) {
+            "IRStore value type must match pointee type: ${value.type} != $pointeeType"
+        }
+    }
+
+    override val lvalue get() = null
+    override fun rvalues() = listOf(pointer, value)
+    override fun transform(transformer: IRTransformer) = IRStore(
+        transformer.transformRValue(this, 0, pointer),
+        transformer.transformRValue(this, 1, value)
     )
 }

@@ -23,6 +23,11 @@ internal object InstructionUtils {
     }
 
     fun stpModeAddress(address: IntRegister, offset: Any, mode: StpMode): String {
+        if (offset == 0) {
+            require(mode == StpMode.SIGNED_OFFSET) { "Post- or pre-indexed mode doesn't make sense for zero offset" }
+            return "[$address]"
+        }
+
         val offsetString = when (offset) {
             is Int -> "#$offset"
             is String -> offset

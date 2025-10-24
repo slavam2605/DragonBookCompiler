@@ -38,6 +38,8 @@ fun IRProtoNode.printToString(): String = when (this) {
     is IRNot -> "${result.printToString()}: ${result.type} = ! ${value.printToString()}"
     is IRConvert -> "${result.printToString()}: ${result.type} = ${value.printToString()} as ${result.type}"
     is IRFunctionCall -> (if (result != null) "${result.printToString()}: ${result.type} = " else "") + "$name(${arguments.joinToString(", ") { it.printToString() }})"
+    is IRLoad -> "${result.printToString()}: ${result.type} = load ${pointer.printToString()}"
+    is IRStore -> "store ${pointer.printToString()}, ${value.printToString()}"
     is IRJump -> "jump ${target.printToString()}"
     is IRJumpIfTrue -> "jump-if-true ${cond.printToString()} ${target.printToString()} else ${elseTarget.printToString()}"
     is IRReturn -> "return${if (value != null) " ${value.printToString()}" else ""}"
@@ -54,14 +56,10 @@ fun ControlFlowGraph.print(useGraphviz: Boolean = false) {
         return
     }
 
-    println("${root.printToString()}:")
-    blocks[root]!!.irNodes.forEach {
-        println("\t${it.printToString()}")
-    }
-    blocks.forEach { (label, block) ->
-        if (label == root) return@forEach
+    val blockOrder = blocks.keys.toList().sortedBy { if (it == root) 0 else 1 }
+    blockOrder.forEach { label ->
         println("${label.printToString()}:")
-        block.irNodes.forEach {
+        blocks[label]!!.irNodes.forEach {
             println("\t${it.printToString()}")
         }
     }

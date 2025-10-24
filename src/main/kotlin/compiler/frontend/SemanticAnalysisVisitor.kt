@@ -136,27 +136,33 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitAssignment(ctx: MainGrammar.AssignmentContext): Nothing? {
-        val leftType = symbolTable.lookup(ctx.ID().text)
-        if (leftType == null) {
-            errors.add(UndefinedVariableException(ctx.ID().symbol.asLocation(), ctx.ID().text))
-        }
+        val leftType = visit(ctx.lvalue())
         val opText = ctx.op.text
         val rightType = visit(ctx.expression())
-        if (leftType != null) {
-            if (opText == "=") {
-                rightType.checkType(ctx.expression(), leftType)
-            } else {
-                check(opText in setOf("+=", "-=", "*=", "/=", "%="))
-                typeChecker.checkNumberBinOpTypes(
-                    leftLocation = ctx.ID().asLocation(),
-                    rightLocation = ctx.expression().asLocation(),
-                    left = leftType,
-                    right = rightType,
-                    result = leftType
-                )
-            }
+        if (leftType == FrontendType.ErrorType) return null
+
+        if (opText == "=") {
+            rightType.checkType(ctx.expression(), leftType)
+        } else {
+            check(opText in setOf("+=", "-=", "*=", "/=", "%="))
+            typeChecker.checkNumberBinOpTypes(
+                leftLocation = ctx.lvalue().asLocation(),
+                rightLocation = ctx.expression().asLocation(),
+                left = leftType,
+                right = rightType,
+                op = opText,
+                result = leftType
+            )
         }
         return null
+    }
+
+    override fun visitIdLValue(ctx: MainGrammar.IdLValueContext): FrontendType {
+        return visitId(ctx.ID().text, ctx.ID().asLocation())
+    }
+
+    override fun visitDerefLValue(ctx: MainGrammar.DerefLValueContext): FrontendType {
+        return visitDeref(ctx.expression())
     }
 
     override fun visitIfStatement(ctx: MainGrammar.IfStatementContext): Nothing? {
@@ -223,16 +229,11 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): FrontendType {
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "*", "/", "%")
-        return visitNumberBinOp(ctx.left, ctx.right)
+        return visitNumberBinOp(ctx.left, ctx.right, ctx.op.text)
     }
 
     override fun visitIdExpr(ctx: MainGrammar.IdExprContext): FrontendType {
-        val type = symbolTable.lookup(ctx.ID().text)
-        if (type == null) {
-            errors.add(UndefinedVariableException(ctx.ID().symbol.asLocation(), ctx.ID().text))
-            return FrontendType.ErrorType
-        }
-        return type
+        return visitId(ctx.ID().text, ctx.ID().asLocation())
     }
 
     override fun visitComparisonExpr(ctx: MainGrammar.ComparisonExprContext): FrontendType {
@@ -271,16 +272,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitDerefExpr(ctx: MainGrammar.DerefExprContext): FrontendType {
-        val exprType = visit(ctx.expression())
-        if (exprType !is FrontendType.Pointer) {
-            errors.add(MismatchedTypeException(
-                location = ctx.expression().asLocation(),
-                expectedTypes = listOf(), // TODO: better error message for "expected pointer type"
-                actualType = exprType
-            ))
-            return FrontendType.ErrorType
-        }
-        return exprType.pointeeType
+        return visitDeref(ctx.expression())
     }
 
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): FrontendType {
@@ -305,6 +297,11 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         val targetType = visit(ctx.type())
         val sourceType = visit(ctx.expression())
 
+        // Pointers can be cast to each other
+        if (targetType is FrontendType.Pointer && sourceType is FrontendType.Pointer) {
+            return targetType
+        }
+
         // Verify that the cast is between int and float
         if ((targetType != FrontendType.Int && targetType != FrontendType.Float) ||
             (sourceType != FrontendType.Int && sourceType != FrontendType.Float)) {
@@ -319,7 +316,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
 
     override fun visitAddSubExpr(ctx: MainGrammar.AddSubExprContext): FrontendType {
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "+", "-")
-        return visitNumberBinOp(ctx.left, ctx.right)
+        return visitNumberBinOp(ctx.left, ctx.right, ctx.op.text)
     }
 
     override fun visitAndExpr(ctx: MainGrammar.AndExprContext): FrontendType {
@@ -332,6 +329,26 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         visit(ctx.left).checkType(ctx.left, FrontendType.Bool)
         visit(ctx.right).checkType(ctx.right, FrontendType.Bool)
         return FrontendType.Bool
+    }
+
+    // -------------- Private helper methods and visitors --------------
+
+    private fun visitDeref(ctx: MainGrammar.ExpressionContext): FrontendType {
+        val exprType = visit(ctx)
+        if (exprType !is FrontendType.Pointer) {
+            errors.add(NonPointerTypeException(ctx.asLocation(), exprType))
+            return FrontendType.ErrorType
+        }
+        return exprType.pointeeType
+    }
+
+    private fun visitId(idName: String, location: SourceLocation): FrontendType {
+        val type = symbolTable.lookup(idName)
+        if (type == null) {
+            errors.add(UndefinedVariableException(location, idName))
+            return FrontendType.ErrorType
+        }
+        return type
     }
 
     private fun visitCall(ctx: MainGrammar.FunctionCallContext, isStatement: Boolean): FrontendType? {
@@ -369,10 +386,10 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         return FrontendType.ErrorType
     }
 
-    private fun visitNumberBinOp(leftCtx: MainGrammar.ExpressionContext, rightCtx: MainGrammar.ExpressionContext): FrontendType {
+    private fun visitNumberBinOp(leftCtx: MainGrammar.ExpressionContext, rightCtx: MainGrammar.ExpressionContext, op: String): FrontendType {
         val left = visit(leftCtx)
         val right = visit(rightCtx)
-        return typeChecker.checkNumberBinOpTypes(leftCtx.asLocation(), rightCtx.asLocation(), left, right)
+        return typeChecker.checkNumberBinOpTypes(leftCtx.asLocation(), rightCtx.asLocation(), left, right, op)
     }
 
     private fun <T> withLoopLevel(block: () -> T): T {

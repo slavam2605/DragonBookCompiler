@@ -31,6 +31,9 @@ open class CompilationException(val location: SourceLocation?, message: String) 
 
 class SyntaxErrorException(location: SourceLocation, message: String) : CompilationException(location, message)
 
+class NonPointerTypeException(location: SourceLocation, actualType: FrontendType)
+    : CompilationException(location, "Expected pointer type, got '$actualType'")
+
 class MismatchedTypeException(location: SourceLocation, expectedTypes: List<FrontendType>, actualType: FrontendType)
     : CompilationException(location, getErrorMessage(expectedTypes, actualType)) {
 

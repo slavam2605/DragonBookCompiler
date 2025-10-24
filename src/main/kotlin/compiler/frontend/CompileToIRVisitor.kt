@@ -138,25 +138,67 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         return null
     }
 
+    private fun visitVarAssignment(
+        ctx: MainGrammar.AssignmentContext,
+        lvalue: MainGrammar.IdLValueContext,
+        binOpKind: IRBinOpKind?,
+        rightValue: IRValue
+    ) {
+        val leftVar = symbolTable.lookup(lvalue.ID().text) ?: error("Undefined variable ${lvalue.ID().text}")
+        if (binOpKind == null) {
+            resultIR.add(IRAssign(leftVar, rightValue).withLocation(ctx))
+            return
+        }
+
+        val (unifiedLeft, unifiedRight, resultType) = unifyTypes(leftVar, rightValue, ctx)
+        val tmp = IRVar(varAllocator.newName(), resultType, null)
+        resultIR.add(IRBinOp(binOpKind, tmp, unifiedLeft, unifiedRight).withLocation(ctx))
+        resultIR.add(IRAssign(leftVar, tmp).withLocation(ctx))
+    }
+
+    private fun visitPointerAssignment(
+        ctx: MainGrammar.AssignmentContext,
+        lvalue: MainGrammar.DerefLValueContext,
+        binOpKind: IRBinOpKind?,
+        rightValue: IRValue
+    ) {
+        val pointerValue = visit(lvalue.expression())
+        if (binOpKind == null) {
+            resultIR.add(IRStore(pointerValue, rightValue).withLocation(ctx))
+            return
+        }
+
+        // First, load the pointed value
+        val pointeeType = (pointerValue.type as IRType.PTR).pointeeType
+        val loadedValue = IRVar(varAllocator.newName(), pointeeType, null)
+        resultIR.add(IRLoad(loadedValue, pointerValue).withLocation(ctx))
+
+        // Second, do the binary operation
+        val (unifiedLeft, unifiedRight, resultType) = unifyTypes(loadedValue, rightValue, ctx)
+        val tmp = IRVar(varAllocator.newName(), resultType, null)
+        resultIR.add(IRBinOp(binOpKind, tmp, unifiedLeft, unifiedRight).withLocation(ctx))
+
+        // Last, store the result back to the pointer
+        resultIR.add(IRStore(pointerValue, tmp).withLocation(ctx))
+    }
+
     override fun visitAssignment(ctx: MainGrammar.AssignmentContext): Nothing? {
-        val leftVar = symbolTable.lookup(ctx.ID().text) ?: error("Undefined variable ${ctx.ID().text}")
-        val opText = ctx.op.text
-        if (opText == "=") {
-            resultIR.add(IRAssign(leftVar, visit(ctx.expression())).withLocation(ctx))
-        } else {
-            val right = visit(ctx.expression())
-            val binOpKind = when (opText) {
-                "+=" -> IRBinOpKind.ADD
-                "-=" -> IRBinOpKind.SUB
-                "*=" -> IRBinOpKind.MUL
-                "/=" -> IRBinOpKind.DIV
-                "%=" -> IRBinOpKind.MOD
-                else -> error("Unsupported assignment operator $opText")
-            }
-            val (unifiedLeft, unifiedRight, resultType) = unifyTypes(leftVar, right, ctx)
-            val tmp = IRVar(varAllocator.newName(), resultType, null)
-            resultIR.add(IRBinOp(binOpKind, tmp, unifiedLeft, unifiedRight).withLocation(ctx))
-            resultIR.add(IRAssign(leftVar, tmp).withLocation(ctx))
+        val lvalue = ctx.lvalue()
+        val rightValue = visit(ctx.expression())
+        val binOpKind = when (val opText = ctx.op.text) {
+            "=" -> null
+            "+=" -> IRBinOpKind.ADD
+            "-=" -> IRBinOpKind.SUB
+            "*=" -> IRBinOpKind.MUL
+            "/=" -> IRBinOpKind.DIV
+            "%=" -> IRBinOpKind.MOD
+            else -> error("Unsupported assignment operator $opText")
+        }
+
+        when (lvalue) {
+            is MainGrammar.IdLValueContext -> visitVarAssignment(ctx, lvalue, binOpKind, rightValue)
+            is MainGrammar.DerefLValueContext -> visitPointerAssignment(ctx, lvalue, binOpKind, rightValue)
+            else -> error("Unknown lvalue type: ${lvalue::class}")
         }
         return null
     }
@@ -338,6 +380,14 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         }
     }
 
+    override fun visitDerefExpr(ctx: MainGrammar.DerefExprContext): IRValue {
+        val pointerValue = visit(ctx.expression())
+        val pointeeType = (pointerValue.type as IRType.PTR).pointeeType
+        return withNewVar(pointeeType) {
+            IRLoad(it, pointerValue).withLocation(ctx)
+        }
+    }
+
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): IRValue {
         return IRInt(ctx.text.toLong())
     }
@@ -411,6 +461,11 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
      * @return Triple of (unified left, unified right, result type)
      */
     private fun unifyTypes(left: IRValue, right: IRValue, ctx: ParserRuleContext): Triple<IRValue, IRValue, IRType> {
+        if (left.type is IRType.PTR) {
+            check(right.type is IRType.INT64)
+            return Triple(left, right, left.type)
+        }
+
         if (left.type == right.type) {
             return Triple(left, right, left.type)
         }

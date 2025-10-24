@@ -7,12 +7,12 @@ import compiler.backend.arm64.instructions.Fcvtzs
 import compiler.backend.arm64.IntRegister.X
 import compiler.backend.arm64.NativeCompilerContext
 import compiler.backend.arm64.Register.D
+import compiler.backend.arm64.instructions.Ldr
 import compiler.backend.arm64.instructions.Scvtf
+import compiler.backend.arm64.instructions.StpMode
+import compiler.backend.arm64.instructions.Str
 import compiler.backend.arm64.ops.utils.CopyUtils
-import compiler.ir.IRAssign
-import compiler.ir.IRConvert
-import compiler.ir.IRNot
-import compiler.ir.IRType
+import compiler.ir.*
 
 class SimpleOpsEmitter(private val context: NativeCompilerContext) {
     fun emitAssign(node: IRAssign) {
@@ -44,6 +44,22 @@ class SimpleOpsEmitter(private val context: NativeCompilerContext) {
                     }
                     else -> error("Invalid conversion: ${node.value.type} -> ${node.result.type}")
                 }
+            }
+        }
+    }
+
+    fun emitLoad(node: IRLoad) {
+        context.allocator.writeReg(node.result) { dst ->
+            context.allocator.readReg(node.pointer) { addr ->
+                context.ops.add(Ldr(dst, addr as X, 0, StpMode.SIGNED_OFFSET))
+            }
+        }
+    }
+
+    fun emitStore(node: IRStore) {
+        context.allocator.readReg(node.value) { src ->
+            context.allocator.readReg(node.pointer) { addr ->
+                context.ops.add(Str(src, addr as X, 0, StpMode.SIGNED_OFFSET))
             }
         }
     }

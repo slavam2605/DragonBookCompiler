@@ -19,6 +19,8 @@ class OpsEmitter(context: NativeCompilerContext) {
             is IRNot -> simpleOps.emitNot(node)
             is IRConvert -> simpleOps.emitConvert(node)
             is IRFunctionCall -> callOps.emitCall(node)
+            is IRLoad -> simpleOps.emitLoad(node)
+            is IRStore -> simpleOps.emitStore(node)
             is IRJumpIfTrue -> branchOps.emitJcc(node)
             is IRJump -> branchOps.emitB(node)
             is IRReturn -> branchOps.emitRet(node)

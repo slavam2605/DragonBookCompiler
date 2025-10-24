@@ -2,6 +2,7 @@ package compiler.frontend
 
 import MainGrammar
 import MainGrammarBaseVisitor
+import compiler.ir.Intrinsics
 import org.antlr.v4.runtime.ParserRuleContext
 
 // TODO store symbol tables in nodes as a tree property and reuse in IR generation
@@ -354,9 +355,6 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     private fun visitCall(ctx: MainGrammar.FunctionCallContext, isStatement: Boolean): FrontendType? {
         val arguments = ctx.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
         val functionName = ctx.ID().text
-        if (functionName == "undef" && arguments.size == 1) {
-            return arguments.single()
-        }
 
         functionTable[functionName]?.let { descriptor ->
             if (descriptor.returnType == null && !isStatement) {
@@ -381,9 +379,61 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
             return descriptor.returnType
         }
 
+        handleIntrinsicCall(ctx, functionName, arguments)?.let {
+            return it
+        }
+
         if (isStatement) return null
         errors.add(SyntaxErrorException(ctx.asLocation(), "Unknown function $functionName"))
         return FrontendType.ErrorType
+    }
+
+    private fun handleIntrinsicCall(ctx: MainGrammar.FunctionCallContext, functionName: String,
+                                    arguments: List<FrontendType>): FrontendType? {
+        if (functionName == Intrinsics.UNDEF) {
+            if (arguments.size != 1) {
+                errors.add(SyntaxErrorException(ctx.asLocation(), "${Intrinsics.UNDEF}() takes exactly one argument, got ${arguments.size}"))
+                return FrontendType.ErrorType
+            }
+            return arguments.single()
+        }
+
+        // malloc(size) as T*
+        if (functionName == Intrinsics.MALLOC) {
+            if (arguments.size != 1) {
+                errors.add(SyntaxErrorException(ctx.asLocation(), "${Intrinsics.MALLOC}() takes exactly one argument (size in bytes), got ${arguments.size}"))
+                return FrontendType.ErrorType
+            }
+            val parentCtx = ctx.parent.parent
+            if (parentCtx !is MainGrammar.CastExprContext) {
+                errors.add(SyntaxErrorException(ctx.asLocation(), "${Intrinsics.MALLOC}() must be cast to a pointer type"))
+                return FrontendType.ErrorType
+            }
+            val castType = visitType(parentCtx.type())
+            if (castType !is FrontendType.Pointer) {
+                errors.add(SyntaxErrorException(ctx.asLocation(), "${Intrinsics.MALLOC}() must be cast to a pointer type"))
+                return FrontendType.ErrorType
+            }
+
+            // Check that the argument is an integer (size in bytes)
+            arguments[0].checkType(ctx.callArguments().expression(0), FrontendType.Int)
+            return FrontendType.Pointer(FrontendType.ErrorType)
+        }
+
+        // free() intrinsic - takes a pointer, returns nothing
+        if (functionName == Intrinsics.FREE) {
+            if (arguments.size != 1) {
+                errors.add(SyntaxErrorException(ctx.asLocation(), "${Intrinsics.FREE}() takes exactly one pointer argument, got ${arguments.size}"))
+                return FrontendType.ErrorType
+            }
+            if (arguments[0] !is FrontendType.Pointer) {
+                errors.add(NonPointerTypeException(ctx.callArguments().expression(0).asLocation(), arguments[0]))
+                return FrontendType.ErrorType
+            }
+            return FrontendType.Void
+        }
+
+        return null
     }
 
     private fun visitNumberBinOp(leftCtx: MainGrammar.ExpressionContext, rightCtx: MainGrammar.ExpressionContext, op: String): FrontendType {

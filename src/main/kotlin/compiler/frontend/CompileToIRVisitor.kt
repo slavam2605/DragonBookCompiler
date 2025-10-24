@@ -318,11 +318,22 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         val call = ctx.functionCall()
         val arguments = call.callArguments()?.expression()?.map { visit(it) } ?: emptyList()
         val name = call.ID().text
-        val returnType = functionReturnType[name] ?: when (name) {
-            "undef" -> arguments.single().type
-            else -> error("Unknown function $name (or it doesn't have a return type)")
+        val returnType = functionReturnType[name]
+            ?: getIntrinsicReturnType(ctx, name, arguments)
+            ?: error("Unknown function $name (or it doesn't have a return type)")
+
+        return withNewVar(returnType) {
+            IRFunctionCall(name, it, arguments).withLocation(ctx)
         }
-        return withNewVar(returnType) { IRFunctionCall(name, it, arguments).withLocation(ctx) }
+    }
+
+    private fun getIntrinsicReturnType(ctx: MainGrammar.CallExprContext, functionName: String,
+                                       arguments: List<IRValue>): IRType? {
+        return when (functionName) {
+            Intrinsics.MALLOC -> (ctx.parent as MainGrammar.CastExprContext).type().irType()
+            Intrinsics.UNDEF -> arguments.single().type
+            else -> null
+        }
     }
 
     override fun visitMulDivExpr(ctx: MainGrammar.MulDivExprContext): IRValue {

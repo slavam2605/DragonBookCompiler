@@ -1,7 +1,29 @@
 package compiler.frontend
 
-enum class FrontendType {
-    INT, BOOL, FLOAT, ERROR_TYPE
+sealed interface FrontendType {
+    data object Int : FrontendType {
+        override fun toString(): String = "int"
+    }
+
+    data object Bool : FrontendType {
+        override fun toString(): String = "bool"
+    }
+
+    data object Float : FrontendType {
+        override fun toString(): String = "float"
+    }
+
+    data object Void : FrontendType {
+        override fun toString(): String = "void"
+    }
+
+    data object ErrorType : FrontendType {
+        override fun toString(): String = "<unknown type>"
+    }
+
+    data class Pointer(val pointeeType: FrontendType) : FrontendType {
+        override fun toString(): String = "$pointeeType*"
+    }
 }
 
 class TypeChecker(private val errorHolder: SemanticAnalysisVisitor) {
@@ -12,12 +34,12 @@ class TypeChecker(private val errorHolder: SemanticAnalysisVisitor) {
     fun checkNumberBinOpTypes(leftLocation: SourceLocation, rightLocation: SourceLocation,
                               left: FrontendType, right: FrontendType,
                               result: FrontendType? = null): FrontendType {
-        val leftCheck = checkType(leftLocation, left, FrontendType.INT, FrontendType.FLOAT)
-        val rightCheck = checkType(rightLocation, right, FrontendType.INT, FrontendType.FLOAT)
+        val leftCheck = checkType(leftLocation, left, FrontendType.Int, FrontendType.Float)
+        val rightCheck = checkType(rightLocation, right, FrontendType.Int, FrontendType.Float)
         val deducedType = when {
-            !leftCheck || !rightCheck -> FrontendType.ERROR_TYPE
-            left == FrontendType.FLOAT || right == FrontendType.FLOAT -> FrontendType.FLOAT
-            else -> FrontendType.INT
+            !leftCheck || !rightCheck -> FrontendType.ErrorType
+            left == FrontendType.Float || right == FrontendType.Float -> FrontendType.Float
+            else -> FrontendType.Int
         }
         if (result != null) {
             checkType(leftLocation, deducedType, result)
@@ -27,7 +49,7 @@ class TypeChecker(private val errorHolder: SemanticAnalysisVisitor) {
     }
 
     fun checkType(location: SourceLocation, type: FrontendType, vararg expected: FrontendType): Boolean {
-        if (type == FrontendType.ERROR_TYPE || expected.singleOrNull() == FrontendType.ERROR_TYPE) return true
+        if (type == FrontendType.ErrorType || expected.singleOrNull() == FrontendType.ErrorType) return true
         if (type !in expected) {
             errorHolder.addError(MismatchedTypeException(location, expected.toList(), type))
             return false

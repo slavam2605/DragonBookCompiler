@@ -67,12 +67,12 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
 
     override fun visitType(ctx: MainGrammar.TypeContext): FrontendType {
         return when (ctx.text) {
-            "int" -> FrontendType.INT
-            "bool" -> FrontendType.BOOL
-            "float" -> FrontendType.FLOAT
+            "int" -> FrontendType.Int
+            "bool" -> FrontendType.Bool
+            "float" -> FrontendType.Float
             else -> {
                 errors.add(UnknownTypeException(ctx.asLocation(), ctx.text))
-                FrontendType.ERROR_TYPE
+                return FrontendType.ErrorType
             }
         }
     }
@@ -151,7 +151,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitIfStatement(ctx: MainGrammar.IfStatementContext): Nothing? {
-        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.BOOL)
+        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.Bool)
         symbolTable.withScope {
             visit(ctx.ifTrue)
         }
@@ -164,7 +164,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitWhileStatement(ctx: MainGrammar.WhileStatementContext): Nothing? {
-        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.BOOL)
+        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.Bool)
         withLoopLevel {
             symbolTable.withScope {
                 visit(ctx.statement())
@@ -174,7 +174,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitDoWhileStatement(ctx: MainGrammar.DoWhileStatementContext): Nothing? {
-        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.BOOL)
+        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.Bool)
         withLoopLevel {
             symbolTable.withScope {
                 visit(ctx.statement())
@@ -186,7 +186,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     override fun visitForStatement(ctx: MainGrammar.ForStatementContext): Nothing? {
         symbolTable.withScope {
             (ctx.initAssign ?: ctx.initDecl)?.let { visit(it) }
-            ctx.cond?.let { visit(it).checkType(it, FrontendType.BOOL) }
+            ctx.cond?.let { visit(it).checkType(it, FrontendType.Bool) }
             ctx.inc?.let { visit(it) }
             withLoopLevel {
                 symbolTable.withScope {
@@ -200,11 +200,11 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     // --------------- Expressions ---------------
 
     override fun visitTrueExpr(ctx: MainGrammar.TrueExprContext): FrontendType {
-        return FrontendType.BOOL
+        return FrontendType.Bool
     }
 
     override fun visitFalseExpr(ctx: MainGrammar.FalseExprContext): FrontendType {
-        return FrontendType.BOOL
+        return FrontendType.Bool
     }
 
     override fun visitCallExpr(ctx: MainGrammar.CallExprContext): FrontendType {
@@ -221,7 +221,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         val type = symbolTable.lookup(ctx.ID().text)
         if (type == null) {
             errors.add(UndefinedVariableException(ctx.ID().symbol.asLocation(), ctx.ID().text))
-            return FrontendType.ERROR_TYPE
+            return FrontendType.ErrorType
         }
         return type
     }
@@ -230,49 +230,62 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         val left = visit(ctx.left)
         val right = visit(ctx.right)
         when (left) {
-            FrontendType.INT, FrontendType.FLOAT ->
-                right.checkType(ctx.right, FrontendType.INT, FrontendType.FLOAT)
-            FrontendType.BOOL if (ctx.op.text == "==" || ctx.op.text == "!=") ->
-                right.checkType(ctx.right, FrontendType.BOOL)
-            FrontendType.ERROR_TYPE -> { /* ignore */ }
+            FrontendType.Int, FrontendType.Float ->
+                right.checkType(ctx.right, FrontendType.Int, FrontendType.Float)
+            FrontendType.Bool if (ctx.op.text == "==" || ctx.op.text == "!=") ->
+                right.checkType(ctx.right, FrontendType.Bool)
+            FrontendType.ErrorType -> { /* ignore */ }
             else -> {
                 errors.add(MismatchedTypeException(
                     location = ctx.left.asLocation(),
-                    expectedTypes = listOf(FrontendType.INT, FrontendType.BOOL),
+                    expectedTypes = listOf(FrontendType.Int, FrontendType.Bool),
                     actualType = left
                 ))
             }
         }
         checkOperatorSyntax(ctx.op.asLocation(), ctx.op.text, "<", ">", "<=", ">=", "==", "!=")
-        return FrontendType.BOOL
+        return FrontendType.Bool
     }
 
     override fun visitNotExpr(ctx: MainGrammar.NotExprContext): FrontendType {
-        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.BOOL)
-        return FrontendType.BOOL
+        visit(ctx.expression()).checkType(ctx.expression(), FrontendType.Bool)
+        return FrontendType.Bool
     }
 
     override fun visitNegExpr(ctx: MainGrammar.NegExprContext): FrontendType {
         val type = visit(ctx.expression())
-        return if (type.checkType(ctx.expression(), FrontendType.INT, FrontendType.FLOAT)) {
+        return if (type.checkType(ctx.expression(), FrontendType.Int, FrontendType.Float)) {
             type
         } else {
-            FrontendType.ERROR_TYPE
+            FrontendType.ErrorType
         }
+    }
+
+    override fun visitDerefExpr(ctx: MainGrammar.DerefExprContext): FrontendType {
+        val exprType = visit(ctx.expression())
+        if (exprType !is FrontendType.Pointer) {
+            errors.add(MismatchedTypeException(
+                location = ctx.expression().asLocation(),
+                expectedTypes = listOf(), // TODO: better error message for "expected pointer type"
+                actualType = exprType
+            ))
+            return FrontendType.ErrorType
+        }
+        return exprType.pointeeType
     }
 
     override fun visitIntExpr(ctx: MainGrammar.IntExprContext): FrontendType {
         if (ctx.text.toLongOrNull() == null) {
             errors.add(MalformedNumberException(ctx.asLocation(), "integer", ctx.text))
         }
-        return FrontendType.INT
+        return FrontendType.Int
     }
 
     override fun visitFloatExpr(ctx: MainGrammar.FloatExprContext): FrontendType {
         if (ctx.text.toDoubleOrNull() == null) {
             errors.add(MalformedNumberException(ctx.asLocation(), "float", ctx.text))
         }
-        return FrontendType.FLOAT
+        return FrontendType.Float
     }
 
     override fun visitParenExpr(ctx: MainGrammar.ParenExprContext): FrontendType {
@@ -284,9 +297,10 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
         val sourceType = visit(ctx.expression())
 
         // Verify that the cast is between int and float
-        if ((targetType != FrontendType.INT && targetType != FrontendType.FLOAT) ||
-            (sourceType != FrontendType.INT && sourceType != FrontendType.FLOAT)) {
-            errors.add(SyntaxErrorException(ctx.asLocation(), "Type cast is only supported between int and float types"))
+        if ((targetType != FrontendType.Int && targetType != FrontendType.Float) ||
+            (sourceType != FrontendType.Int && sourceType != FrontendType.Float)) {
+            errors.add(SyntaxErrorException(ctx.asLocation(), "Can't cast type $sourceType to $targetType"))
+            return targetType
         }
 
         // Casting to the same type is allowed but redundant (just a warning, not an error)
@@ -300,15 +314,15 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     }
 
     override fun visitAndExpr(ctx: MainGrammar.AndExprContext): FrontendType {
-        visit(ctx.left).checkType(ctx.left, FrontendType.BOOL)
-        visit(ctx.right).checkType(ctx.right, FrontendType.BOOL)
-        return FrontendType.BOOL
+        visit(ctx.left).checkType(ctx.left, FrontendType.Bool)
+        visit(ctx.right).checkType(ctx.right, FrontendType.Bool)
+        return FrontendType.Bool
     }
 
     override fun visitOrExpr(ctx: MainGrammar.OrExprContext): FrontendType {
-        visit(ctx.left).checkType(ctx.left, FrontendType.BOOL)
-        visit(ctx.right).checkType(ctx.right, FrontendType.BOOL)
-        return FrontendType.BOOL
+        visit(ctx.left).checkType(ctx.left, FrontendType.Bool)
+        visit(ctx.right).checkType(ctx.right, FrontendType.Bool)
+        return FrontendType.Bool
     }
 
     private fun visitCall(ctx: MainGrammar.FunctionCallContext, isStatement: Boolean): FrontendType? {
@@ -322,7 +336,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
             if (descriptor.returnType == null && !isStatement) {
                 errors.add(SyntaxErrorException(ctx.asLocation(),
                     "Can't call '$functionName' in expression, it has no return type"))
-                return FrontendType.ERROR_TYPE
+                return FrontendType.ErrorType
             }
 
             if (arguments.size != descriptor.arguments.size) {
@@ -343,7 +357,7 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
 
         if (isStatement) return null
         errors.add(SyntaxErrorException(ctx.asLocation(), "Unknown function $functionName"))
-        return FrontendType.ERROR_TYPE
+        return FrontendType.ErrorType
     }
 
     private fun visitNumberBinOp(leftCtx: MainGrammar.ExpressionContext, rightCtx: MainGrammar.ExpressionContext): FrontendType {

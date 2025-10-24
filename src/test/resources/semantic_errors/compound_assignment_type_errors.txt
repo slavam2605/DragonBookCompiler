@@ -10,5 +10,5 @@ fun test_main() {
     x += 2.5
 }
 
-// error: 6:4 "Mismatched types: expected 'INT' or 'FLOAT', got BOOL"
-// error: 10:4 "Expected type 'INT', got 'FLOAT'"
+// error: 6:4 "Mismatched types: expected 'int' or 'float', got bool"
+// error: 10:4 "Expected type 'int', got 'float'"

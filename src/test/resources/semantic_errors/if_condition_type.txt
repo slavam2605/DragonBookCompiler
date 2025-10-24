@@ -3,5 +3,5 @@ fun test_main() {
     if (1) {
         result = result + 1
     }
-    // error: 3:8 "Expected type 'BOOL', got 'INT'"
+    // error: 3:8 "Expected type 'bool', got 'int'"
 }

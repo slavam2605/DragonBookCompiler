@@ -1,4 +1,4 @@
 fun test_main() {
     int x = true + 1
-    // error: 2:12 "Mismatched types: expected 'INT' or 'FLOAT', got BOOL"
+    // error: 2:12 "Mismatched types: expected 'int' or 'float', got bool"
 }

@@ -1,4 +1,4 @@
 fun test_main() {
     int x = true
-    // error: 2:12 "Expected type 'INT', got 'BOOL'"
+    // error: 2:12 "Expected type 'int', got 'bool'"
 }

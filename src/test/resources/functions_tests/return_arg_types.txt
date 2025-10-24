@@ -7,7 +7,7 @@ fun test_main() {
     int x = foo(false)
     int y = 1 + foo(10)
 }
-// error: 6:8 "Expected type 'INT', got 'BOOL'"
-// error: 7:16 "Expected type 'INT', got 'BOOL'"
-// error: 7:12 "Expected type 'INT', got 'BOOL'"
-// error: 8:16 "Mismatched types: expected 'INT' or 'FLOAT', got BOOL"
+// error: 6:8 "Expected type 'int', got 'bool'"
+// error: 7:16 "Expected type 'int', got 'bool'"
+// error: 7:12 "Expected type 'int', got 'bool'"
+// error: 8:16 "Mismatched types: expected 'int' or 'float', got bool"

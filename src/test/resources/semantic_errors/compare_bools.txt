@@ -2,5 +2,5 @@ fun test_main() {
     bool a = true
     int x = 42
     a = a == x
-    // error: 4:13 "Expected type 'BOOL', got 'INT'"
+    // error: 4:13 "Expected type 'bool', got 'int'"
 }

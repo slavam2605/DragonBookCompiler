@@ -3,5 +3,5 @@ fun test_main() {
     while (1) {
         i = i + 1
     }
-    // error: 3:11 "Expected type 'BOOL', got 'INT'"
+    // error: 3:11 "Expected type 'bool', got 'int'"
 }

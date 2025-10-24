@@ -8,6 +8,7 @@ import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.DominatorTree
+import compiler.ir.cfg.extensions.SourceLocationMap
 import kotlin.collections.forEach
 import kotlin.collections.forEachIndexed
 import kotlin.collections.get
@@ -17,7 +18,8 @@ private class BlockRecord(val label: IRLabel, var index: Int)
 
 internal class RenameVariablesForSSA(
     private val cfg: ControlFlowGraph,
-    private val mutableBlocks: MutableMap<IRLabel, MutableList<IRNode>>
+    private val mutableBlocks: MutableMap<IRLabel, MutableList<IRNode>>,
+    private val sourceMap: SourceLocationMap
 ) {
     private val counter = mutableMapOf<String, Int>()
     private val stack = mutableMapOf<String, MutableList<BlockRecord>>()
@@ -64,6 +66,9 @@ internal class RenameVariablesForSSA(
                     override fun transformRValue(node: IRNode, index: Int, value: IRValue) = renamedVars[value] ?: value
                 })
             }
+
+            // Keep track of source mapping
+            sourceMap.replace(node, block[index])
         }
 
         // Step 2. Fill in phi-nodes in **successor blocks of CFG**

@@ -56,13 +56,13 @@ private fun transformLabels(
         changedByPredNew.getOrPut(edge.originalPredecessor to edge.newTarget) { mutableListOf() }.add(edge)
     }
 
-    val sourceMap = SourceLocationMap.extractMap(cfg) ?: SourceLocationMap.empty()
+    val sourceMap = SourceLocationMap.extractMap(cfg)
     val newBlocks = cfg.blocks.toMutableMap()
 
     applyChangedEdges(sourceMap, newBlocks, changedByFromOld)
     applyRemovedBlocks(newBlocks, removed)
     if (cfg is SSAControlFlowGraph) {
-        fixPhiNodes(newRoot, newBlocks, changedByPredNew)
+        fixPhiNodes(newRoot, newBlocks, changedByPredNew, sourceMap)
     }
 
     return newBlocks to sourceMap
@@ -105,12 +105,14 @@ private fun applyRemovedBlocks(
 private fun fixPhiNodes(
     newRoot: IRLabel,
     newBlocks: MutableMap<IRLabel, CFGBlock>,
-    changed: Map<Pair<OriginalPredecessor, NewTarget>, List<CFGEdgeChanged>>
+    changed: Map<Pair<OriginalPredecessor, NewTarget>, List<CFGEdgeChanged>>,
+    sourceMap: SourceLocationMap
 ) {
     val reachableBlocks = findReachableBlocks(newRoot, newBlocks)
     newBlocks.forEach { (label, block) ->
         newBlocks[label] = block.transform(
-            PhiTransformer(label, newRoot, reachableBlocks, newBlocks, changed)
+            PhiTransformer(label, newRoot, reachableBlocks, newBlocks, changed),
+            sourceMap
         )
     }
 }

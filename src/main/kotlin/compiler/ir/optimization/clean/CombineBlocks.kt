@@ -41,6 +41,7 @@ class CombineBlocks(private val cfg: ControlFlowGraph) {
             chains[chainRoot] = chain
         }
 
+        val sourceMap = SourceLocationMap.extractMap(cfg)
         val newBlocks = mutableMapOf<IRLabel, CFGBlock>()
         cfg.blocks.forEach { (label, block) ->
             if (label in chains || label in valueSet) return@forEach
@@ -76,10 +77,9 @@ class CombineBlocks(private val cfg: ControlFlowGraph) {
                     }
                     return IRPhi(node.result, newSources)
                 }
-            })
+            }, sourceMap)
         }
 
-        val sourceMap = SourceLocationMap.extractMap(cfg) ?: SourceLocationMap.empty()
         return cfg.new(cfg.root, newBlocks).apply {
             SourceLocationMap.storeMap(sourceMap, this)
         }

@@ -9,6 +9,7 @@ import compiler.ir.analysis.LiveVarAnalysis
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.DominanceFrontiers
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.utils.reachableFrom
 
 /**
@@ -24,6 +25,7 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
          * Transforms the given [ControlFlowGraph] into an [SSAControlFlowGraph].
          */
         fun transform(cfg: ControlFlowGraph): SSAControlFlowGraph {
+            val sourceMap = SourceLocationMap.extractMap(cfg)
             val mutableBlocks = cfg.blocks.mapValues { (_, block) ->
                 block.irNodes.toMutableList()
             }.toMutableMap()
@@ -35,14 +37,16 @@ class SSAControlFlowGraph(root: IRLabel, blocks: Map<IRLabel, CFGBlock>) : Contr
             insertPhiNodes(cfg, blocksMap, globals, mutableBlocks)
 
             // Step 3. Rename all variables to have unique names
-            RenameVariablesForSSA(cfg, mutableBlocks).renameVariables()
+            RenameVariablesForSSA(cfg, mutableBlocks, sourceMap).renameVariables()
 
             return SSAControlFlowGraph(
                 cfg.root,
                 mutableBlocks.mapValues { (_, irNodes) ->
                     CFGBlock(irNodes)
                 }
-            )
+            ).also {
+                SourceLocationMap.storeMap(sourceMap, it)
+            }
         }
 
         private fun insertPhiNodes(

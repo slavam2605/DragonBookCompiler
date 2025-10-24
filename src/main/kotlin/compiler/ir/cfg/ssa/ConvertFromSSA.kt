@@ -10,10 +10,12 @@ import compiler.ir.IRSource
 import compiler.ir.IRVar
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.utils.advanceAfterAllLabels
 import compiler.utils.NameAllocator
 
 class ConvertFromSSA(private val ssa: SSAControlFlowGraph) {
+    private val sourceMap = SourceLocationMap.extractMap(ssa)
     private val newBlocks = mutableMapOf<IRLabel, MutableList<IRNode>>()
 
     fun run(): ControlFlowGraph {
@@ -35,9 +37,9 @@ class ConvertFromSSA(private val ssa: SSAControlFlowGraph) {
             newBlocks[label]!!.removeIf { it is IRPhi }
         }
 
-        return SSAControlFlowGraph(ssa.root, newBlocks.mapValues { (_, irNodes) ->
-            CFGBlock(irNodes)
-        })
+        return SSAControlFlowGraph(ssa.root, newBlocks.mapValues { (_, irNodes) -> CFGBlock(irNodes) }).also {
+            SourceLocationMap.storeMap(sourceMap, it)
+        }
     }
 
     private fun insertPhiAssignments(phiNodes: List<IRPhi>, fromLabel: IRLabel) {
@@ -179,7 +181,7 @@ class ConvertFromSSA(private val ssa: SSAControlFlowGraph) {
                     }
                     return label
                 }
-            }).irNodes.toMutableList()
+            }, sourceMap).irNodes.toMutableList()
         }
 
         newBlocks.forEach { (label, block) ->

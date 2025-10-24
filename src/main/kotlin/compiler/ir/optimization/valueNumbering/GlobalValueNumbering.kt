@@ -8,6 +8,7 @@ import compiler.ir.IRVar
 import compiler.ir.SimpleIRTransformer
 import compiler.ir.cfg.CFGBlock
 import compiler.ir.cfg.extensions.DominatorTree
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 
 class GlobalValueNumbering(private val cfg: SSAControlFlowGraph) {
@@ -15,6 +16,7 @@ class GlobalValueNumbering(private val cfg: SSAControlFlowGraph) {
     private val numberMap = mutableListOf<MutableMap<IRValue, Long>>()
     private val valueMap = mutableListOf<MutableMap<RightSideValue, IRVar>>()
     private val newBlocks = mutableMapOf<IRLabel, CFGBlock>()
+    private val sourceMap = SourceLocationMap.copyMap(cfg)
     private var changed = false
 
     private fun nextNumber() = ++currentNumber
@@ -35,7 +37,9 @@ class GlobalValueNumbering(private val cfg: SSAControlFlowGraph) {
         traverse(cfg.root, domTree)
 
         if (!changed) return cfg
-        return SSAControlFlowGraph(cfg.root, newBlocks)
+        return SSAControlFlowGraph(cfg.root, newBlocks).also {
+            SourceLocationMap.storeMap(sourceMap, it)
+        }
     }
 
     private fun traverse(label: IRLabel, tree: DominatorTree) {
@@ -75,6 +79,6 @@ class GlobalValueNumbering(private val cfg: SSAControlFlowGraph) {
                 numberMap.put(irVar, nextNumber())
                 return node
             }
-        })
+        }, sourceMap)
     }
 }

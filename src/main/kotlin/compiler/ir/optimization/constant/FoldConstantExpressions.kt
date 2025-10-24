@@ -12,6 +12,7 @@ import compiler.ir.IRPhi
 import compiler.ir.IRValue
 import compiler.ir.IRVar
 import compiler.ir.SimpleIRTransformer
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -46,6 +47,8 @@ object FoldConstantExpressions {
             }
         }
 
+        // Copy the source map from the original CFG (to keep the original map unchanged)
+        val sourceMap = SourceLocationMap.copyMap(cfg)
         val newBlocks = cfg.blocks.mapValues { (currentLabel, block) ->
             block.transform(object : SimpleIRTransformer() {
                 override fun transformNodeSimple(node: IRNode): IRNode? {
@@ -102,10 +105,13 @@ object FoldConstantExpressions {
                     }
                     return value
                 }
-            })
+            }, sourceMap)
         }
 
         if (!changed) return cfg
-        return SSAControlFlowGraph(cfg.root, newBlocks)
+
+        return SSAControlFlowGraph(cfg.root, newBlocks).also {
+            SourceLocationMap.storeMap(sourceMap, it)
+        }
     }
 }

@@ -3,6 +3,7 @@ package compiler.ir.optimization.constant
 import compiler.ir.*
 import compiler.ir.analysis.DataFlowFramework
 import compiler.ir.cfg.CFGBlock
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 
 /**
@@ -38,6 +39,7 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
         ).run()
 
         var cfgChanged = false
+        val sourceMap = SourceLocationMap.copyMap(cfg)
         val newBlocks = mutableMapOf<IRLabel, CFGBlock>()
         cfg.blocks.forEach { (label, block) ->
             val condVars = dfa.inValues[label]!!.toMutableMap()
@@ -46,7 +48,7 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
                 val newNode = mergePhiSources(node, label, dfa)
                 if (node !== newNode) cfgChanged = true
 
-                transformedBlock.add(newNode.transform(object : BaseIRTransformer() {
+                val transformedNode = newNode.transform(object : BaseIRTransformer() {
                     override fun transformRValue(node: IRNode, index: Int, value: IRValue): IRValue {
                         if (value !is IRVar) return value
                         (condVars[value] as? SSCPValue.IntValue)?.let { sscpValue ->
@@ -65,15 +67,19 @@ class ConditionalJumpValues(private val cfg: SSAControlFlowGraph) {
 
                         return value
                     }
-                }))
+                })
+                transformedBlock.add(transformedNode)
                 node.lvalue?.let {
                     condVars.remove(it)
                 }
+                sourceMap.replace(node, transformedNode)
             }
             newBlocks[label] = CFGBlock(transformedBlock)
         }
         if (!cfgChanged) return cfg
-        return SSAControlFlowGraph(cfg.root, newBlocks)
+        return SSAControlFlowGraph(cfg.root, newBlocks).also {
+            SourceLocationMap.storeMap(sourceMap, it)
+        }
     }
 
     /**

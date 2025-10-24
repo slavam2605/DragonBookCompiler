@@ -15,6 +15,24 @@ class SourceLocationMap {
         map[irNode] = sourceLocation
     }
 
+    fun remove(irNode: IRNode): SourceLocation? {
+        return map.remove(irNode)
+    }
+
+    fun replace(oldNode: IRNode, newNode: IRNode) {
+        remove(oldNode)?.let {
+            map[newNode] = it
+        }
+    }
+
+    fun copyTo(other: SourceLocationMap) = other.map.putAll(map)
+
+    private fun copy(): SourceLocationMap {
+        return SourceLocationMap().also {
+            it.map.putAll(map)
+        }
+    }
+
     companion object {
         private val Key = ExtensionKey<SourceLocationMap>("SourceLocationMap")
 
@@ -29,8 +47,12 @@ class SourceLocationMap {
             cfg.putExtension(Key, sourceMap)
         }
 
-        fun extractMap(cfg: ControlFlowGraph): SourceLocationMap? {
-            return cfg.removeExtension(Key)
+        fun extractMap(cfg: ControlFlowGraph): SourceLocationMap {
+            return cfg.removeExtension(Key) ?: empty()
+        }
+
+        fun copyMap(cfg: ControlFlowGraph): SourceLocationMap {
+            return cfg.getExtension(Key)?.copy() ?: empty()
         }
     }
 }

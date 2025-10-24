@@ -3,6 +3,7 @@ package compiler.ir.optimization.inline
 import compiler.frontend.FrontendFunction
 import compiler.ir.*
 import compiler.ir.cfg.CFGBlock
+import compiler.ir.cfg.extensions.SourceLocationMap
 import compiler.ir.cfg.ssa.SSAControlFlowGraph
 import compiler.ir.cfg.utils.advanceAfterAllLabels
 import compiler.ir.cfg.utils.advanceAfterAllVars
@@ -13,6 +14,7 @@ internal class InlineTransformer(
     private val cfg: SSAControlFlowGraph,
     private val functionName: String
 ) {
+    private val sourceMap = SourceLocationMap.copyMap(cfg)
     private val varAllocator = NameAllocator("x")
     private val labelAllocator = NameAllocator("L")
     private val newBlocks = mutableMapOf<IRLabel, CFGBlock>()
@@ -32,7 +34,9 @@ internal class InlineTransformer(
         }
 
         updatePhiNodeSources()
-        return cfg.new(cfg.root, newBlocks)
+        return cfg.new(cfg.root, newBlocks).also {
+            SourceLocationMap.storeMap(sourceMap, it)
+        }
     }
 
     private fun transformBlock(startLabel: IRLabel, block: CFGBlock) {
@@ -67,6 +71,7 @@ internal class InlineTransformer(
                 inlinedReturnLabel = inlinedReturnLabel,
                 returnValueSources = returnValueSources
             ))
+            SourceLocationMap.extractMap(renamedFn).copyTo(sourceMap)
 
             // Rename blocks themselves
             renamedFn.blocks.forEach { (label, block) ->
@@ -82,7 +87,9 @@ internal class InlineTransformer(
             }
 
             // Insert jump to the start of the inlined function
-            currentBlock.add(IRJump(namesCollector.getNewIRLabel(fn.value.root)))
+            currentBlock.add(IRJump(namesCollector.getNewIRLabel(fn.value.root)).also {
+                sourceMap.replace(originalNode, it)
+            })
 
             // End the current block and start a continuation
             newBlocks[currentLabel] = CFGBlock(currentBlock)

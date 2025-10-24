@@ -56,10 +56,13 @@ open class ControlFlowGraph(
     }
 
     fun transform(transformer: IRTransformer): ControlFlowGraph {
+        val sourceMap = SourceLocationMap.copyMap(this)
         return new(root, blocks.mapValues { (label, block) ->
             transformer.startBlock(label)
-            block.transform(transformer)
-        })
+            block.transform(transformer, sourceMap)
+        }).also {
+            SourceLocationMap.storeMap(sourceMap, it)
+        }
     }
 
     override fun equals(other: Any?): Boolean {

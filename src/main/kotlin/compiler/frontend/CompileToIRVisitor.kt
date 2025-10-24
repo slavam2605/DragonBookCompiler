@@ -331,6 +331,7 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
         val zero = when (value.type) {
             IRType.INT64 -> IRInt(0)
             IRType.FLOAT64 -> IRFloat(0.0)
+            is IRType.PTR -> error("Cannot negate pointer type")
         }
         return withNewVar(value.type) {
             IRBinOp(IRBinOpKind.SUB, it, zero, value).withLocation(ctx)

@@ -41,7 +41,7 @@ class CallEmitter(private val context: NativeCompilerContext) {
         var floatIndex = 0
         n.arguments.forEach { arg ->
             val reg = when (arg.type) {
-                IRType.INT64 -> X(intIndex++).also { check(intIndex <= 8) }
+                IRType.INT64, is IRType.PTR -> X(intIndex++).also { check(intIndex <= 8) }
                 IRType.FLOAT64 -> D(floatIndex++).also { check(floatIndex <= 8) }
             }
             checkArgumentRegister(arg)
@@ -53,7 +53,7 @@ class CallEmitter(private val context: NativeCompilerContext) {
         n.result?.let { res ->
             val dst = allocator.loc(res)
             val resultReg = when (res.type) {
-                IRType.INT64 -> X0
+                IRType.INT64, is IRType.PTR -> X0
                 IRType.FLOAT64 -> D0
             }
 

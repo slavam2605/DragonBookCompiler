@@ -78,7 +78,7 @@ class CompositeRegisterAllocator(
     fun getLivenessInfo() = intAllocator.livenessInfo
 
     private fun chooseAllocator(value: IRValue): BaseMemoryAllocator<*> = when (value.type) {
-        IRType.INT64 -> intAllocator
+        IRType.INT64, is IRType.PTR -> intAllocator
         IRType.FLOAT64 -> floatAllocator
     }
 }

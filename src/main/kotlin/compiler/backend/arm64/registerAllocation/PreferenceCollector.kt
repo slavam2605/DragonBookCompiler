@@ -60,7 +60,7 @@ object PreferenceCollector {
             if (!typeFilter(result)) return@let
 
             val returnReg = when (result.type) {
-                IRType.INT64, IRType.FLOAT64 -> parameterRegs[0]  // x0 or d0
+                IRType.INT64, IRType.FLOAT64, is IRType.PTR -> parameterRegs[0]  // x0 or d0 (pointers use x0)
             }
 
             explicitPreferences

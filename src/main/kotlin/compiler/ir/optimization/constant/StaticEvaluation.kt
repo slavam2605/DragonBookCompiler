@@ -129,6 +129,7 @@ private fun IRNode.evaluate(rValues: List<SSCPValue>): SSCPValue {
 private fun IRValue.typedZero() = when (this.type) {
     IRType.INT64 -> SSCPValue.IntValue(0L)
     IRType.FLOAT64 -> SSCPValue.FloatValue(0.0)
+    is IRType.PTR -> error("No IRValue for constant null pointer")
 }
 
 private fun SSCPValue.isZero() = when (this) {

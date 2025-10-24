@@ -35,7 +35,7 @@ class BranchEmitter(private val context: NativeCompilerContext) {
     fun emitRet(node: IRReturn) {
         node.value?.let { value ->
             val targetReg = when (value.type) {
-                IRType.INT64 -> X0
+                IRType.INT64, is IRType.PTR -> X0
                 IRType.FLOAT64 -> D0
             }
             CopyUtils.emitCopy(context, targetReg, value)

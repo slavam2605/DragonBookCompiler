@@ -2,14 +2,20 @@ package compiler.ir
 
 // values
 
-enum class IRType {
-    INT64, FLOAT64;
+sealed interface IRType {
+    val typeSize: Long // Size in bytes
 
-    override fun toString(): String {
-        return when (this) {
-            INT64 -> "i64"
-            FLOAT64 -> "f64"
-        }
+    data object INT64 : IRType {
+        override fun toString() = "i64"
+        override val typeSize: Long = 8
+    }
+    data object FLOAT64 : IRType {
+        override fun toString() = "f64"
+        override val typeSize: Long = 8
+    }
+    data class PTR(val pointeeType: IRType) : IRType {
+        override fun toString() = "$pointeeType*"
+        override val typeSize: Long = 8
     }
 }
 

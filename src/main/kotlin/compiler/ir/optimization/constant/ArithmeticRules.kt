@@ -25,6 +25,7 @@ object ArithmeticRules {
     private fun IRValue.typedZero() = when (type) {
         IRType.INT64 -> IRInt(0L)
         IRType.FLOAT64 -> IRFloat(0.0)
+        is IRType.PTR -> error("No IRValue for constant null pointer")
     }
 
     private fun IRNode.toAssign(value: IRValue) = IRAssign(lvalue!!, value)

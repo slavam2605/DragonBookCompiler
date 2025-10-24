@@ -1,6 +1,7 @@
 package compiler.frontend
 
 import compiler.frontend.FrontendFunctions.Companion.callGraph
+import compiler.ir.IRType
 import compiler.ir.cfg.ControlFlowGraph
 
 private object FunctionUtils {
@@ -24,6 +25,11 @@ private object FunctionUtils {
         // Mark as visited before recursing to prevent infinite loops
         visited.add(name)
 
+        // Conservative check: if any parameter is a pointer, the function is not pure
+        if (usesPointerParameters(function)) {
+            return false
+        }
+
         // The function is pure if all functions that it calls are pure
         val result = ffs.callGraph().getCallees(name)
             .all { calleeName -> isPure(ffs, calleeName, visited) }
@@ -32,6 +38,17 @@ private object FunctionUtils {
         visited.remove(name)
 
         return result
+    }
+
+    private fun usesPointerParameters(function: FrontendFunction<out ControlFlowGraph>): Boolean {
+        val pointerArguments = function.parameters.filter { it.type is IRType.PTR }.toSet()
+        function.value.blocks.values.forEach { block ->
+            block.irNodes.forEach { irNode ->
+                check(irNode.lvalue !in pointerArguments) // assume that arguments are not changed
+                if (irNode.rvalues().any { it in pointerArguments }) return true
+            }
+        }
+        return false
     }
 }
 

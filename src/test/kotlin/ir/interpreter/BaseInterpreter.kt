@@ -1,8 +1,11 @@
 package ir.interpreter
 
+import compiler.frontend.CompilationException
+import compiler.frontend.CompilationFailed
 import compiler.frontend.FrontendFunctions
 import compiler.frontend.FrontendConstantValue
 import compiler.ir.*
+import compiler.ir.cfg.extensions.SourceLocationMap
 
 abstract class BaseInterpreter<T>(
     functionName: String,
@@ -33,6 +36,8 @@ abstract class BaseInterpreter<T>(
 
     abstract fun callFunction(functionName: String, args: List<FrontendConstantValue>): FrontendConstantValue?
 
+    abstract val sourceMap: SourceLocationMap
+
     protected sealed interface Command {
         class Jump(val label: IRLabel) : Command
         object Continue : Command
@@ -51,7 +56,7 @@ abstract class BaseInterpreter<T>(
         }
     }
 
-    protected fun baseEval(node: IRProtoNode): Command {
+    private fun baseEvalUnsafe(node: IRProtoNode): Command {
         incrementStep()?.let { return it }
         when (node) {
             is IRLabel -> { /* skip */ }
@@ -123,6 +128,15 @@ abstract class BaseInterpreter<T>(
             }
         }
         return Command.Continue
+    }
+
+    protected fun baseEval(node: IRProtoNode): Command {
+        try {
+            return baseEvalUnsafe(node)
+        } catch (e: Throwable) {
+            val location = (node as? IRNode)?.let { sourceMap[it] }
+            throw CompilationFailed(listOf(CompilationException(location, e.message!!, e)))
+        }
     }
 
     private fun incrementStep(): Command? {

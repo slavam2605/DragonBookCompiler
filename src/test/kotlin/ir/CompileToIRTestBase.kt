@@ -40,10 +40,10 @@ abstract class CompileToIRTestBase {
         StatsHolder.clear()
         when (mode) {
             TestMode.IR -> {
-                val (ffs, _) = compileToIR(input).also { (ffs, _) ->
+                val (ffs, sourceMap) = compileToIR(input).also { (ffs, _) ->
                     if (PRINT_DEBUG_INFO) ffs.print { it.print() }
                 }
-                return ProtoIRInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler).eval()
+                return ProtoIRInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler, sourceMap).eval()
             }
             TestMode.CFG -> {
                 val ffs = compileToCFG(input).also { ffs ->

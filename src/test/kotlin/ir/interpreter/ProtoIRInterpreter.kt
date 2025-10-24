@@ -3,12 +3,14 @@ package ir.interpreter
 import compiler.frontend.FrontendFunctions
 import compiler.frontend.FrontendConstantValue
 import compiler.ir.*
+import compiler.ir.cfg.extensions.SourceLocationMap
 
 open class ProtoIRInterpreter(
     functionName: String,
     arguments: List<FrontendConstantValue>,
     private val functions: FrontendFunctions<List<IRProtoNode>>,
     private val fallbackFunctionHandler: (String, List<FrontendConstantValue>) -> FrontendConstantValue = DEFAULT_FUNCTION_HANDLER,
+    override val sourceMap: SourceLocationMap,
     private val exitAfterMaxSteps: Boolean = false
 ) : BaseInterpreter<List<IRProtoNode>>(functionName, arguments, functions, fallbackFunctionHandler, exitAfterMaxSteps) {
     private val labelMap = mutableMapOf<IRLabel, Int>()
@@ -43,6 +45,7 @@ open class ProtoIRInterpreter(
             args,
             functions,
             fallbackFunctionHandler,
+            sourceMap,
             exitAfterMaxSteps
         ).eval()[IntReturnValue]
     }

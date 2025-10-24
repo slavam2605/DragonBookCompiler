@@ -6,6 +6,7 @@ import compiler.ir.IRLabel
 import compiler.ir.IRPhi
 import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
+import compiler.ir.cfg.extensions.SourceLocationMap
 
 class CFGInterpreter(
     functionName: String,
@@ -19,6 +20,8 @@ class CFGInterpreter(
     private var currentLabel: IRLabel = cfg.root
     private var currentLine: Int = 0
     private val tempPhiBuffer = mutableMapOf<IRVar, FrontendConstantValue>()
+
+    override val sourceMap: SourceLocationMap = SourceLocationMap.copyMap(cfg)
 
     private val currentBlock
         get() = cfg.blocks[currentLabel] ?: error("No block for label $currentLabel")

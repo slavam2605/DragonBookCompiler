@@ -23,7 +23,11 @@ class CompilationFailed(val exceptions: List<CompilationException>) : Exception(
     }
 }
 
-abstract class CompilationException(val location: SourceLocation?, message: String) : Exception(message)
+open class CompilationException(val location: SourceLocation?, message: String) : Exception(message) {
+    constructor(location: SourceLocation?, message: String, cause: Throwable) : this(location, message) {
+        initCause(cause)
+    }
+}
 
 class SyntaxErrorException(location: SourceLocation, message: String) : CompilationException(location, message)
 

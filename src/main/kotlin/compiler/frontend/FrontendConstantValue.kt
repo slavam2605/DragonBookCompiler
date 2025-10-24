@@ -70,5 +70,35 @@ sealed class FrontendConstantValue {
         override val irType = IRType.FLOAT64
     }
 
+    internal data class PointerValue(val address: Long, val targetType: IRType) : FrontendConstantValue() {
+        override fun plus(other: FrontendConstantValue): FrontendConstantValue {
+            return PointerValue(address + (other as IntValue).value, targetType)
+        }
+
+        override fun minus(other: FrontendConstantValue): FrontendConstantValue {
+            return PointerValue(address - (other as IntValue).value, targetType)
+        }
+
+        override fun times(other: FrontendConstantValue): FrontendConstantValue {
+            error("Cannot multiply pointer values")
+        }
+
+        override fun div(other: FrontendConstantValue): FrontendConstantValue {
+            error("Cannot divide pointer values")
+        }
+
+        override fun rem(other: FrontendConstantValue): FrontendConstantValue {
+            error("Cannot modulus pointer values")
+        }
+
+        override fun compareTo(other: FrontendConstantValue): Int {
+            return address.compareTo((other as PointerValue).address)
+        }
+
+        override fun toString(): String = "$$address"
+
+        override val irType = IRType.PTR(targetType)
+    }
+
     abstract val irType: IRType
 }

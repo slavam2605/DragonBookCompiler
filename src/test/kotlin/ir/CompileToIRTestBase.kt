@@ -44,19 +44,19 @@ abstract class CompileToIRTestBase {
                 val (ffs, sourceMap) = compileToIR(input).also { (ffs, _) ->
                     if (PRINT_DEBUG_INFO) ffs.print { it.print() }
                 }
-                return ProtoIRInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler, sourceMap).eval()
+                return ProtoIRInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler, sourceMap).eval(true)
             }
             TestMode.CFG -> {
                 val ffs = compileToCFG(input).also { ffs ->
                     if (PRINT_DEBUG_INFO) ffs.print { it.print() }
                 }
-                return CFGInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler).eval()
+                return CFGInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler).eval(true)
             }
             TestMode.SSA -> {
                 val ffs = compileToSSA(input).also { ffs ->
                     if (PRINT_DEBUG_INFO) ffs.print { it.print() }
                 }
-                return CFGInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler).eval()
+                return CFGInterpreter(MAIN, emptyList(), ffs, TestFunctionHandler).eval(true)
             }
             TestMode.OPTIMIZED_SSA -> {
                 val ffs = compileToOptimizedSSA(input).also { ffs ->
@@ -72,7 +72,7 @@ abstract class CompileToIRTestBase {
                 }
 
                 val optimizedFfs = ffs.map { it.value }
-                return CFGInterpreter(MAIN, emptyList(), optimizedFfs, TestFunctionHandler).eval()
+                return CFGInterpreter(MAIN, emptyList(), optimizedFfs, TestFunctionHandler).eval(true)
             }
             TestMode.OPTIMIZED_NON_SSA -> {
                 check(!ignoreInterpretedValues) {
@@ -83,7 +83,7 @@ abstract class CompileToIRTestBase {
                 val nonSsaFfs = compileToOptimizedCFG(input)
                 if (PRINT_DEBUG_INFO) nonSsaFfs.print { it.print() }
 
-                return CFGInterpreter(MAIN, emptyList(), nonSsaFfs, TestFunctionHandler).eval()
+                return CFGInterpreter(MAIN, emptyList(), nonSsaFfs, TestFunctionHandler).eval(true)
             }
             TestMode.NATIVE_ARM64 -> {
                 val ffs = compileToOptimizedCFG(input).map {

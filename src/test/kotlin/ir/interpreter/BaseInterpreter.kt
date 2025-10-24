@@ -7,11 +7,12 @@ import compiler.frontend.FrontendConstantValue
 import compiler.ir.*
 import compiler.ir.cfg.extensions.SourceLocationMap
 
-abstract class BaseInterpreter<T>(
+internal abstract class BaseInterpreter<T>(
     functionName: String,
     private val arguments: List<FrontendConstantValue>,
     private val functions: FrontendFunctions<out T>,
     private val fallbackFunctionHandler: (String, List<FrontendConstantValue>) -> FrontendConstantValue,
+    private val allocator: TestAllocator,
     private val exitAfterMaxSteps: Boolean
 ) {
     protected val vars = mutableMapOf<IRVar, FrontendConstantValue>()
@@ -32,7 +33,10 @@ abstract class BaseInterpreter<T>(
         }
     }
 
-    abstract fun eval(): Map<IRVar, FrontendConstantValue>
+    /**
+     * @param isOuterMain `true` if program is finished after this function
+     */
+    abstract fun eval(isOuterMain: Boolean = false): Map<IRVar, FrontendConstantValue>
 
     abstract fun callFunction(functionName: String, args: List<FrontendConstantValue>): FrontendConstantValue?
 
@@ -69,8 +73,8 @@ abstract class BaseInterpreter<T>(
             is IRBinOp -> {
                 val left = getValue(node.left)
                 val right = getValue(node.right)
-                require(left.irType == right.irType) {
-                    "IRBinOp requires operands of the same type, got ${left.irType} and ${right.irType}"
+                require(left.irType == right.irType || left.irType is IRType.PTR && right.irType == IRType.INT64) {
+                    "IRBinOp requires operands of the same type or a pointer and i64, got ${left.irType} and ${right.irType}"
                 }
                 val result = when (node.op) {
                     IRBinOpKind.ADD -> left + right
@@ -102,17 +106,46 @@ abstract class BaseInterpreter<T>(
                         val intVal = (value as FrontendConstantValue.IntValue).value
                         FrontendConstantValue.FloatValue(intVal.toDouble())
                     }
+                    is IRType.PTR -> {
+                        val address = (value as FrontendConstantValue.PointerValue).address
+                        FrontendConstantValue.PointerValue(address, node.result.type.pointeeType)
+                    }
                 }
                 vars[node.result] = result
             }
             is IRFunctionCall -> {
                 val arguments = node.arguments.map { getValue(it) }
-                val result = if (node.name in functions) {
-                    callFunction(node.name, arguments)
-                } else {
-                    fallbackFunctionHandler(node.name, arguments)
+                val result = when (node.name) {
+                    Intrinsics.MALLOC -> {
+                        check(node.result != null)
+                        check(node.result.type is IRType.PTR)
+                        check(arguments.size == 1)
+                        check(arguments[0] is FrontendConstantValue.IntValue)
+                        allocator.allocate(node.result.type.pointeeType, (arguments[0] as FrontendConstantValue.IntValue).value)
+                    }
+
+                    Intrinsics.FREE -> {
+                        check(arguments.size == 1)
+                        check(arguments[0].irType is IRType.PTR)
+                        allocator.free(arguments[0] as FrontendConstantValue.PointerValue)
+                        null
+                    }
+
+                    in functions -> callFunction(node.name, arguments)
+                    else -> fallbackFunctionHandler(node.name, arguments)
                 }
                 if (node.result != null) vars[node.result] = result!!
+            }
+            is IRLoad -> {
+                val pointer = getValue(node.pointer)
+                check(pointer is FrontendConstantValue.PointerValue)
+                vars[node.result] = allocator.load(pointer)
+            }
+            is IRStore -> {
+                val pointer = getValue(node.pointer)
+                check(pointer is FrontendConstantValue.PointerValue)
+                val value = getValue(node.value)
+                allocator.store(pointer, value)
             }
             is IRJump -> return Command.Jump(node.target)
             is IRJumpIfTrue -> {

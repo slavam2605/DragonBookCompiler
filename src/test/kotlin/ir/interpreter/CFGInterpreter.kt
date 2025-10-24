@@ -8,13 +8,14 @@ import compiler.ir.IRVar
 import compiler.ir.cfg.ControlFlowGraph
 import compiler.ir.cfg.extensions.SourceLocationMap
 
-class CFGInterpreter(
+internal class CFGInterpreter(
     functionName: String,
-    private val arguments: List<FrontendConstantValue>,
+    arguments: List<FrontendConstantValue>,
     private val functions: FrontendFunctions<out ControlFlowGraph>,
     private val fallbackFunctionHandler: (String, List<FrontendConstantValue>) -> FrontendConstantValue = DEFAULT_FUNCTION_HANDLER,
+    private val allocator: TestAllocator = TestAllocator(),
     private val exitAfterMaxSteps: Boolean = false
-) : BaseInterpreter<ControlFlowGraph>(functionName, arguments, functions, fallbackFunctionHandler, exitAfterMaxSteps) {
+) : BaseInterpreter<ControlFlowGraph>(functionName, arguments, functions, fallbackFunctionHandler, allocator, exitAfterMaxSteps) {
     private val cfg = functions[functionName]?.value ?: error("Function $functionName not found")
     private var jumpedFromLabel: IRLabel? = null
     private var currentLabel: IRLabel = cfg.root
@@ -26,7 +27,7 @@ class CFGInterpreter(
     private val currentBlock
         get() = cfg.blocks[currentLabel] ?: error("No block for label $currentLabel")
 
-    override fun eval(): Map<IRVar, FrontendConstantValue> {
+    override fun eval(isOuterMain: Boolean): Map<IRVar, FrontendConstantValue> {
         var isInPhiPrefix = true
         while (currentLine < currentBlock.irNodes.size) {
             val currentNode = currentBlock.irNodes[currentLine]
@@ -60,6 +61,9 @@ class CFGInterpreter(
                 is Command.Exit -> break
             }
         }
+        if (isOuterMain) {
+            allocator.checkUnfreedMemory()
+        }
         return vars.toMap()
     }
 
@@ -69,6 +73,7 @@ class CFGInterpreter(
             args,
             functions,
             fallbackFunctionHandler,
+            allocator,
             exitAfterMaxSteps
         ).eval()[IntReturnValue]
     }

@@ -66,7 +66,8 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
     // --------------- Types ---------------
 
     override fun visitType(ctx: MainGrammar.TypeContext): FrontendType {
-        return when (ctx.text) {
+        val baseTypeName = ctx.ID().text
+        val baseType = when (baseTypeName) {
             "int" -> FrontendType.Int
             "bool" -> FrontendType.Bool
             "float" -> FrontendType.Float
@@ -75,6 +76,14 @@ class SemanticAnalysisVisitor : MainGrammarBaseVisitor<FrontendType>() {
                 return FrontendType.ErrorType
             }
         }
+
+        // Count the number of STAR tokens to build the pointer type
+        val pointerDepth = ctx.STAR().size
+        var resultType = baseType
+        repeat(pointerDepth) {
+            resultType = FrontendType.Pointer(resultType)
+        }
+        return resultType
     }
 
     // --------------- Statements ---------------

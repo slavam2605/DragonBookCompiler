@@ -62,7 +62,7 @@ declaration
     ;
 
 type
-    : ID
+    : ID STAR*
     ;
 
 assignment

@@ -439,12 +439,20 @@ class CompileToIRVisitor : MainGrammarBaseVisitor<IRValue>() {
     }
 
     private fun MainGrammar.TypeContext.irType(): IRType {
-        return when (text) {
+        val baseType = when (val baseTypeName = ID().text) {
             "int" -> IRType.INT64
             "bool" -> IRType.INT64
             "float" -> IRType.FLOAT64
-            else -> error("Unknown type '$text'")
+            else -> error("Unknown type '$baseTypeName'")
         }
+
+        // Count the number of STAR tokens to build the pointer type
+        val pointerDepth = STAR().size
+        var resultType = baseType
+        repeat(pointerDepth) {
+            resultType = IRType.PTR(resultType)
+        }
+        return resultType
     }
 
     private fun <T> withLoop(continueLabel: IRLabel, breakLabel: IRLabel, block: () -> T): T {

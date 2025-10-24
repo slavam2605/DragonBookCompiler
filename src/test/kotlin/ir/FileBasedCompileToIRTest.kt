@@ -2,9 +2,9 @@ package ir
 
 import MainLexer
 import compiler.backend.arm64.Arm64ConstantPool
+import compiler.backend.arm64.registerAllocation.Arm64StorageType
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator
 import compiler.frontend.CompilationFailed
-import compiler.ir.IRType
 import compiler.ir.printToString
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -94,8 +94,8 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
         }
 
         expected.forEach { (functionName, used, spilled) ->
-            val actualUsedInt = StatsHolder.get<BaseMemoryAllocator.StatUsedRegisters>(functionName, IRType.INT64).value
-            val actualSpilledInt = StatsHolder.get<BaseMemoryAllocator.StatSpilledRegisters>(functionName, IRType.INT64).value
+            val actualUsedInt = StatsHolder.get<BaseMemoryAllocator.StatUsedRegisters>(functionName, Arm64StorageType.INT_REG).value
+            val actualSpilledInt = StatsHolder.get<BaseMemoryAllocator.StatSpilledRegisters>(functionName, Arm64StorageType.INT_REG).value
             assertEquals(used, actualUsedInt)
             assertEquals(spilled, actualSpilledInt)
         }

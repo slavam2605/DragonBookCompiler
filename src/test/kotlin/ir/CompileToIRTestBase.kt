@@ -3,6 +3,7 @@ package ir
 import TestResources
 import backend.NativeArm64TestCompilationFlow
 import compiler.backend.PrepareForNativeCompilation
+import compiler.backend.arm64.registerAllocation.Arm64StorageType
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatAvailableRegisters
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatSpilledRegisters
 import compiler.backend.arm64.registerAllocation.BaseMemoryAllocator.StatUsedRegisters
@@ -92,9 +93,9 @@ abstract class CompileToIRTestBase {
 
                 ffs.forEach { function ->
                     val name = function.name
-                    val availableRegisters = StatsHolder.get<StatAvailableRegisters>(name, IRType.INT64).value
-                    val usedRegisters = StatsHolder.get<StatUsedRegisters>(name, IRType.INT64).value
-                    val spilledRegisters = StatsHolder.get<StatSpilledRegisters>(name, IRType.INT64).value
+                    val availableRegisters = StatsHolder.get<StatAvailableRegisters>(name, Arm64StorageType.INT_REG).value
+                    val usedRegisters = StatsHolder.get<StatUsedRegisters>(name, Arm64StorageType.INT_REG).value
+                    val spilledRegisters = StatsHolder.get<StatSpilledRegisters>(name, Arm64StorageType.INT_REG).value
 
                     if (PRINT_DEBUG_INFO) {
                         println("Memory allocator stats for $name:")

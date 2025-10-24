@@ -60,8 +60,8 @@ class InterferenceGraph private constructor(cfg: ControlFlowGraph) {
 
                 // Build interference edges (same-type only)
                 irNode.lvalue?.let { lVar ->
-                    // Filter live variables to same type as lVar
-                    val sameLiveOut = liveOut.filter { it.type == lVar.type }
+                    // Filter live variables to the same type-kind as lVar
+                    val sameLiveOut = liveOut.filter { Arm64StorageType.of(it.type) == Arm64StorageType.of(lVar.type) }
 
                     // Special handling for copy instructions: x = y
                     // x interferes with everything live EXCEPT y

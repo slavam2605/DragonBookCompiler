@@ -52,7 +52,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     val context: NativeCompilerContext,
     val function: FrontendFunction<ControlFlowGraph>,
     val ops: MutableList<Instruction>,
-    val type: IRType,
+    val storageType: Arm64StorageType,
     private val analysisResult: AllocationAnalysisResult
 ) : MemoryAllocator<Reg> {
     private val map = HashMap<IRVar, MemoryLocation>()
@@ -77,7 +77,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
 
         // Process parameter registers
         function.parameters
-            .filter { it.type == type }
+            .filter { Arm64StorageType.of(it.type) == storageType }
             .forEachIndexed { index, parameter ->
                 check(index < 8)
                 val reg = parameterRegs[index]
@@ -103,7 +103,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
         // Collect register allocation preferences
         val preferences = PreferenceCollector.collect(
             cfg = cfg,
-            typeFilter = { it.type == type },
+            typeFilter = { Arm64StorageType.of(it.type) == storageType },
             parameterRegs = parameterRegs()
         )
         preferences.hardRequirements.forEach { (reg, color) ->
@@ -128,7 +128,7 @@ abstract class BaseMemoryAllocator<Reg : Register>(
             colors = nonTempRegs,
             initialColoring = map,
             graph = interferenceGraph,
-            typeFilter = { it.type == type },  // Filter to only process variables of this type
+            typeFilter = { Arm64StorageType.of(it.type) == storageType },  // Filter to only process variables of this type
             allocationScorer = { irVar, color ->
                 AllocationScore.score(irVar, color, livenessInfo)
             },
@@ -152,9 +152,9 @@ abstract class BaseMemoryAllocator<Reg : Register>(
             }
         }
 
-        StatAvailableRegisters(nonTempRegs.size, type).record(functionName = function.name)
-        StatUsedRegisters(usedRegsHistory.size, type).record(functionName = function.name)
-        StatSpilledRegisters(nextStackOffset / 8, type).record(functionName = function.name)
+        StatAvailableRegisters(nonTempRegs.size, storageType).record(functionName = function.name)
+        StatUsedRegisters(usedRegsHistory.size, storageType).record(functionName = function.name)
+        StatSpilledRegisters(nextStackOffset / 8, storageType).record(functionName = function.name)
     }
 
     override val alignedAllocatedSize: Int get() = (nextStackOffset + 15) and (-16)
@@ -227,13 +227,13 @@ abstract class BaseMemoryAllocator<Reg : Register>(
     private fun free(reg: Reg) = freeTempRegs.add(reg)
 
     private fun tempRegInternal(): Reg {
-        val tempReg = freeTempRegs.firstOrNull() ?: error("No free registers for $type")
+        val tempReg = freeTempRegs.firstOrNull() ?: error("No free registers for $storageType")
         freeTempRegs.remove(tempReg)
         usedRegsHistory.add(tempReg)
         return tempReg
     }
 
-    class StatAvailableRegisters(val value: Int, type: IRType) : PerFunctionStatsData(type)
-    class StatUsedRegisters(val value: Int, type: IRType) : PerFunctionStatsData(type)
-    class StatSpilledRegisters(val value: Int, type: IRType) : PerFunctionStatsData(type)
+    class StatAvailableRegisters(val value: Int, storageType: Arm64StorageType) : PerFunctionStatsData(storageType)
+    class StatUsedRegisters(val value: Int, storageType: Arm64StorageType) : PerFunctionStatsData(storageType)
+    class StatSpilledRegisters(val value: Int, storageType: Arm64StorageType) : PerFunctionStatsData(storageType)
 }

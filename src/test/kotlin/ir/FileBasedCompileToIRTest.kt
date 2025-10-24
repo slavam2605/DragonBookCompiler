@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.fail
 import statistics.StatsHolder
 import java.io.File
 import kotlin.test.assertTrue
@@ -56,7 +57,9 @@ abstract class FileBasedCompileToIRTest : CompileToIRTestBase() {
                     val expectedError = expectedErrors.find {
                         it.line == ctx.line && it.col == ctx.start && it.message == message
                     }
-                    assertTrue(expectedError != null, "Unexpected error: ${ctx.line}:${ctx.start} \"$message\"")
+                    if (expectedError == null) {
+                        fail("Unexpected error: ${ctx.line}:${ctx.start} \"$message\"", exception)
+                    }
                     visitedErrors.add(expectedError)
                     if (PRINT_DEBUG_INFO) {
                         println("Expected exception: $message at ${ctx.line}:${ctx.start}")
